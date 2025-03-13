@@ -1,6 +1,6 @@
 const std = @import("std");
-const Cpu = @import("mos6510").Cpu;
-const Emulator = @import("mos6510").Emulator;
+const Cpu = @import("zig64").Cpu;
+const C64 = @import("zig64");
 
 test "ADC basic addition without carry" {
     var cpu = Cpu.init(0x0000);
@@ -113,39 +113,39 @@ test "SBC signed overflow (negative result turns positive)" {
 
 test "Branching instruction tests" {
     const gpa = std.heap.page_allocator;
-    var emu = Emulator.init(gpa, Emulator.VicType.pal, 0x0800);
+    var c64 = C64.init(gpa, C64.Vic.Type.pal, 0x0800);
 
     // Test case 1: No branch when t1 != t2
-    emu.cpu.pc = 0x1000;
-    emu.mem.data[0x1000] = 0x05; // Offset +5
-    emu.cpu.branch(1, 0); // Should NOT branch
-    try std.testing.expectEqual(@as(u16, 0x1001), emu.cpu.pc); // PC should just move forward
+    c64.cpu.pc = 0x1000;
+    c64.mem.data[0x1000] = 0x05; // Offset +5
+    c64.cpu.branch(1, 0); // Should NOT branch
+    try std.testing.expectEqual(@as(u16, 0x1001), c64.cpu.pc); // PC should just move forward
 
     // Test case 2: Branch forward +5 when t1 == t2
-    emu.cpu.pc = 0x2000;
-    emu.mem.data[0x2000] = 0x05; // Offset +5
-    emu.cpu.branch(1, 1); // Should branch
-    try std.testing.expectEqual(@as(u16, 0x2006), emu.cpu.pc); // PC should jump to 0x2006
+    c64.cpu.pc = 0x2000;
+    c64.mem.data[0x2000] = 0x05; // Offset +5
+    c64.cpu.branch(1, 1); // Should branch
+    try std.testing.expectEqual(@as(u16, 0x2006), c64.cpu.pc); // PC should jump to 0x2006
 
     // Test case 3: Branch backward -4 when t1 == t2
-    emu.cpu.pc = 0x3005;
-    emu.mem.data[0x3005] = 0xFC; // Offset -4 (Two’s complement: -4)
-    emu.cpu.branch(1, 1); // Should branch
-    try std.testing.expectEqual(@as(u16, 0x3002), emu.cpu.pc); // PC should jump back
+    c64.cpu.pc = 0x3005;
+    c64.mem.data[0x3005] = 0xFC; // Offset -4 (Two’s complement: -4)
+    c64.cpu.branch(1, 1); // Should branch
+    try std.testing.expectEqual(@as(u16, 0x3002), c64.cpu.pc); // PC should jump back
 
     // Test case 4: Page boundary crossing should add extra cycle
-    emu.cpu.pc = 0x20FE; // Last byte of page 0x20
-    emu.mem.data[0x20FE] = 0x02; // Offset +2 (would land in 0x2102)
-    const cycles_before = emu.cpu.cycles_executed;
-    emu.cpu.branch(1, 1); // Should branch and add extra cycle
-    try std.testing.expectEqual(@as(u16, 0x2101), emu.cpu.pc); // PC should land in next page
-    try std.testing.expectEqual(cycles_before + 3, emu.cpu.cycles_executed); // Extra cycle added
+    c64.cpu.pc = 0x20FE; // Last byte of page 0x20
+    c64.mem.data[0x20FE] = 0x02; // Offset +2 (would land in 0x2102)
+    const cycles_before = c64.cpu.cycles_executed;
+    c64.cpu.branch(1, 1); // Should branch and add extra cycle
+    try std.testing.expectEqual(@as(u16, 0x2101), c64.cpu.pc); // PC should land in next page
+    try std.testing.expectEqual(cycles_before + 3, c64.cpu.cycles_executed); // Extra cycle added
 
     // Test case 5: Branch without page crossing (normal case)
-    emu.cpu.pc = 0x2500;
-    emu.mem.data[0x2500] = 0x02; // Offset +2
-    const cycles_before_2 = emu.cpu.cycles_executed;
-    emu.cpu.branch(1, 1);
-    try std.testing.expectEqual(@as(u16, 0x2503), emu.cpu.pc); // PC should move normally
-    try std.testing.expectEqual(cycles_before_2 + 2, emu.cpu.cycles_executed); // Only 1 extra cycle
+    c64.cpu.pc = 0x2500;
+    c64.mem.data[0x2500] = 0x02; // Offset +2
+    const cycles_before_2 = c64.cpu.cycles_executed;
+    c64.cpu.branch(1, 1);
+    try std.testing.expectEqual(@as(u16, 0x2503), c64.cpu.pc); // PC should move normally
+    try std.testing.expectEqual(cycles_before_2 + 2, c64.cpu.cycles_executed); // Only 1 extra cycle
 }

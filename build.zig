@@ -4,9 +4,9 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // Add mos6510 module
-    const mod_c64 = b.addModule("c64", .{
-        .root_source_file = b.path("src/c64.zig"),
+    // Add c64 module
+    const mod_zig64 = b.addModule("zig64", .{
+        .root_source_file = b.path("src/zig64.zig"),
     });
 
     // Main executable
@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    exe.root_module.addImport("c64", mod_c64);
+    exe.root_module.addImport("zig64", mod_zig64);
     b.installArtifact(exe);
 
     // Run step
@@ -35,7 +35,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    test_exe.root_module.addImport("c64", mod_c64);
+    test_exe.root_module.addImport("zig64", mod_zig64);
 
     const test_run = b.addRunArtifact(test_exe);
     test_run.step.dependOn(b.getInstallStep()); // Ensure it's built first
