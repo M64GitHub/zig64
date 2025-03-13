@@ -125,7 +125,7 @@ var frames_executed = c64.runFrames(1);
 <br>
 
 
-The `C64` struct defines the execution environment for the CPU emulation, and provides the following public functions:
+The `C64` struct defines the execution environment for the CPU emulation:
 
 ```zig
 
