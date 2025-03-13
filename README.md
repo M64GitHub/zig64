@@ -145,7 +145,7 @@ pub const C64 = struct {
     // ... ...
 };
 
-pub fn init( allocator: std.mem.Allocator, vic: Vic.Type, init_addr: u16) *C64
+pub fn init(allocator: std.mem.Allocator, vic: Vic.Type, init_addr: u16) *C64
 ```
 
 The real emulation happens in the struct `Cpu`:  
