@@ -390,10 +390,10 @@ Developed with ❤️ by **M64**
 - **C64 Demo Scene** – `The demigods of 8-bit artistry!`
   Code, SID music, and pixel art, pushed beyond all limits! 👾👾 👾  
 
-SAVE "RESPECT.",8,1 👾🔥  
+💾 SAVE "RESPECT.",8,1 👾🔥  
 
-💾 **READY.**  
-   █
+**READY.**  
+█
 
 <br>
 
