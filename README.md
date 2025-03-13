@@ -382,9 +382,9 @@ This emulator is released under the **MIT License**, allowing free modification 
 ## Credits
 Developed with ❤️ by **M64** 
 Hall Of Fame
-- **Commodore Business Machines (CBM)** – **The OGs of retro computing!** The engineers of the C64, MOS 6510/6581/8580 sparked the 8-bit uprising! 🔥🔥🔥  
-- **Zig Team** – **Forger of the ultimate language** that lets us bend time, space, and CPU cycles with pure elegance! **No GC, no nonsense, just raw POWER!** ⚡  
-- **C64 Demo Scene & Retro Community** – **The demigods of 8-bit artistry!** Code, SID music, and pixels, all pushed beyond the limits! RESPECT. 🔥👾  
+- **Commodore Business Machines (CBM)** – `The OGs of retro computing!` The engineers of the C64, MOS 6510/6581/8580 sparked the 8-bit uprising! 🔥🔥🔥  
+- **Zig Team** – `Forger of the ultimate language` where low-level control meets modern simplicity! ⚡ No GC, no nonsense, just raw POWER! ⚡  
+- **C64 Demo Scene & Retro Community** – `The demigods of 8-bit artistry!` Code, SID music, and pixel art, all pushed beyond the limits! RESPECT. 🔥👾  
 
 💾 **READY.**  
 
