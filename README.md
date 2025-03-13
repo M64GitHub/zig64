@@ -138,10 +138,10 @@ pub const C64 = struct {
     resid: ?*opaque {}, // optional resid integration
     dbg_enabled: bool,
 
-    pub fn call(emu: *Emulator, address: u16) void {
-    pub fn loadPrg(emu: *Emulator, file_name: []const u8, pc_to_loadaddr: bool) !u16
-    pub fn runFrames(emu: *Emulator, frame_count: u32) u32
-    pub fn setPrg(emu: *Emulator, program: []const u8, pc_to_loadaddr: bool) u16
+    pub fn call(c64: *C64, address: u16) void {
+    pub fn loadPrg(c64: *C64, file_name: []const u8, pc_to_loadaddr: bool) !u16
+    pub fn runFrames(c64: *C64, frame_count: u32) u32
+    pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) u16
     // ... ...
 };
 
@@ -207,7 +207,7 @@ pub const Cpu = struct {
 };
 ```
 
-The Cpu can access `emu.mem` which is defined as struct `Ram64K`:
+The Cpu can access `c64.mem` which is defined as struct `Ram64K`:
 
 ```zig
 pub const Ram64K = struct {
@@ -288,13 +288,13 @@ pub fn printRegisters(sid: *VSid) void
 // Load a .prg file into memory. Returns the load address.
 // When setPC is true, the CPU.PC is set to the load address.
 // This function utilizes the allocator set at CPU initialization
-pub fn loadPrg(emu: *Emulator, file_name: []const u8, pc_to_loadaddr: bool) !u16
+pub fn loadPrg(c64: *C64, file_name: []const u8, pc_to_loadaddr: bool) !u16
 
 // Write a buffer containing a .prg to memory. Returns the load address of the .prg.
-pub fn setPrg(emu: *Emulator, program: []const u8, pc_to_loadaddr: bool) u16
+pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) u16
 
 // call a subroutine (ie sid_init, sid_play) and return on RTS
-pub fn call(emu: *Emulator, address: u16) void
+pub fn call(c64: *C64, address: u16) void
 ```
 
 ##### 🎞 **Frame-Based Execution** (PAL & NTSC Timing)
@@ -302,7 +302,7 @@ pub fn call(emu: *Emulator, address: u16) void
 // struct C64
 // The following function executes until a number of PAL or NTSC frames is reached
 // The number of frames executed is returned
-pub fn runFrames(emu: *Emulator, frame_count: u32) u32
+pub fn runFrames(c64: *C64, frame_count: u32) u32
 ```
 
 ##### 🔍 **Debugging**
@@ -330,7 +330,7 @@ The test program `main.zig` writes a small routine into the memory, which execut
 080D: 60                          RTS             ; 6
 ```
 
-It also demonstrates loading a `.prg` file via `emu.loadPrg()`, containing the same instructions.
+It also demonstrates loading a `.prg` file via `c64.loadPrg()`, containing the same instructions.
 
 Test Output:
 ```
