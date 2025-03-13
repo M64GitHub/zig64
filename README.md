@@ -50,10 +50,11 @@ zig fetch --save https://github.com/M64GitHub/6510-emulator-zig/archive/refs/tag
 This will add a dependency to your `build.zig.zon`:
 ```zig
     .dependencies = .{
-        .mos6510 = .{
-            .url = "https://github.com/M64GitHub/6510-emulator-zig/archive/refs/tags/v0.0.1-alpha.tar.gz",
-            .hash = "1220d42860901beab5ee92e7ae3b5494946cdf6a05607f4a85234283a24e0fe10358",
+        .zig64 = .{
+            .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.0.0-alpha.tar.gz",
+            .hash = "1220cc4b1b01ffaeb429e72a3ccd6289845babfdec4546fb0fdf6373f21150aa3438",
         },
+
     },
 ```
 
