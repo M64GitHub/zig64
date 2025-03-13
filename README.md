@@ -64,7 +64,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = std.builtin.OptimizeMode.ReleaseFast;
 
-    const dep_zig64 = b.dependency("zig64", .{});   // define the dependeny
+    const dep_zig64 = b.dependency("zig64", .{}); // define the dependeny
     const mod_zig64 = dep_zig64.module("zig64");  // define for the module
 
     // ...
