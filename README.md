@@ -1,4 +1,4 @@
-# 6510 Emulator in Zig
+# C64 MOS 6510 CPU Emulator in Zig
 
 A **MOS 6510 (Commodore 64) CPU emulator** written in **Zig**, designed for accuracy, efficiency, and integration with SID-based applications. This emulator features **video synchronization** for **PAL and NTSC**, enabling smooth execution of CPU cycles in sync with real C64 refresh rates. Additionally, it includes **SID register monitoring**, making it ideal for **audio-driven applications** and real-time SID playback and -analysis.
 
