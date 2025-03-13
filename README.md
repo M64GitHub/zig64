@@ -8,7 +8,6 @@ It serves as the **computational core of a C64 system**, making it suitable for 
 Enjoy bringing the **C64 to life in Zig!** 🕹🔥  
 READY.  
 
-Check out **[zigreSID](https://github.com/M64GitHub/zigreSID)** for SID sound emulation in Zig!
 <br>
 
 ## 🚀 Features  
@@ -16,7 +15,9 @@ Check out **[zigreSID](https://github.com/M64GitHub/zigreSID)** for SID sound em
 - 🎞 **Video Synchronization** – Execute CPU cycles in sync with PAL (19,656 cycles/frame) or NTSC (17,734 cycles/frame).  
 - 🎵 **SID Register Modification Detection** – Detects when SID registers (`0xD400-0xD418`) are written to, perfect for tracking SID interaction.  
 - 💾 **Program Loading Support** – Load PRG files and execute C64 programs.  
-- 🛠 **CPU Debugging** – Functions for inspecting CPU registers, flags, memory, and SID states.  
+- 🛠 **CPU Debugging** – Functions for inspecting CPU registers, flags, memory, and SID states.
+
+Check out **[zigreSID](https://github.com/M64GitHub/zigreSID)** for SID sound emulation in Zig!
 
 <br>
 
