@@ -3,11 +3,12 @@
 A **Commodore 64 MOS6510 emulator core** written in **Zig**, designed for accuracy, efficiency, and seamless integration into C64-based projects.  
 This emulator provides cycle-accurate execution, video synchronization for PAL and NTSC, and SID register monitoring, making it ideal for real-time SID interaction, analysis, and execution of C64 programs.  
 
-It serves as the **computational core of a C64 system**, making it suitable for a range of applications, from testing and debugging C64 software to powering SID music playback engines like zigreSID**.  
+It serves as the **computational core of a C64 system**, making it suitable for a range of applications, from testing and debugging C64 software to powering SID music playback engines like [zigreSID](https://github.com/M64GitHub/zigreSID).  
 
 Enjoy bringing the **C64 to life in Zig!** 🕹🔥  
 READY.  
 
+Check out **[zigreSID](https://github.com/M64GitHub/zigreSID)** for SID sound emulation in Zig!
 <br>
 
 ## 🚀 Features  
@@ -348,6 +349,9 @@ Test Output:
 This emulator is released under the **MIT License**, allowing free modification and distribution.
 
 <br>
+
+## Related Projects  
+- 🎵 **[zigreSID](https://github.com/M64GitHub/zigreSID)** – A SID sound emulation library for Zig, integrating with this emulator for `.sid` file playback.
 
 ## Credits
 Developed with ❤️ by **M64** 
