@@ -7,6 +7,7 @@ It serves as the **computational core of a C64 system**, making it suitable for 
 
 Enjoy bringing the **C64 to life in Zig!** 🕹🔥  
 READY.  
+█
 
 🎧 Check out [zigreSID](https://github.com/M64GitHub/zigreSID) for SID sound emulation in Zig!  
 
@@ -392,6 +393,7 @@ Developed with ❤️ by **M64**
 SAVE "RESPECT.",8,1 👾🔥  
 
 💾 **READY.**  
+   █
 
 <br>
 
