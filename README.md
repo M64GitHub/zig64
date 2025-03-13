@@ -55,7 +55,7 @@ This will add a dependency to your `build.zig.zon`:
 .dependencies = .{
     .zig64 = .{
         .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.0.0-alpha.tar.gz",
-        .hash = "1220cc4b1b01ffaeb429e72a3ccd6289845babfdec4546fb0fdf6373f21150aa3438",
+        .hash = "1220326deb65fbba87ee7ec883f3ae15b6069fb9ea051ad0ab284c3ff35fe9c7402e",
     },
 },
 ```
