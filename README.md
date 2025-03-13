@@ -83,6 +83,8 @@ pub fn build(b: *std.Build) void {
 }
 ```
 
+<br>
+
 ## API Reference
 ### 💡 Quick Start
 **To integrate the emulator into a Zig project, simply import it and initialize:**
@@ -247,6 +249,8 @@ pub const Vic = struct {
 
     pub fn init(victype: Type) Vic
 ```
+
+<br>
 
 ### 📜 Emulator API
 
