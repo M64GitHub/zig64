@@ -118,7 +118,7 @@ while (c64.cpu.runStep() != 0) {
 **Or run the CPU a specific amount of virtual video frames:**  
 `runFrames()` returns the number of frames executed.
 ```zig
-c64.cpu.dbg_enabled = true; // will call printStatus after each step
+c64.cpu.dbg_enabled = true; // will call printStatus() after each step
 var frames_executed = c64.runFrames(1);
 ```
 
