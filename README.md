@@ -8,6 +8,8 @@ It serves as the **computational core of a C64 system**, making it suitable for 
 Enjoy bringing the **C64 to life in Zig!** 🕹🔥  
 READY.  
 
+Check out `[zigreSID](https://github.com/M64GitHub/zigreSID)` for SID sound emulation in Zig!  
+
 <br>
 
 ## 🚀 Features  
@@ -17,7 +19,6 @@ READY.
 - 💾 **Program Loading Support** – Load PRG files and execute C64 programs.  
 - 🛠 **CPU Debugging** – Functions for inspecting CPU registers, flags, memory, and SID states.
 
-Check out **[zigreSID](https://github.com/M64GitHub/zigreSID)** for SID sound emulation in Zig!
 
 <br>
 
