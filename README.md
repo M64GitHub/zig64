@@ -10,6 +10,8 @@ Enjoy bringing the **C64 to life in Zig!** 🕹🔥
 **READY.**  
 █
 
+<br>
+
 🎧 Check out [zigreSID](https://github.com/M64GitHub/zigreSID) for SID sound emulation in Zig!  
 
 <br>
