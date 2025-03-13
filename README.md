@@ -220,7 +220,7 @@ pub const Ram64K = struct {
 The Cpu can also access a virtual SID, the `Sid` structure, and tell if register writes to the SID chip have happened during execution.
 
 ```zig
-const VSid = struct {
+const Sid = struct {
     base_address: u16,
     registers: [25]u8,
 
