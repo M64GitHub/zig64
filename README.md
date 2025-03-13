@@ -92,7 +92,7 @@ pub fn build(b: *std.Build) void {
 ```zig
 const C64 = @import("zig64");
 // initialize the cpu with the PC set to address 0x0800
-// and emulate a PAL system behaviour (set to NTSC if required)
+// and emulate PAL system behaviour (set to NTSC if required)
 var c64 = C64.init(gpa, C64.Vic.Type.pal, 0x0800);
 ```
 **Load a program `.prg` file:**
