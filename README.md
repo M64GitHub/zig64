@@ -64,19 +64,19 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = std.builtin.OptimizeMode.ReleaseFast;
 
-    const dep_mos6510 = b.dependency("mos6510", .{});   // define the dependeny
-    const mod_mos6510 = dep_mos6510.module("mos6510");  // define for the module
+    const dep_zig64 = b.dependency("zig64", .{});   // define the dependeny
+    const mod_zig64 = dep_zig64.module("zig64");  // define for the module
 
     // ...
 
     // add to an example executable:
     const exe = b.addExecutable(.{
-        .name = "6510-loadPrg-example",
+        .name = "loadPrg-example",
         .root_source_file = b.path("src/examples/loadprg_example.zig"),
         .target = target,
         .optimize = optimize,
     });
-    exe.root_module.addImport("mos6510", mod_mos6510); // add the module here
+    exe.root_module.addImport("zig64", mod_zig64); // add the module here
     b.installArtifact(exe);
 
     // ...
