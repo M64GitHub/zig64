@@ -227,9 +227,9 @@ const Sid = struct {
 
     pub const std_base = 0xD400;
 
-    pub fn init(base_address: u16) VSid 
-    pub fn getRegisters(sid: *VSid) [25]u8 
-    pub fn printRegisters(sid: *VSid) void
+    pub fn init(base_address: u16) Sid 
+    pub fn getRegisters(sid: *Sid) [25]u8 
+    pub fn printRegisters(sid: *Sid) void
 };
 ```
 
@@ -278,8 +278,8 @@ pub fn writeMem(cpu: *Cpu, data: []const u8, addr: u16) void
 pub fn sidRegWritten(cpu: *Cpu) bool
 
 // struct Sid
-pub fn getRegisters(sid: *VSid) [25]u8
-pub fn printRegisters(sid: *VSid) void
+pub fn getRegisters(sid: *Sid) [25]u8
+pub fn printRegisters(sid: *Sid) void
 ```
 
 #### ⚡ **Emulator Control**
