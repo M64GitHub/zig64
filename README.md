@@ -1,18 +1,21 @@
-# C64 MOS 6510 CPU Emulator in Zig
+# C64 6510 Emulator Core in Zig  
 
-A **Commodore 64 MOS 6510  CPU emulator** written in **Zig**, designed for accuracy, efficiency, and integration with SID-based applications. This emulator features **video synchronization** for **PAL and NTSC**, enabling smooth execution of CPU cycles in sync with real C64 refresh rates. Additionally, it includes **SID register monitoring**, making it ideal for **audio-driven applications** and real-time SID playback and -analysis.
+A **Commodore 64 6510 emulator core** written in **Zig**, designed for accuracy, efficiency, and seamless integration into C64-based projects.  
+This emulator provides cycle-accurate execution, video synchronization for PAL and NTSC, and SID register monitoring, making it ideal for real-time SID interaction, analysis, and execution of C64 programs.  
 
-Enjoy bringing the **C64 CPU to life in Zig!** 🕹🔥  
-READY.
+It serves as the **computational core of a C64 system**, making it suitable for a range of applications, from testing and debugging C64 software to powering SID music playback engines like zigreSID**.  
+
+Enjoy bringing the **C64 to life in Zig!** 🕹🔥  
+READY.  
 
 <br>
 
-## 🚀 Features
-- 🎮 **Fully Functional 6510 CPU Emulator** – Implements all legal 6502/6510 instructions and addressing modes.
-- 🎞 **Video Synchronization** – Execute CPU cycles in sync with PAL (19,656 cycles/frame) or NTSC (17,734 cycles/frame).
-- 🎵 **SID Register Modification Detection** – Detects when SID registers (`0xD400-0xD418`) are written to, perfect for tracking SID interaction.
-- 💾 **Program Loading Support** – Load PRG files and execute C64 programs.
-- 🛠 **CPU Debugging** – Functions for inspecting CPU registers, flags, memory, and SID states.
+## 🚀 Features  
+- 🎮 **Fully Functional 6510 CPU Emulator** – Implements all legal 6502/6510 instructions and addressing modes.  
+- 🎞 **Video Synchronization** – Execute CPU cycles in sync with PAL (19,656 cycles/frame) or NTSC (17,734 cycles/frame).  
+- 🎵 **SID Register Modification Detection** – Detects when SID registers (`0xD400-0xD418`) are written to, perfect for tracking SID interaction.  
+- 💾 **Program Loading Support** – Load PRG files and execute C64 programs.  
+- 🛠 **CPU Debugging** – Functions for inspecting CPU registers, flags, memory, and SID states.  
 
 <br>
 
