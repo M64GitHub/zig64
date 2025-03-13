@@ -87,10 +87,10 @@ pub fn build(b: *std.Build) void {
 ### 💡 Quick Start
 **To integrate the emulator into a Zig project, simply import it and initialize:**
 ```zig
-const Emulator = @import("6510").Emulator;
+const C64 = @import("zig64");
 // initialize the cpu with the PC set to address 0x0800
 // and emulate a PAL system behaviour (set to NTSC if required)
-var emu = Emulator.init(gpa, Emulator.VicType.pal, 0x0800);
+var c64 = C64.init(gpa, C64.Vic.Type.pal, 0x0800);
 ```
 **Load a program `.prg` file:**
 ```zig
@@ -99,56 +99,54 @@ var emu = Emulator.init(gpa, Emulator.VicType.pal, 0x0800);
 // utilizing the allocator we set above.
 
 const file_name = "data/test1.prg";
-const load_address = try emu.loadPrg(file_name, true);
+const load_address = try c64.loadPrg(file_name, false);
 ```
 **Run the CPU until program end:**  
 ```zig
-emu.call(load_address); // returns on RTS
+c64.call(load_address); // returns on RTS
 ```
 Or have more control and execute instruction by instruction:
 `runStep()` returns the number of cycles executed
 ```zig
-while (emu.cpu.runStep() != 0) {
-    emu.cpu.printStatus();
+while (c64.cpu.runStep() != 0) {
+    c64.cpu.printStatus();
 }
 ```
 **Or run the CPU a specific amount of virtual video frames:**  
 `runFrames()` returns the number of frames executed.
 ```zig
-cpu.dbg_enabled = true; // will call printStatus() after each step
-var frames_executed = emu.runFrames(1);
+c64.cpu.dbg_enabled = true; // will call printStatus after each step
+var frames_executed = c64.runFrames(1);
 ```
 
 <br>
 
 
-The `Emulator` struct defines the execution environment for the CPU emulation, and provides the following public functions:
+The `C64` struct defines the execution environment for the CPU emulation, and provides the following public functions:
 
 ```zig
-pub const Emulator = struct {
+
+pub const C64 = struct {
     allocator: std.mem.Allocator,
     cpu: Cpu,
     mem: Ram64K,
-    vic: VicType,
-    sid: VSid,
+    vic: Vic,
+    sid: Sid,
     resid: ?*opaque {}, // optional resid integration
     dbg_enabled: bool,
 
-    pub const VicType = enum {
-        pal,
-        ntsc,
-    };
-    pub fn init(allocator: std.mem.Allocator, vic: VicType, init_addr: u16) *Emulator
     pub fn call(emu: *Emulator, address: u16) void {
     pub fn loadPrg(emu: *Emulator, file_name: []const u8, pc_to_loadaddr: bool) !u16
     pub fn runFrames(emu: *Emulator, frame_count: u32) u32
     pub fn setPrg(emu: *Emulator, program: []const u8, pc_to_loadaddr: bool) u16
     // ... ...
 };
+
+pub fn init( allocator: std.mem.Allocator, vic: Vic.Type, init_addr: u16) *C64
 ```
 
 The real emulation happens in the struct `Cpu`:  
-(it contains a pointer to the emulator to access the full environment)
+(it contains a pointer to the `C64` struct - to access the full environment)
 
 ```zig
 pub const Cpu = struct {
@@ -167,7 +165,7 @@ pub const Cpu = struct {
     ext_sid_reg_written: bool,
     dbg_enabled: bool,
     sid_dbg_enabled: bool,
-    emu: *Emulator,
+    c64: *C64,
 
     const CpuFlags = struct {
         c: u1,
@@ -189,11 +187,6 @@ pub const Cpu = struct {
         intDisable = 0b000000100,
         zero = 0b000000010,
         carry = 0b000000001,
-    };
-
-    pub const Timing = struct {
-        const cyclesVsyncPAL = 19656;
-        const cyclesVsyncNTSC = 17734;
     };
 
     pub fn init(pc_start: u16) Cpu 
@@ -222,7 +215,7 @@ pub const Ram64K = struct {
 };
 ```
 
-The Cpu can also access a virtual SID, the `VSid` structure, and tell if register writes to the SID have happened during execution.
+The Cpu can also access a virtual SID, the `Sid` structure, and tell if register writes to the SID chip have happened during execution.
 
 ```zig
 const VSid = struct {
@@ -236,10 +229,30 @@ const VSid = struct {
     pub fn printRegisters(sid: *VSid) void
 };
 ```
+
+A virtual VIC is defined as struct `Vic`:
+```zig
+pub const Vic = struct {
+    type: Type,
+
+    pub const Type = enum {
+        pal,
+        ntsc,
+    };
+
+    pub const Timing = struct {
+        const cyclesVsyncPAL = 19656;
+        const cyclesVsyncNTSC = 17734;
+    };
+
+    pub fn init(victype: Type) Vic
+```
+
 ### 📜 Emulator API
 
 #### 🖥 **CPU Control**
 ```zig
+// struct Cpu
 pub fn init(pc_start: u16) Cpu // Initialize CPU with a start PC
 pub fn reset(cpu: *Cpu) void // Reset CPU registers and PC (0xFFFC)
 pub fn hardReset(cpu: *Cpu) void // Reset and clear memory
@@ -247,6 +260,7 @@ pub fn runStep(cpu: *Cpu) u8 // Execute a single instruction, return number of u
 ```
 ##### 📝 **Memory Read/Write**
 ```zig
+// struct Cpu
 pub fn readByte(cpu: *Cpu, addr: u16) u8
 pub fn readWord(cpu: *Cpu, addr: u16) u16
 pub fn writeByte(cpu: *Cpu, val: u8, addr: u16) void
@@ -255,24 +269,17 @@ pub fn writeMem(cpu: *Cpu, data: []const u8, addr: u16) void
 ```
 ##### 🎶 **SID Register Monitoring**
 ```zig
-//CPU
+// struct Cpu
 pub fn sidRegWritten(cpu: *Cpu) bool
 
-// VSid
+// struct Sid
 pub fn getRegisters(sid: *VSid) [25]u8
 pub fn printRegisters(sid: *VSid) void
 ```
-##### 🔍 **Debugging**
-```zig
-pub fn printStatus(cpu: *Cpu) void
-pub fn printFlags(cpu: *Cpu) void
-
-cpu.dbg_enabled = true; // enable debug messages
-```
-
 
 #### ⚡ **Emulator Control**
 ```zig
+// struct C64
 // Load a .prg file into memory. Returns the load address.
 // When setPC is true, the CPU.PC is set to the load address.
 // This function utilizes the allocator set at CPU initialization
@@ -283,15 +290,26 @@ pub fn setPrg(emu: *Emulator, program: []const u8, pc_to_loadaddr: bool) u16
 
 // call a subroutine (ie sid_init, sid_play) and return on RTS
 pub fn call(emu: *Emulator, address: u16) void
-
-emu.dbg_enabled = true; // enable debug messages
 ```
 
 ##### 🎞 **Frame-Based Execution** (PAL & NTSC Timing)
 ```zig
+// struct C64
 // The following function executes until a number of PAL or NTSC frames is reached
 // The number of frames executed is returned
 pub fn runFrames(emu: *Emulator, frame_count: u32) u32
+```
+
+##### 🔍 **Debugging**
+```zig
+// struct Cpu
+pub fn printStatus(cpu: *Cpu) void
+pub fn printFlags(cpu: *Cpu) void
+
+cpu.dbg_enabled = true; // enable debug messages
+
+// struct C64
+c64.dbg_enabled = true; // enable debug messages
 ```
 
 ## Test Run
