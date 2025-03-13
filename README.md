@@ -67,7 +67,7 @@ pub fn build(b: *std.Build) void {
     const optimize = std.builtin.OptimizeMode.ReleaseFast;
 
     const dep_zig64 = b.dependency("zig64", .{}); // define the dependeny
-    const mod_zig64 = dep_zig64.module("zig64");  // define for the module
+    const mod_zig64 = dep_zig64.module("zig64");  // define the module
 
     // ...
 
@@ -78,7 +78,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    exe.root_module.addImport("zig64", mod_zig64); // add the module here
+    exe.root_module.addImport("zig64", mod_zig64); // add the module
     b.installArtifact(exe);
 
     // ...
