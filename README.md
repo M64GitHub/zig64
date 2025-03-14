@@ -7,6 +7,7 @@ It serves as the **computational core of a C64 system**, making it suitable for 
 
 Enjoy bringing the **C64 to life in Zig!** 🕹🔥  
 
+`PRESS ANY KEY TO CONTINUE!`  
 **READY.**  
 █  
 
