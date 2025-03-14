@@ -28,17 +28,16 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the prg");
     run_step.dependOn(&run_cmd.step);
 
+    const test_run = b.addRunArtifact(test_exe);
+    test_run.step.dependOn(b.getInstallStep()); // Ensure it's built first
+
     // CPU Test
     const test_exe = b.addTest(.{
         .root_source_file = b.path("src/test/test-cpu.zig"),
         .target = target,
         .optimize = optimize,
     });
-
     test_exe.root_module.addImport("zig64", mod_zig64);
-
-    const test_run = b.addRunArtifact(test_exe);
-    test_run.step.dependOn(b.getInstallStep()); // Ensure it's built first
 
     const test_step = b.step("test", "Build and run tests");
     test_step.dependOn(&test_run.step);
