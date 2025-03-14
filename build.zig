@@ -35,9 +35,9 @@ pub fn build(b: *std.Build) void {
     });
     test_exe.root_module.addImport("zig64", mod_zig64);
 
-    const test_step = b.step("test", "Build and run tests");
-    test_step.dependOn(&test_run.step);
-
     const test_run = b.addRunArtifact(test_exe);
     test_run.step.dependOn(b.getInstallStep());
+
+    const test_step = b.step("test", "Build and run tests");
+    test_step.dependOn(&test_run.step);
 }
