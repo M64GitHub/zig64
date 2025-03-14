@@ -6,7 +6,10 @@ This emulator provides cycle-accurate execution, video synchronization for PAL a
 It serves as the **computational core of a C64 system**, making it suitable for a range of applications, from testing and debugging C64 software to powering SID music playback engines like [zigreSID](https://github.com/M64GitHub/zigreSID).  
 
 Enjoy bringing the **C64 to life in Zig!** 🕹🔥  
-READY.  
+
+**READY.**  
+█  
+
 
 🎧 Check out [zigreSID](https://github.com/M64GitHub/zigreSID) for SID sound emulation in Zig!  
 
@@ -49,13 +52,12 @@ zig fetch --save https://github.com/M64GitHub/6510-emulator-zig/archive/refs/tag
 ```
 This will add a dependency to your `build.zig.zon`:
 ```zig
-    .dependencies = .{
-        .zig64 = .{
-            .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.0.0-alpha.tar.gz",
-            .hash = "1220cc4b1b01ffaeb429e72a3ccd6289845babfdec4546fb0fdf6373f21150aa3438",
-        },
-
+.dependencies = .{
+    .zig64 = .{
+        .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.0.0-alpha.tar.gz",
+        .hash = "1220326deb65fbba87ee7ec883f3ae15b6069fb9ea051ad0ab284c3ff35fe9c7402e",
     },
+},
 ```
 
 In your `build.zig`, add the module as follows:
@@ -65,7 +67,7 @@ pub fn build(b: *std.Build) void {
     const optimize = std.builtin.OptimizeMode.ReleaseFast;
 
     const dep_zig64 = b.dependency("zig64", .{}); // define the dependeny
-    const mod_zig64 = dep_zig64.module("zig64");  // define for the module
+    const mod_zig64 = dep_zig64.module("zig64");  // define the module
 
     // ...
 
@@ -76,7 +78,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    exe.root_module.addImport("zig64", mod_zig64); // add the module here
+    exe.root_module.addImport("zig64", mod_zig64); // add the module
     b.installArtifact(exe);
 
     // ...
@@ -101,7 +103,7 @@ var c64 = C64.init(gpa, C64.Vic.Type.pal, 0x0800);
 // utilizing the allocator we set above.
 
 const file_name = "data/test1.prg";
-const load_address = try c64.loadPrg(file_name, false);
+const load_address = try c64.loadPrg(file_name, true);
 ```
 **Run the CPU until program end:**  
 ```zig
@@ -248,6 +250,7 @@ pub const Vic = struct {
     };
 
     pub fn init(victype: Type) Vic
+}
 ```
 
 <br>
@@ -380,21 +383,28 @@ This emulator is released under the **MIT License**, allowing free modification 
 <br>
 
 ## Credits
-Developed with ❤️ by **M64** 
-Hall Of Fame
-- **Commodore Business Machines (CBM)** – `The OGs of retro computing!` The engineers of the C64, MOS 6510/6581/8580 sparked the 8-bit uprising! 🔥🔥🔥  
-- **Zig Team** – `Forger of the ultimate language` where low-level control meets modern simplicity! ⚡ No GC, no nonsense, just raw POWER! ⚡  
-- **C64 Demo Scene** – `The demigods of 8-bit artistry!` Code, SID music, and pixel art, all pushed beyond the limits! SAVE "RESPECT.",8,1 🔥👾  
+Developed with ❤️ by **M64**  
+### Hall Of Fame
+- **Commodore Business Machines (CBM)** – `The OGs of retro computing!`
+  Engineers of the C64, MOS 6510/6581/8580,  sparked the 8-bit uprising! 🔥🔥🔥  
+- **Zig Team** – `Forger of the ultimate language` 
+  where low-level control meets modern simplicity! ⚡ No GC, no nonsense, just raw POWER! ⚡  
+- **C64 Demo Scene** – `The demigods of 8-bit artistry!`
+  Code, SID music, and pixel art, pushed beyond all limits! 👾👾 👾  
 
-💾 **READY.**  
+SAVE "RESPECT.",8,1 💾
+
+
+**READY.**  
+█
 
 <br>
 
 ## 🚀 Get Started Now!
 Clone the repository and start experimenting:
 ```sh
-git clone https://github.com/M64GitHub/6510-emulator-zig.git
-cd 6510-emulator-zig
+git clone https://github.com/M64GitHub/zig64.git
+cd zig64
 zig build
 ```
 Enjoy bringing the **C64 CPU to life in Zig!** 🕹🔥
