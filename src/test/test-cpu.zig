@@ -5,7 +5,7 @@ const C64 = @import("zig64");
 const gpa = std.heap.page_allocator;
 
 test "ADC basic addition without carry" {
-    var c64 = C64.init(gpa, C64.Vic.Model.pal, 0x0800);
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x0000);
     defer c64.deinit(gpa);
 
     c64.cpu.a = 0x10;
@@ -19,7 +19,7 @@ test "ADC basic addition without carry" {
 }
 
 test "ADC addition with carry" {
-    var c64 = C64.init(gpa, C64.Vic.Model.pal, 0x0800);
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x0000);
     defer c64.deinit(gpa);
 
     c64.cpu.a = 0x10;
@@ -32,7 +32,7 @@ test "ADC addition with carry" {
 }
 
 test "ADC signed overflow detection" {
-    var c64 = C64.init(gpa, C64.Vic.Model.pal, 0x0800);
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x0000);
     defer c64.deinit(gpa);
 
     c64.cpu.a = 0x40; // +64
@@ -45,7 +45,7 @@ test "ADC signed overflow detection" {
 }
 
 test "ADC carry flag set on overflow past 255" {
-    var c64 = C64.init(gpa, C64.Vic.Model.pal, 0x0800);
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x0000);
     defer c64.deinit(gpa);
 
     c64.cpu.a = 0xFF;
@@ -58,7 +58,7 @@ test "ADC carry flag set on overflow past 255" {
 }
 
 test "ADC negative flag set" {
-    var c64 = C64.init(gpa, C64.Vic.Model.pal, 0x0800);
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x0000);
     defer c64.deinit(gpa);
 
     c64.cpu.a = 0x80; // -128
@@ -70,7 +70,7 @@ test "ADC negative flag set" {
 }
 
 test "SBC basic subtraction without borrow" {
-    var c64 = C64.init(gpa, C64.Vic.Model.pal, 0x0800);
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x0000);
     defer c64.deinit(gpa);
 
     c64.cpu.a = 0x50;
@@ -84,7 +84,7 @@ test "SBC basic subtraction without borrow" {
 }
 
 test "SBC with borrow (C=0)" {
-    var c64 = C64.init(gpa, C64.Vic.Model.pal, 0x0800);
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x0000);
     defer c64.deinit(gpa);
 
     c64.cpu.a = 0x50;
@@ -97,7 +97,7 @@ test "SBC with borrow (C=0)" {
 }
 
 test "SBC signed overflow (positive result turns negative)" {
-    var c64 = C64.init(gpa, C64.Vic.Model.pal, 0x0800);
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x0000);
     defer c64.deinit(gpa);
 
     c64.cpu.a = 0x40; // +64
@@ -110,7 +110,7 @@ test "SBC signed overflow (positive result turns negative)" {
 }
 
 test "SBC signed overflow (negative result turns positive)" {
-    var c64 = C64.init(gpa, C64.Vic.Model.pal, 0x0800);
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x0000);
     defer c64.deinit(gpa);
 
     c64.cpu.a = 0x80; // -128
@@ -124,7 +124,7 @@ test "SBC signed overflow (negative result turns positive)" {
 
 test "Branching instruction tests" {
     // Test case 1: No branch when t1 != t2
-    var c64 = C64.init(gpa, C64.Vic.Model.pal, 0x0800);
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x0000);
     defer c64.deinit(gpa);
 
     c64.cpu.pc = 0x1000;
