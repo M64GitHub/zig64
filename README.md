@@ -321,6 +321,8 @@ cpu.dbg_enabled = true; // enable debug messages
 c64.dbg_enabled = true; // enable debug messages
 ```
 
+<br>
+
 ## Test Run
 The test program `main.zig` writes a small routine into the memory, which executes a simple loop:
 ```
