@@ -4,7 +4,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // Add c64 module
+    // Add zig64 module
     const mod_zig64 = b.addModule("zig64", .{
         .root_source_file = b.path("src/zig64.zig"),
     });
@@ -28,7 +28,7 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the prg");
     run_step.dependOn(&run_cmd.step);
 
-    // ** TEST TARGET**
+    // CPU Test
     const test_exe = b.addTest(.{
         .root_source_file = b.path("src/test/test-cpu.zig"),
         .target = target,
