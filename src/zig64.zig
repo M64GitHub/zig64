@@ -14,8 +14,8 @@ pub fn init(
     allocator: std.mem.Allocator,
     vic_model: Vic.Model,
     init_addr: u16,
-) *C64 {
-    var c64 = allocator.create(C64) catch unreachable;
+) !*C64 {
+    var c64 = try allocator.create(C64);
     c64.* = C64{
         .cpu = Cpu.init(c64, init_addr),
         .mem = Ram64K.init(),

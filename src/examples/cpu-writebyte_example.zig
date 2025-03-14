@@ -8,7 +8,7 @@ pub fn main() !void {
 
     try stdout.print("[MAIN] initializing c64lator\n", .{});
 
-    var c64 = C64.init(gpa, C64.Vic.Model.pal, 0x0800);
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x0800);
     defer c64.deinit(gpa);
 
     try stdout.print("[MAIN] cpu init address: {X:0>4}\n", .{

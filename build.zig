@@ -27,7 +27,7 @@ pub fn build(b: *std.Build) void {
         run_cmd_loadprg.addArgs(args);
     }
     const run_step_loadprg = b.step(
-        "rub-loadprg",
+        "run-loadprg",
         "Run the loadprg example",
     );
     run_step_loadprg.dependOn(&run_cmd_loadprg.step);
