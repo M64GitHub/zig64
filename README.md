@@ -5,9 +5,9 @@ This emulator provides cycle-accurate execution, video synchronization for PAL a
 
 It serves as the **computational core of a C64 system**, making it suitable for a range of applications, from testing and debugging C64 software to powering SID music playback engines like [zigreSID](https://github.com/M64GitHub/zigreSID).  
 
-Enjoy bringing the **C64 to life in Zig!** 🕹🔥  
+PRESS ANY KEY TO CONTINUE! 🕹🔥  
 
-`PRESS ANY KEY TO CONTINUE!`  
+
 **READY.**  
 █  
 
