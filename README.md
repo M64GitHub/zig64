@@ -23,6 +23,26 @@ It serves as the **computational core of a C64 system**, making it suitable for 
 - 💾 **Program Loading Support** – Load PRG files and execute C64 programs.  
 - 🛠 **CPU Debugging** – Functions for inspecting CPU registers, flags, memory, and SID states.
 
+<br>
+
+## Building the Project
+#### Requirements:
+- ⚡ **Zig** (Latest stable version)
+
+#### Building the Example Executable:
+```sh
+zig build
+```
+
+#### Running the Example Executable:
+```sh
+zig build run
+```
+
+#### Run CPU Tests:
+```sh
+zig build test
+```
 
 <br>
 
@@ -63,27 +83,6 @@ pub fn build(b: *std.Build) void {
 
     // ...
 }
-```
-
-<br>
-
-## Building the Project
-#### Requirements:
-- ⚡ **Zig** (Latest stable version)
-
-#### Building the Example Executable:
-```sh
-zig build
-```
-
-#### Running the Example Executable:
-```sh
-zig build run
-```
-
-#### Run CPU Tests:
-```sh
-zig build test
 ```
 
 <br>
