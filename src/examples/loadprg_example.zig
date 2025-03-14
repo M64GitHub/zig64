@@ -8,6 +8,7 @@ pub fn main() !void {
 
     try stdout.print("[MAIN] initializing c64lator\n", .{});
     var c64 = C64.init(gpa, C64.Vic.Model.pal, 0x0000);
+    defer c64.deinit(gpa);
 
     // -- load a .prg file from disk
 

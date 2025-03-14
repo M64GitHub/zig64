@@ -9,27 +9,57 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/zig64.zig"),
     });
 
-    // Example executable
-    const exe = b.addExecutable(.{
+    // Example loadprg
+    const exe_loadprg = b.addExecutable(.{
         .name = "loadPrg-example",
-        .root_source_file = b.path("src/examples/loadprg_example.zig"),
+        .root_source_file = b.path(
+            "src/examples/loadprg_example.zig",
+        ),
         .target = target,
         .optimize = optimize,
     });
-    exe.root_module.addImport("zig64", mod_zig64);
-    b.installArtifact(exe);
+    exe_loadprg.root_module.addImport("zig64", mod_zig64);
+    b.installArtifact(exe_loadprg);
 
-    const run_cmd = b.addRunArtifact(exe);
-    run_cmd.step.dependOn(b.getInstallStep());
+    const run_cmd_loadprg = b.addRunArtifact(exe_loadprg);
+    run_cmd_loadprg.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
-        run_cmd.addArgs(args);
+        run_cmd_loadprg.addArgs(args);
     }
-    const run_step = b.step("run", "Run the prg");
-    run_step.dependOn(&run_cmd.step);
+    const run_step_loadprg = b.step(
+        "rub-loadprg",
+        "Run the loadprg example",
+    );
+    run_step_loadprg.dependOn(&run_cmd_loadprg.step);
+
+    // Example cpu-writebyte
+    const exe_writebyte = b.addExecutable(.{
+        .name = "loadPrg-example",
+        .root_source_file = b.path(
+            "src/examples/cpu-writebyte_example.zig",
+        ),
+        .target = target,
+        .optimize = optimize,
+    });
+    exe_writebyte.root_module.addImport("zig64", mod_zig64);
+    b.installArtifact(exe_writebyte);
+
+    const run_cmd_writebyte = b.addRunArtifact(exe_writebyte);
+    run_cmd_writebyte.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        run_cmd_writebyte.addArgs(args);
+    }
+    const run_step_writebyte = b.step(
+        "run-writebyte",
+        "Run the cpu-writebyte example",
+    );
+    run_step_writebyte.dependOn(&run_cmd_writebyte.step);
 
     // CPU Test
     const test_exe = b.addTest(.{
-        .root_source_file = b.path("src/test/test-cpu.zig"),
+        .root_source_file = b.path(
+            "src/test/test-cpu.zig",
+        ),
         .target = target,
         .optimize = optimize,
     });
