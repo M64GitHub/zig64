@@ -103,7 +103,7 @@ var c64 = C64.init(gpa, C64.Vic.Type.pal, 0x0800);
 // utilizing the allocator we set above.
 
 const file_name = "data/test1.prg";
-const load_address = try c64.loadPrg(file_name, false);
+const load_address = try c64.loadPrg(file_name, true);
 ```
 **Run the CPU until program end:**  
 ```zig
