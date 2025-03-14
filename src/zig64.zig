@@ -1,120 +1,123 @@
 const std = @import("std");
 const stdout = std.io.getStdOut().writer();
 
+const C64 = @This();
+
+allocator: std.mem.Allocator,
+cpu: Cpu,
+mem: Ram64K,
+vic: Vic,
+sid: Sid,
+resid: ?*opaque {}, // optional resid integration
+dbg_enabled: bool,
+
 pub fn init(
     allocator: std.mem.Allocator,
     vic: Vic.Type,
     init_addr: u16,
-) *C64 {
-    var c64 = allocator.create(C64) catch unreachable;
-    c64.* = C64{
+) !*C64 {
+    var c64 = try allocator.create(C64);
+    c64.* = .{
         .allocator = allocator,
-        .cpu = Cpu.init(init_addr),
+        .cpu = Cpu.init(c64, init_addr),
         .mem = Ram64K.init(),
         .vic = Vic.init(vic),
         .sid = Sid.init(Sid.std_base),
         .resid = null,
         .dbg_enabled = false,
     };
-    c64.cpu.c64 = c64;
     c64.mem.data[0x01] = 0x37;
     return c64;
 }
 
-pub const C64 = struct {
-    allocator: std.mem.Allocator,
-    cpu: Cpu,
-    mem: Ram64K,
-    vic: Vic,
-    sid: Sid,
-    resid: ?*opaque {}, // optional resid integration
-    dbg_enabled: bool,
+pub fn deinit(c64: *C64) void {
+    c64.allocator.destroy(c64);
+}
 
-    pub fn call(c64: *C64, address: u16) void {
-        c64.cpu.ext_sid_reg_written = false;
-        c64.cpu.pushW(0x0000);
-        c64.cpu.pc = address;
-        if (c64.dbg_enabled) {
-            stdout.print("[c64 ] calling address: {X:0>4}\n", .{
-                address,
-            }) catch {};
+pub fn call(c64: *C64, address: u16) void {
+    c64.cpu.ext_sid_reg_written = false;
+    c64.cpu.pushW(0x0000);
+    c64.cpu.pc = address;
+    if (c64.dbg_enabled) {
+        stdout.print("[c64 ] calling address: {X:0>4}\n", .{
+            address,
+        }) catch {};
+    }
+    while (c64.cpu.runStep() != 0) {}
+}
+
+pub fn loadPrg(
+    c64: *C64,
+    file_name: []const u8,
+    pc_to_loadaddr: bool,
+) !u16 {
+    var file = try std.fs.cwd().openFile(file_name, .{});
+    defer file.close();
+
+    if (c64.dbg_enabled) {
+        try stdout.print("[c64 ] loading file: '{s}'\n", .{
+            file_name,
+        });
+        c64.cpu.printStatus();
+    }
+    const stat = try file.stat();
+    const file_size = stat.size;
+
+    const buffer = try c64.allocator.alloc(u8, file_size);
+
+    _ = try file.readAll(buffer);
+
+    return c64.setPrg(buffer, pc_to_loadaddr);
+}
+
+pub fn run(c64: *C64) void {
+    while (c64.cpu.runStep() != 0) {}
+}
+
+pub fn runFrames(c64: *C64, frame_count: u32) u32 {
+    if (frame_count == 0) return;
+    var frames_executed: u32 = 0;
+    var cycles_max: u32 = 0;
+    var cycles: u32 = 0;
+    if (c64.vic.type == Vic.Type.pal) cycles_max = Vic.Timing.cyclesVsyncPAL;
+    if (c64.vic.type == Vic.Type.ntsc) cycles_max = Vic.Timing.cyclesVsyncNTSC;
+
+    while (frames_executed < frame_count) {
+        cycles += c64.cpu.runStep();
+        if (cycles >= cycles_max) {
+            frames_executed += 1;
+            cycles = 0;
         }
-        while (c64.cpu.runStep() != 0) {}
     }
+    c64.cpu.frame_ctr += frames_executed;
+    return frames_executed;
+}
 
-    pub fn loadPrg(
-        c64: *C64,
-        file_name: []const u8,
-        pc_to_loadaddr: bool,
-    ) !u16 {
-        var file = try std.fs.cwd().openFile(file_name, .{});
-        defer file.close();
+pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) u16 {
+    var load_address: u16 = 0;
+    if ((program.len != 0) and (program.len > 2)) {
+        var offs: u32 = 0;
+        const lo: u16 = program[offs];
+        offs += 1;
+        const hi: u16 = @as(u16, program[offs]) << 8;
+        offs += 1;
+        load_address = @as(u16, lo) | @as(u16, hi);
 
-        if (c64.dbg_enabled) {
-            try stdout.print("[c64 ] loading file: '{s}'\n", .{
-                file_name,
-            });
-            c64.cpu.printStatus();
-        }
-        const stat = try file.stat();
-        const file_size = stat.size;
-
-        const buffer = try c64.allocator.alloc(u8, file_size);
-
-        _ = try file.readAll(buffer);
-
-        return c64.setPrg(buffer, pc_to_loadaddr);
-    }
-
-    pub fn run(c64: *C64) void {
-        while (c64.cpu.runStep() != 0) {}
-    }
-
-    pub fn runFrames(c64: *C64, frame_count: u32) u32 {
-        if (frame_count == 0) return;
-        var frames_executed: u32 = 0;
-        var cycles_max: u32 = 0;
-        var cycles: u32 = 0;
-        if (c64.vic.type == Vic.Type.pal) cycles_max = Vic.Timing.cyclesVsyncPAL;
-        if (c64.vic.type == Vic.Type.ntsc) cycles_max = Vic.Timing.cyclesVsyncNTSC;
-
-        while (frames_executed < frame_count) {
-            cycles += c64.cpu.runStep();
-            if (cycles >= cycles_max) {
-                frames_executed += 1;
-                cycles = 0;
-            }
-        }
-        c64.cpu.frame_ctr += frames_executed;
-        return frames_executed;
-    }
-
-    pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) u16 {
-        var load_address: u16 = 0;
-        if ((program.len != 0) and (program.len > 2)) {
-            var offs: u32 = 0;
-            const lo: u16 = program[offs];
+        var i: u16 = load_address;
+        while (i < (load_address +% program.len -% 2)) : (i +%= 1) {
+            c64.mem.data[i] = program[offs];
+            if (c64.dbg_enabled)
+                stdout.print("[c64 ] writing mem: {X:0>4} offs: {X:0>4} data: {X:0>2}\n", .{
+                    i,
+                    offs,
+                    program[offs],
+                }) catch {};
             offs += 1;
-            const hi: u16 = @as(u16, program[offs]) << 8;
-            offs += 1;
-            load_address = @as(u16, lo) | @as(u16, hi);
-
-            var i: u16 = load_address;
-            while (i < (load_address +% program.len -% 2)) : (i +%= 1) {
-                c64.mem.data[i] = program[offs];
-                if (c64.dbg_enabled)
-                    stdout.print("[c64 ] writing mem: {X:0>4} offs: {X:0>4} data: {X:0>2}\n", .{
-                        i,
-                        offs,
-                        program[offs],
-                    }) catch {};
-                offs += 1;
-            }
         }
-        if (pc_to_loadaddr) c64.cpu.pc = load_address;
-        return load_address;
     }
-};
+    if (pc_to_loadaddr) c64.cpu.pc = load_address;
+    return load_address;
+}
 
 // virtual sid
 const Sid = struct {
@@ -220,7 +223,7 @@ pub const Cpu = struct {
         carry = 0b000000001,
     };
 
-    pub fn init(pc_start: u16) Cpu {
+    pub fn init(c64: *C64, pc_start: u16) Cpu {
         return Cpu{
             .pc = pc_start,
             .sp = 0xFD,
@@ -246,7 +249,7 @@ pub const Cpu = struct {
             .frame_ctr = 0,
             .dbg_enabled = false,
             .sid_dbg_enabled = false,
-            .c64 = undefined,
+            .c64 = c64,
         };
     }
 
@@ -665,7 +668,7 @@ pub const Cpu = struct {
         cpu.c64.mem.data[0xD012] = cpu.c64.mem.data[0xD012] +% 1;
         if ((cpu.c64.mem.data[0xD012] == 0) or
             (((cpu.c64.mem.data[0xD011] & 0x80) != 0) and
-                (cpu.c64.mem.data[0xD012] >= 0x38)))
+            (cpu.c64.mem.data[0xD012] >= 0x38)))
         {
             cpu.c64.mem.data[0xD011] ^= 0x80;
             cpu.c64.mem.data[0xD012] = 0x00;
@@ -952,11 +955,11 @@ pub const Cpu = struct {
 
                     if (cpu.c64.vic.type == Vic.Type.pal and
                         cpu.cycles_executed % Vic.Timing.cyclesVsyncPAL ==
-                            0) cpu.frame_ctr += 1;
+                        0) cpu.frame_ctr += 1;
 
                     if (cpu.c64.vic.type == Vic.Type.ntsc and
                         cpu.cycles_executed %
-                            Vic.Timing.cyclesVsyncNTSC == 0) cpu.frame_ctr += 1;
+                        Vic.Timing.cyclesVsyncNTSC == 0) cpu.frame_ctr += 1;
 
                     return 0;
                 }
