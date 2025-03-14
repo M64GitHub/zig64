@@ -46,7 +46,7 @@ zig build test
 
 <br>
 
-## Use zig64 In Your Project
+## Using zig64 In Your Project
 ```sh
 zig fetch --save https://github.com/M64GitHub/6510-emulator-zig/archive/refs/tags/v0.0.1-alpha.tar.gz
 ```
