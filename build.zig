@@ -9,7 +9,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/zig64.zig"),
     });
 
-    // Main executable
+    // Example executable
     const exe = b.addExecutable(.{
         .name = "loadPrg-example",
         .root_source_file = b.path("src/examples/loadprg_example.zig"),
@@ -19,7 +19,6 @@ pub fn build(b: *std.Build) void {
     exe.root_module.addImport("zig64", mod_zig64);
     b.installArtifact(exe);
 
-    // Run step
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
