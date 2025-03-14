@@ -26,27 +26,6 @@ It serves as the **computational core of a C64 system**, making it suitable for 
 
 <br>
 
-## Building the Project
-#### Requirements:
-- ⚡ **Zig** (Latest stable version)
-
-#### Building the Example Executable:
-```sh
-zig build
-```
-
-#### Running the Example Executable:
-```sh
-zig build run
-```
-
-#### Run CPU Tests:
-```sh
-zig build test
-```
-
-<br>
-
 ## Add the Emulator Into Your Project
 ```sh
 zig fetch --save https://github.com/M64GitHub/6510-emulator-zig/archive/refs/tags/v0.0.1-alpha.tar.gz
@@ -84,6 +63,27 @@ pub fn build(b: *std.Build) void {
 
     // ...
 }
+```
+
+<br>
+
+## Building the Project
+#### Requirements:
+- ⚡ **Zig** (Latest stable version)
+
+#### Building the Example Executable:
+```sh
+zig build
+```
+
+#### Running the Example Executable:
+```sh
+zig build run
+```
+
+#### Run CPU Tests:
+```sh
+zig build test
 ```
 
 <br>
