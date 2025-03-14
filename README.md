@@ -374,7 +374,7 @@ Test Output:
 
 <br>
 
-## License
+## 🔓 License
 This emulator is released under the **MIT License**, allowing free modification and distribution.
 
 <br>
@@ -384,7 +384,7 @@ This emulator is released under the **MIT License**, allowing free modification 
 
 <br>
 
-## Credits
+## 🏆 Credits
 Developed with ❤️ by **M64**  
 ### Hall Of Fame
 - **Commodore Business Machines (CBM)** – `The OGs of retro computing!`
