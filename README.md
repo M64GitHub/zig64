@@ -250,6 +250,7 @@ pub const Vic = struct {
     };
 
     pub fn init(victype: Type) Vic
+}
 ```
 
 <br>
