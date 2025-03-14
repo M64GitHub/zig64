@@ -66,6 +66,10 @@ pub const C64 = struct {
         return c64.setPrg(buffer, pc_to_loadaddr);
     }
 
+    pub fn run(c64: *C64) void {
+        while (c64.cpu.runStep() != 0) {}
+    }
+
     pub fn runFrames(c64: *C64, frame_count: u32) u32 {
         if (frame_count == 0) return;
         var frames_executed: u32 = 0;

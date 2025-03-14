@@ -87,8 +87,9 @@ pub fn main() !void {
     try stdout.print("[MAIN] Loading '{s}'\n", .{file_name});
 
     // c64.dbg_enabled = true;
-    const load_address = try c64.loadPrg(file_name, false);
+    const load_address = try c64.loadPrg(file_name, true);
     try stdout.print("[MAIN] Load address: {X:0>4}\n", .{load_address});
     c64.cpu.dbg_enabled = true; // will call printStatus after each step
+    c64.run();
     c64.call(load_address);
 }
