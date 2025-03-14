@@ -403,8 +403,8 @@ SAVE "RESPECT.",8,1 💾
 ## 🚀 Get Started Now!
 Clone the repository and start experimenting:
 ```sh
-git clone https://github.com/M64GitHub/6510-emulator-zig.git
-cd 6510-emulator-zig
+git clone https://github.com/M64GitHub/zig64.git
+cd zig64
 zig build
 ```
 Enjoy bringing the **C64 CPU to life in Zig!** 🕹🔥
