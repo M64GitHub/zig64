@@ -107,7 +107,7 @@ const load_address = try c64.loadPrg(file_name, true);
 ```
 **Run the CPU until program end:**  
 ```zig
-c64.call(load_address); // returns on RTS
+c64.run(); // returns on RTS
 ```
 Or have more control and execute instruction by instruction:
 `runStep()` returns the number of cycles executed
@@ -297,6 +297,7 @@ pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) u16
 
 // call a subroutine (ie sid_init, sid_play) and return on RTS
 pub fn call(c64: *C64, address: u16) void
+pub fn run(c64: *C64) void // start execution at current PC, return on RTS
 ```
 
 ##### 🎞 **Frame-Based Execution** (PAL & NTSC Timing)
