@@ -17,23 +17,21 @@ pub fn init(
 ) *C64 {
     var c64 = allocator.create(C64) catch unreachable;
     c64.* = C64{
-        .cpu = Cpu.init(init_addr),
+        .cpu = Cpu.init(c64, init_addr),
         .mem = Ram64K.init(),
         .vic = Vic.init(vic_model),
         .sid = Sid.init(Sid.std_base),
         .resid = null,
         .dbg_enabled = false,
     };
-    c64.cpu.c64 = c64;
 
     // default startup value: BASIC ROM, KERNAL ROM, and I/O
     c64.mem.data[0x01] = 0x37;
-
     return c64;
 }
 
-pub fn deinit(c64: *C64) void {
-    c64.allocator.destroy(c64);
+pub fn deinit(c64: *C64, allocator: std.mem.Allocator) void {
+    allocator.destroy(c64);
 }
 
 pub fn call(c64: *C64, address: u16) void {
@@ -82,6 +80,7 @@ pub fn runFrames(c64: *C64, frame_count: u32) u32 {
     var frames_executed: u32 = 0;
     var cycles_max: u32 = 0;
     var cycles: u32 = 0;
+
     if (c64.vic.model == Vic.Model.pal) cycles_max = Vic.Timing.cyclesVsyncPAL;
     if (c64.vic.model == Vic.Model.ntsc) cycles_max = Vic.Timing.cyclesVsyncNTSC;
 
@@ -226,7 +225,7 @@ pub const Cpu = struct {
         carry = 0b000000001,
     };
 
-    pub fn init(pc_start: u16) Cpu {
+    pub fn init(c64: *C64, pc_start: u16) Cpu {
         return Cpu{
             .pc = pc_start,
             .sp = 0xFD,
@@ -252,7 +251,7 @@ pub const Cpu = struct {
             .frame_ctr = 0,
             .dbg_enabled = false,
             .sid_dbg_enabled = false,
-            .c64 = undefined,
+            .c64 = c64,
         };
     }
 
