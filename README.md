@@ -314,7 +314,7 @@ pub fn getRegisters(sid: *Sid) [25]u8
 pub fn printRegisters(sid: *Sid) void
 ```
 
-##### 🎶 **VIC Rasterbeam Handling**
+##### 📺**VIC Rasterbeam Handling**
 ```zig
 // struct Vic
 vsync_happened: bool,
