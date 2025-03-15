@@ -1,4 +1,4 @@
-# C64 MOS6510 Emulator Core in Zig  
+# C64 Emulator Core in Zig  
 
 A **Commodore 64 MOS6510 emulator core** written in **Zig**, designed for accuracy, efficiency, and seamless integration into C64-based projects.  
 This emulator delivers cycle-accurate execution, precise rasterbeam emulation for PAL and NTSC video synchronization, and SID register tracking. Designed for C64 software analysis and program execution, it ensures faithful reproduction of C64 behavior with high precision.
