@@ -4,7 +4,7 @@ const stdout = std.io.getStdOut().writer();
 const C64 = @This();
 
 cpu: Cpu,
-mem: Ram64K,
+mem: Ram64k,
 vic: Vic,
 sid: Sid,
 resid: ?*opaque {}, // optional resid integration
@@ -21,7 +21,7 @@ pub fn init(
     var c64 = try allocator.create(C64);
     c64.* = C64{
         .cpu = Cpu.init(c64, init_addr),
-        .mem = Ram64K.init(),
+        .mem = Ram64k.init(),
         .vic = Vic.init(c64, vic_model),
         .sid = Sid.init(c64, Sid.std_base),
         .resid = null,
@@ -161,6 +161,7 @@ pub const Vic = struct {
     model: Model,
     vsync_happened: bool,
     hsync_happened: bool,
+    badline_happened: bool,
     rasterline_changed: bool,
     rasterline: u16,
     frame_ctr: usize,
@@ -173,9 +174,10 @@ pub const Vic = struct {
 
     pub const Timing = struct {
         const cyclesVsyncPal = 19656; // 63 cycles x 312 rasterlines
-        const cyclesVsyncNtsc = 17734;
+        const cyclesVsyncNtsc = 17030;
         const cyclesRasterlinePal = 63;
         const cyclesRasterlineNtsc = 65;
+        const cyclesBadlineStealing = 40; // cycles vic steals cpu on badline
     };
 
     pub fn init(c64: *C64, vic_model: Model) Vic {
@@ -183,6 +185,7 @@ pub const Vic = struct {
             .model = vic_model,
             .vsync_happened = true,
             .hsync_happened = true,
+            .badline_happened = false,
             .rasterline_changed = false,
             .rasterline = 0,
             .frame_ctr = 0,
@@ -193,26 +196,37 @@ pub const Vic = struct {
     }
 
     pub fn emulateD012(vic: *Vic) void {
+        vic.rasterline += 1;
+        vic.rasterline_changed = true;
+        vic.hsync_happened = true;
+
         vic.c64.mem.data[0xD012] = vic.c64.mem.data[0xD012] +% 1;
-        vic.c64.vic.rasterline += 1;
-        vic.c64.vic.rasterline_changed = true;
-        vic.c64.vic.hsync_happened = true;
         if ((vic.c64.mem.data[0xD012] == 0) or
             (((vic.c64.mem.data[0xD011] & 0x80) != 0) and
                 (vic.c64.mem.data[0xD012] >= 0x38)))
         {
             vic.c64.mem.data[0xD011] ^= 0x80;
             vic.c64.mem.data[0xD012] = 0x00;
-            vic.c64.vic.rasterline = 0;
-            vic.c64.vic.vsync_happened = true;
+            vic.rasterline = 0;
+            vic.vsync_happened = true;
+        }
+
+        // check badline
+        if (vic.rasterline % 8 == 3) {
+            vic.badline_happened = true;
+            vic.c64.cpu.cycles_executed += Timing.cyclesBadlineStealing;
+            vic.c64.cpu.cycles_last_step += Timing.cyclesBadlineStealing;
+            vic.c64.cpu.cycles_since_hsync += Timing.cyclesBadlineStealing;
+            vic.c64.cpu.cycles_since_vsync += Timing.cyclesBadlineStealing;
         }
     }
 
     pub fn printStatus(vic: *Vic) void {
-        stdout.print("[vic] RL {X:0>4} | VSYNC: {}, HSYNC: {}, RL-CHG: {}, FRM: {d}\n", .{
+        stdout.print("[vic] RL {X:0>4} | VSYNC: {} | HSYNC: {} | BL: {} | RL-CHG: {} | FRM: {d}", .{
             vic.rasterline,
             vic.vsync_happened,
             vic.hsync_happened,
+            vic.badline_happened,
             vic.rasterline_changed,
             vic.frame_ctr,
         }) catch {};
@@ -220,16 +234,16 @@ pub const Vic = struct {
 };
 
 // virtual mem
-pub const Ram64K = struct {
+pub const Ram64k = struct {
     data: [0x10000]u8,
 
-    pub fn init() Ram64K {
-        return Ram64K{
+    pub fn init() Ram64k {
+        return Ram64k{
             .data = [_]u8{0} ** 65536,
         };
     }
 
-    pub fn clear(self: *Ram64K) void {
+    pub fn clear(self: *Ram64k) void {
         @memset(&self.data, 0);
     }
 };
@@ -243,11 +257,11 @@ pub const Cpu = struct {
     y: u8,
     status: u8,
     flags: CpuFlags,
+    opcode_last: u8,
     cycles_executed: u32,
     cycles_since_vsync: u16,
     cycles_since_hsync: u8,
     cycles_last_step: u8,
-    opcode_last: u8,
     sid_reg_written: bool,
     ext_sid_reg_written: bool,
     c64: *C64,
@@ -718,6 +732,7 @@ pub const Cpu = struct {
         cpu.sid_reg_written = false;
         cpu.c64.vic.vsync_happened = false;
         cpu.c64.vic.hsync_happened = false;
+        cpu.c64.vic.badline_happened = false;
         cpu.c64.vic.rasterline_changed = false;
 
         const cycles_now: u32 = cpu.cycles_executed;
