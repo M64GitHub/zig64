@@ -447,7 +447,7 @@ c64.cpu.writeByte(0x60, 0x080D); //  RTS
 
 **Running the Example:**
 ```sh
-zig build run-loadprg
+zig build run-writebyte
 ```
 
 **Example Output:**
