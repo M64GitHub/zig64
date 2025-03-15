@@ -289,7 +289,7 @@ pub fn init(c64: *C64, pc_start: u16) Cpu // init with start address
 pub fn reset(cpu: *Cpu) void // reset CPU registers and PC (0xFFFC)
 pub fn hardReset(cpu: *Cpu) void // reset and clear memory
 
-// execute a single instruction, return number of used cycles executed
+// execute a single instruction, return number of used cycles
 pub fn runStep(cpu: *Cpu) u8 
 
 // run for specific amount of video frames, return number of frames executed
