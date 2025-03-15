@@ -227,7 +227,7 @@ pub const Vic = struct {
     }
 
     pub fn printStatus(vic: *Vic) void {
-        stdout.print("[vic] RL {X:0>4} | VSYNC: {} | HSYNC: {} | BL: {} | RL-CHG: {} | FRM: {d}", .{
+        stdout.print("[vic] RL {X:0>4} | VSYNC: {} | HSYNC: {} | BL: {} | RL-CHG: {} | FRM: {d}\n", .{
             vic.rasterline,
             vic.vsync_happened,
             vic.hsync_happened,
@@ -741,15 +741,8 @@ pub const Cpu = struct {
         cpu.c64.vic.rasterline_changed = false;
 
         const cycles_now: u32 = cpu.cycles_executed;
-        const old_pc = cpu.pc;
         const opcode: u8 = fetchUByte(cpu);
         cpu.opcode_last = opcode;
-
-        if (cpu.c64.cpu_dbg_enabled)
-            stdout.print("[cpu] runStep: {X:0>4}, opcode: {X:0>2}\n", .{
-                old_pc,
-                opcode,
-            }) catch {};
 
         switch (opcode) {
             0x29 => {
