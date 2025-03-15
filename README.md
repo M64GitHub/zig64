@@ -317,15 +317,14 @@ pub fn printRegisters(sid: *Sid) void
 ##### 📺 **VIC Rasterbeam Handling**
 ```zig
 // struct Vic
-vsync_happened: bool,
-hsync_happened: bool,
-badline_happened: bool,
-rasterline_changed: bool,
-rasterline: u16,
-frame_ctr: usize,
+// the following flags will be set by the Cpu on execution, after each step:
+vsync_happened: bool,      // true when a vertical sync happened
+hsync_happened: bool,      // true when a horizontal sync happened
+badline_happened: bool,    // true when a badline happened (rasterline % 8 == 3)
+rasterline_changed: bool,  // true when the current rasterline changed
+rasterline: u16,           // number of the current rasterline
+frame_ctr: usize,          // total number of video frames
 ```
-
-
 
 ##### 🔍 **Debugging**
 ```zig
