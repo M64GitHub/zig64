@@ -316,13 +316,13 @@ pub fn printRegisters(sid: *Sid) void
 
 ##### 🎶 **VIC Rasterbeam Handling**
 ```zig
-
-    vsync_happened: bool,
-    hsync_happened: bool,
-    badline_happened: bool,
-    rasterline_changed: bool,
-    rasterline: u16,
-    frame_ctr: usize,
+// struct Vic
+vsync_happened: bool,
+hsync_happened: bool,
+badline_happened: bool,
+rasterline_changed: bool,
+rasterline: u16,
+frame_ctr: usize,
 ```
 
 
