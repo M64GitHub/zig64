@@ -397,15 +397,17 @@ zig build run-loadprg
 [c64] writing mem: C001 offs: 0003 data: A9
 [c64] writing mem: C002 offs: 0004 data: 00
 ...
-...[cpu] runStep: C000, opcode: 78
+...
 [cpu] PC: C001 | A: 00 | X: 00 | Y: 00 | Last Opc: 78 | Last Cycl: 2 | Cycl-TT: 2 | FL: 00100100
-[vic] RL 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0[cpu] runStep: C001, opcode: A9
+[vic] RL 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
 [cpu] PC: C003 | A: 00 | X: 00 | Y: 00 | Last Opc: A9 | Last Cycl: 2 | Cycl-TT: 4 | FL: 00100110
-[vic] RL 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0[cpu] runStep: C003, opcode: 85
+[vic] RL 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
 [cpu] PC: C005 | A: 00 | X: 00 | Y: 00 | Last Opc: 85 | Last Cycl: 3 | Cycl-TT: 7 | FL: 00100110
-[vic] RL 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0[cpu] runStep: C005, opcode: A2
+[vic] RL 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
+...
+...
 [cpu] PC: C03B | A: 37 | X: 00 | Y: FF | Last Opc: 58 | Last Cycl: 2 | Cycl-TT: 5863 | FL: 00100000
-[vic] RL 0056 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0[cpu] runStep: C03B, opcode: 60
+[vic] RL 0056 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
 [cpu] Return to 0000
 [cpu] Return EXIT!
 ```
