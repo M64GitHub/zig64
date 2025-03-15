@@ -356,8 +356,67 @@ pub fn printStatus(vic: *Vic) void {
 
 <br>
 
-## 🕹️ Test Run
-The test program `writebytes-example.zig` writes a small routine into the memory, which executes a simple loop:
+## 🕹️ Examples
+Example code can be found in the folder `src/examples`.
+
+### Loading and Executing a demo program
+The program `loadprg-example.zig` demonstrates how to load and run a `.prg`.
+
+```zig
+// zig64 - loadPrg() example
+const std = @import("std");
+const C64 = @import("zig64");
+
+pub fn main() !void {
+    const gpa = std.heap.page_allocator;
+    const stdout = std.io.getStdOut().writer();
+
+    try stdout.print("[EXE] initializing emulator\n", .{});
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x0000);
+    defer c64.deinit(gpa);
+
+    // load a .prg file from disk
+    const file_name = "c64asm/test.prg";
+    try stdout.print("[EXE] Loading '{s}'\n", .{file_name});
+
+    // full debug output
+    c64.dbg_enabled = true;
+    c64.cpu_dbg_enabled = true;
+    c64.vic_dbg_enabled = true;
+    c64.sid_dbg_enabled = true;
+
+    const load_address = try c64.loadPrg(gpa, file_name, true);
+    try stdout.print("[EXE] Load address: {X:0>4}\n", .{load_address});
+    c64.run();
+}
+```
+#### Output
+```
+[EXE] initializing emulator
+[EXE] Loading 'c64asm/test.prg'
+[c64] loading file: 'c64asm/test.prg'
+[c64] file load address: $C000
+[cpu] PC: 0000 | A: 00 | X: 00 | Y: 00 | Last Opc: 00 | Last Cycl: 0 | Cycl-TT: 0 | FL: 00100100
+[c64] writing mem: C000 offs: 0002 data: 78
+[c64] writing mem: C001 offs: 0003 data: A9
+[c64] writing mem: C002 offs: 0004 data: 00
+...
+...[cpu] runStep: C000, opcode: 78
+[cpu] PC: C001 | A: 00 | X: 00 | Y: 00 | Last Opc: 78 | Last Cycl: 2 | Cycl-TT: 2 | FL: 00100100
+[vic] RL 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0[cpu] runStep: C001, opcode: A9
+[cpu] PC: C003 | A: 00 | X: 00 | Y: 00 | Last Opc: A9 | Last Cycl: 2 | Cycl-TT: 4 | FL: 00100110
+[vic] RL 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0[cpu] runStep: C003, opcode: 85
+[cpu] PC: C005 | A: 00 | X: 00 | Y: 00 | Last Opc: 85 | Last Cycl: 3 | Cycl-TT: 7 | FL: 00100110
+[vic] RL 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0[cpu] runStep: C005, opcode: A2
+[cpu] PC: C03B | A: 37 | X: 00 | Y: FF | Last Opc: 58 | Last Cycl: 2 | Cycl-TT: 5863 | FL: 00100000
+[vic] RL 0056 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0[cpu] runStep: C03B, opcode: 60
+[cpu] Return to 0000
+[cpu] Return EXIT!
+```
+
+
+### Manually writing a program into memory
+The test program `writebytes-example.zig` writes a small routine into the memory, which executes a simple loop. Since it writes to `$D400,X`, the emulator will detect SID register chhanges:
 ```
 0800: A9 0A                       LDA #$0A        ; 2
 0802: AA                          TAX             ; 2
@@ -369,12 +428,66 @@ The test program `writebytes-example.zig` writes a small routine into the memory
 080D: 60                          RTS             ; 6
 ```
 
-It also demonstrates loading a `.prg` file via `c64.loadPrg()`, containing the same instructions.
+
+```zig
+c64.cpu.writeByte(0xa9, 0x0800); //  LDA,,
+c64.cpu.writeByte(0x0a, 0x0801); //      #0A     ; 10
+c64.cpu.writeByte(0xaa, 0x0802); //  TAX
+c64.cpu.writeByte(0x69, 0x0803); //  ADC
+c64.cpu.writeByte(0x1e, 0x0804); //      #$1E
+c64.cpu.writeByte(0x9d, 0x0805); //  STA $
+c64.cpu.writeByte(0x00, 0x0806); //         00
+c64.cpu.writeByte(0xd4, 0x0807); //       D4
+c64.cpu.writeByte(0xe8, 0x0808); //  INX
+c64.cpu.writeByte(0xe0, 0x0809); //  CPX
+c64.cpu.writeByte(0x19, 0x080A); //      #19
+c64.cpu.writeByte(0xd0, 0x080B); //  BNE
+c64.cpu.writeByte(0xf6, 0x080C); //      $0803 (-10)
+c64.cpu.writeByte(0x60, 0x080D); //  RTS
+```
 
 Test Output:
 ```
+[EXE] initializing emulator
+[EXE] cpu init address: 0800
+[EXE] c64 vic type: pal
+[EXE] c64 sid base address: D400
+[EXE] cpu status:
+[cpu] PC: 0800 | A: 00 | X: 00 | Y: 00 | Last Opc: 00 | Last Cycl: 0 | Cycl-TT: 0 | FL: 00100100
+[EXE] Writing program ...
+[cpu] PC: 0800 | A: 00 | X: 00 | Y: 00 | Last Opc: 00 | Last Cycl: 0 | Cycl-TT: 14 | FL: 00100100
+[EXE] Executing program ...
+[cpu] PC: 0802 | A: 0A | X: 00 | Y: 00 | Last Opc: A9 | Last Cycl: 2 | Cycl-TT: 16 | FL: 00100100
+[cpu] PC: 0803 | A: 0A | X: 0A | Y: 00 | Last Opc: AA | Last Cycl: 2 | Cycl-TT: 18 | FL: 00100100
+[cpu] PC: 0805 | A: 28 | X: 0A | Y: 00 | Last Opc: 69 | Last Cycl: 2 | Cycl-TT: 20 | FL: 00100100
+[cpu] PC: 0808 | A: 28 | X: 0A | Y: 00 | Last Opc: 9D | Last Cycl: 5 | Cycl-TT: 25 | FL: 00100100
+[EXE] sid register written!
 ...
 ...
+[cpu] PC: 0808 | A: CC | X: 18 | Y: 00 | Last Opc: 9D | Last Cycl: 5 | Cycl-TT: 261 | FL: 10100100
+[EXE] sid register written!
+[sid] registers: 00 00 00 00 00 00 00 00 00 00 28 46 64 82 A0 BE DC FA 18 36 54 72 90 AE CC 
+[EXE] sid volume changed: CC
+```
+In the main function it checks for the change of the SID volume register:
+```zig
+try stdout.print("[EXE] Executing program ...\n", .{});
+var sid_volume_old = c64.sid.getRegisters()[24];
+while (c64.cpu.runStep() != 0) {
+    c64.cpu.printStatus();
+    if (c64.cpu.sidRegWritten()) {
+        try stdout.print("[EXE] sid register written!\n", .{});
+        c64.sid.printRegisters();
+
+        const sid_registers = c64.sid.getRegisters();
+        if (sid_volume_old != sid_registers[24]) {
+            try stdout.print("[EXE] sid volume changed: {X:0>2}\n", .{
+                sid_registers[24],
+            });
+            sid_volume_old = sid_registers[24];
+        }
+    }
+}
 ```
 
 <br>

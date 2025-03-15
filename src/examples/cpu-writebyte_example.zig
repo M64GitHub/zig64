@@ -6,28 +6,28 @@ pub fn main() !void {
     const gpa = std.heap.page_allocator;
     const stdout = std.io.getStdOut().writer();
 
-    try stdout.print("[MAIN] initializing c64lator\n", .{});
+    try stdout.print("[EXE] initializing emulator\n", .{});
 
     var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x0800);
     defer c64.deinit(gpa);
 
-    try stdout.print("[MAIN] cpu init address: {X:0>4}\n", .{
+    try stdout.print("[EXE] cpu init address: {X:0>4}\n", .{
         c64.cpu.pc,
     });
-    try stdout.print("[MAIN] c64 vic type: {s}\n", .{
+    try stdout.print("[EXE] c64 vic type: {s}\n", .{
         @tagName(c64.vic.model),
     });
-    try stdout.print("[MAIN] c64 sid base address: {X:0>4}\n", .{
+    try stdout.print("[EXE] c64 sid base address: {X:0>4}\n", .{
         c64.sid.base_address,
     });
-    try stdout.print("[MAIN] cpu status:\n", .{});
+    try stdout.print("[EXE] cpu status:\n", .{});
     c64.cpu.printStatus();
 
     try stdout.print("\n", .{});
 
     // -- manually write a program into memory
 
-    try stdout.print("[MAIN] Writing program ...\n", .{});
+    try stdout.print("[EXE] Writing program ...\n", .{});
 
     // 0800: A9 0A                       LDA #$0A        ; 2
     // 0802: AA                          TAX             ; 2
@@ -57,17 +57,17 @@ pub fn main() !void {
     // -- manually execute single steps, print cpu status
     //    and check sid register modifications
 
-    try stdout.print("[MAIN] Executing program ...\n", .{});
+    try stdout.print("[EXE] Executing program ...\n", .{});
     var sid_volume_old = c64.sid.getRegisters()[24];
     while (c64.cpu.runStep() != 0) {
         c64.cpu.printStatus();
         if (c64.cpu.sidRegWritten()) {
-            try stdout.print("[MAIN] sid register written!\n", .{});
+            try stdout.print("[EXE] sid register written!\n", .{});
             c64.sid.printRegisters();
 
             const sid_registers = c64.sid.getRegisters();
             if (sid_volume_old != sid_registers[24]) {
-                try stdout.print("[MAIN] sid volume changed: {X:0>2}\n", .{
+                try stdout.print("[EXE] sid volume changed: {X:0>2}\n", .{
                     sid_registers[24],
                 });
                 sid_volume_old = sid_registers[24];

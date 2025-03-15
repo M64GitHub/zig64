@@ -65,7 +65,6 @@ pub fn loadPrg(
         try stdout.print("[c64] loading file: '{s}'\n", .{
             file_name,
         });
-        c64.cpu.printStatus();
     }
     const stat = try file.stat();
     const file_size = stat.size;
@@ -101,7 +100,7 @@ pub fn runFrames(c64: *C64, frame_count: u32) u32 {
     return frames_executed;
 }
 
-pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) u16 {
+pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) !u16 {
     var load_address: u16 = 0;
     if ((program.len != 0) and (program.len > 2)) {
         var offs: u32 = 0;
@@ -110,6 +109,13 @@ pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) u16 {
         const hi: u16 = @as(u16, program[offs]) << 8;
         offs += 1;
         load_address = @as(u16, lo) | @as(u16, hi);
+
+        if (c64.dbg_enabled) {
+            try stdout.print("[c64] file load address: ${X:0>4}\n", .{
+                load_address,
+            });
+            c64.cpu.printStatus();
+        }
 
         var i: u16 = load_address;
         while (i < (load_address +% program.len -% 2)) : (i +%= 1) {
