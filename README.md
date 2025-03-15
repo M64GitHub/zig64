@@ -267,12 +267,13 @@ pub const Vic = struct {
 #### ⚡ **Emulator Control**
 ```zig
 // struct C64
-// Load a .prg file into memory. Returns the load address.
-// When pc_to_loadaddr is true, the CPU.PC is set to the load address.
+// Load a .prg file into memory, returns the load address
+// When pc_to_loadaddr is true, the CPU.PC is set to the load address
 // This function utilizes the allocator set at CPU initialization
 pub fn loadPrg(c64: *C64, file_name: []const u8, pc_to_loadaddr: bool) !u16
 
-// Write a buffer containing a .prg to memory. Returns the load address of the .prg.
+// Write a buffer containing a .prg to memory, 
+// returns the load address of the .prg
 pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) u16
 
 // call a subroutine (ie sid_init, sid_play) and return on RTS
@@ -287,8 +288,12 @@ pub fn run(c64: *C64) void // start execution at current PC, return on RTS
 pub fn init(c64: *C64, pc_start: u16) Cpu // init with start address
 pub fn reset(cpu: *Cpu) void // reset CPU registers and PC (0xFFFC)
 pub fn hardReset(cpu: *Cpu) void // reset and clear memory
-pub fn runStep(cpu: *Cpu) u8 // execute a single instruction, return number of used cycles
-pub fn runFrames(c64: *C64, frame_count: u32) u32 // run for specific amount of video frames
+
+// execute a single instruction, return number of used cycles
+pub fn runStep(cpu: *Cpu) u8 
+
+// run for specific amount of video frames
+pub fn runFrames(c64: *C64, frame_count: u32) u32 
 ```
 ##### 📝 **Memory Read/Write**
 ```zig
