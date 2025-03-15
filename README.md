@@ -351,10 +351,6 @@ Example code can be found in the folder `src/examples`.
 ### Loading and Executing a demo program
 The program `loadprg-example.zig` demonstrates how to load and run a `.prg`.
 
-**Running the Example:***
-```sh
-zig build run-loadprg
-```
 
 ```zig
 // zig64 - loadPrg() example
@@ -385,13 +381,18 @@ pub fn main() !void {
 }
 ```
 
+
+**Running the Example:***
+```sh
+zig build run-loadprg
+```
+
 **Example Output:**
 ```
 [EXE] initializing emulator
 [EXE] Loading 'c64asm/test.prg'
 [c64] loading file: 'c64asm/test.prg'
 [c64] file load address: $C000
-[cpu] PC: 0000 | A: 00 | X: 00 | Y: 00 | Last Opc: 00 | Last Cycl: 0 | Cycl-TT: 0 | FL: 00100100
 [c64] writing mem: C000 offs: 0002 data: 78
 [c64] writing mem: C001 offs: 0003 data: A9
 [c64] writing mem: C002 offs: 0004 data: 00
