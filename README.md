@@ -292,15 +292,8 @@ pub fn init(c64: *C64, pc_start: u16) Cpu // init with start address
 pub fn reset(cpu: *Cpu) void // reset CPU registers and PC (0xFFFC)
 pub fn hardReset(cpu: *Cpu) void // reset and clear memory
 pub fn runStep(cpu: *Cpu) u8 // execute a single instruction, return number of used cycles
+pub fn runFrames(c64: *C64, frame_count: u32) u32 // run for specific amount of video frames
 ```
-##### 🎞 **Frame-Based Execution** (PAL & NTSC Timing)
-```zig
-// struct C64
-// The following function executes until a number of PAL or NTSC frames is reached
-// The number of frames executed is returned
-pub fn runFrames(c64: *C64, frame_count: u32) u32
-```
-
 ##### 📝 **Memory Read/Write**
 ```zig
 // struct Cpu
