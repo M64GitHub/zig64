@@ -268,7 +268,7 @@ pub const Vic = struct {
 ```zig
 // struct C64
 // Load a .prg file into memory. Returns the load address.
-// When setPC is true, the CPU.PC is set to the load address.
+// When pc_to_loadaddr is true, the CPU.PC is set to the load address.
 // This function utilizes the allocator set at CPU initialization
 pub fn loadPrg(c64: *C64, file_name: []const u8, pc_to_loadaddr: bool) !u16
 
