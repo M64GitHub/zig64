@@ -9,6 +9,9 @@ vic: Vic,
 sid: Sid,
 resid: ?*opaque {}, // optional resid integration
 dbg_enabled: bool,
+cpu_dbg_enabled: bool,
+sid_dbg_enabled: bool,
+vic_dbg_enabled: bool,
 
 pub fn init(
     allocator: std.mem.Allocator,
@@ -19,10 +22,13 @@ pub fn init(
     c64.* = C64{
         .cpu = Cpu.init(c64, init_addr),
         .mem = Ram64K.init(),
-        .vic = Vic.init(vic_model),
-        .sid = Sid.init(Sid.std_base),
+        .vic = Vic.init(c64, vic_model),
+        .sid = Sid.init(c64, Sid.std_base),
         .resid = null,
         .dbg_enabled = false,
+        .cpu_dbg_enabled = false,
+        .sid_dbg_enabled = false,
+        .vic_dbg_enabled = false,
     };
 
     // default startup value: BASIC ROM, KERNAL ROM, and I/O
@@ -39,7 +45,7 @@ pub fn call(c64: *C64, address: u16) void {
     c64.cpu.pushW(0x0000);
     c64.cpu.pc = address;
     if (c64.dbg_enabled) {
-        stdout.print("[c64 ] calling address: {X:0>4}\n", .{
+        stdout.print("[c64] calling address: {X:0>4}\n", .{
             address,
         }) catch {};
     }
@@ -56,7 +62,7 @@ pub fn loadPrg(
     defer file.close();
 
     if (c64.dbg_enabled) {
-        try stdout.print("[c64 ] loading file: '{s}'\n", .{
+        try stdout.print("[c64] loading file: '{s}'\n", .{
             file_name,
         });
         c64.cpu.printStatus();
@@ -81,8 +87,8 @@ pub fn runFrames(c64: *C64, frame_count: u32) u32 {
     var cycles_max: u32 = 0;
     var cycles: u32 = 0;
 
-    if (c64.vic.model == Vic.Model.pal) cycles_max = Vic.Timing.cyclesVsyncPAL;
-    if (c64.vic.model == Vic.Model.ntsc) cycles_max = Vic.Timing.cyclesVsyncNTSC;
+    if (c64.vic.model == Vic.Model.pal) cycles_max = Vic.Timing.cyclesVsyncPal;
+    if (c64.vic.model == Vic.Model.ntsc) cycles_max = Vic.Timing.cyclesVsyncNtsc;
 
     while (frames_executed < frame_count) {
         cycles += c64.cpu.runStep();
@@ -109,7 +115,7 @@ pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) u16 {
         while (i < (load_address +% program.len -% 2)) : (i +%= 1) {
             c64.mem.data[i] = program[offs];
             if (c64.dbg_enabled)
-                stdout.print("[c64 ] writing mem: {X:0>4} offs: {X:0>4} data: {X:0>2}\n", .{
+                stdout.print("[c64] writing mem: {X:0>4} offs: {X:0>4} data: {X:0>2}\n", .{
                     i,
                     offs,
                     program[offs],
@@ -125,13 +131,15 @@ pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) u16 {
 const Sid = struct {
     base_address: u16,
     registers: [25]u8,
+    c64: *C64,
 
     pub const std_base = 0xD400;
 
-    pub fn init(base_address: u16) Sid {
+    pub fn init(c64: *C64, base_address: u16) Sid {
         return Sid{
             .base_address = base_address,
             .registers = [_]u8{0} ** 25,
+            .c64 = c64,
         };
     }
 
@@ -140,7 +148,7 @@ const Sid = struct {
     }
 
     pub fn printRegisters(sid: *Sid) void {
-        stdout.print("[Sid ] Registers: ", .{}) catch {};
+        stdout.print("[sid] registers: ", .{}) catch {};
         for (sid.registers) |v| {
             stdout.print("{X:0>2} ", .{v}) catch {};
         }
@@ -151,6 +159,12 @@ const Sid = struct {
 // virtual vic
 pub const Vic = struct {
     model: Model,
+    vsync_happened: bool,
+    hsync_happened: bool,
+    rasterline_changed: bool,
+    rasterline: u16,
+    frame_ctr: usize,
+    c64: *C64,
 
     pub const Model = enum {
         pal,
@@ -158,14 +172,50 @@ pub const Vic = struct {
     };
 
     pub const Timing = struct {
-        const cyclesVsyncPAL = 19656;
-        const cyclesVsyncNTSC = 17734;
+        const cyclesVsyncPal = 19656; // 63 cycles x 312 rasterlines
+        const cyclesVsyncNtsc = 17734;
+        const cyclesRasterlinePal = 63;
+        const cyclesRasterlineNtsc = 65;
     };
 
-    pub fn init(vic_model: Model) Vic {
-        return Vic{
+    pub fn init(c64: *C64, vic_model: Model) Vic {
+        const vic = Vic{
             .model = vic_model,
+            .vsync_happened = true,
+            .hsync_happened = true,
+            .rasterline_changed = false,
+            .rasterline = 0,
+            .frame_ctr = 0,
+            .c64 = c64,
         };
+
+        return vic;
+    }
+
+    pub fn emulateD012(vic: *Vic) void {
+        vic.c64.mem.data[0xD012] = vic.c64.mem.data[0xD012] +% 1;
+        vic.c64.vic.rasterline += 1;
+        vic.c64.vic.rasterline_changed = true;
+        vic.c64.vic.hsync_happened = true;
+        if ((vic.c64.mem.data[0xD012] == 0) or
+            (((vic.c64.mem.data[0xD011] & 0x80) != 0) and
+                (vic.c64.mem.data[0xD012] >= 0x38)))
+        {
+            vic.c64.mem.data[0xD011] ^= 0x80;
+            vic.c64.mem.data[0xD012] = 0x00;
+            vic.c64.vic.rasterline = 0;
+            vic.c64.vic.vsync_happened = true;
+        }
+    }
+
+    pub fn printStatus(vic: *Vic) void {
+        stdout.print("[vic] RL {X:0>4} | VSYNC: {}, HSYNC: {}, RL-CHG: {}, FRM: {d}\n", .{
+            vic.rasterline,
+            vic.vsync_happened,
+            vic.hsync_happened,
+            vic.rasterline_changed,
+            vic.frame_ctr,
+        }) catch {};
     }
 };
 
@@ -194,13 +244,12 @@ pub const Cpu = struct {
     status: u8,
     flags: CpuFlags,
     cycles_executed: u32,
-    cycles_last_step: u32,
+    cycles_since_vsync: u16,
+    cycles_since_hsync: u8,
+    cycles_last_step: u8,
     opcode_last: u8,
-    frame_ctr: u32,
     sid_reg_written: bool,
     ext_sid_reg_written: bool,
-    dbg_enabled: bool,
-    sid_dbg_enabled: bool,
     c64: *C64,
 
     const CpuFlags = struct {
@@ -248,9 +297,8 @@ pub const Cpu = struct {
             .opcode_last = 0x00, // No opcode executed yet
             .sid_reg_written = false,
             .ext_sid_reg_written = false,
-            .frame_ctr = 0,
-            .dbg_enabled = false,
-            .sid_dbg_enabled = false,
+            .cycles_since_vsync = 0,
+            .cycles_since_hsync = 0,
             .c64 = c64,
         };
     }
@@ -295,7 +343,7 @@ pub const Cpu = struct {
     }
 
     pub fn printStatus(cpu: *Cpu) void {
-        stdout.print("[Cpu ] PC: {X:0>4} | A: {X:0>2} | X: {X:0>2} | Y: {X:0>2} | Last Opc: {X:0>2} | Last Cycl: {d} | Cycl-TT: {d} | ", .{
+        stdout.print("[cpu] PC: {X:0>4} | A: {X:0>2} | X: {X:0>2} | Y: {X:0>2} | Last Opc: {X:0>2} | Last Cycl: {d} | Cycl-TT: {d} | ", .{
             cpu.pc,
             cpu.a,
             cpu.x,
@@ -310,7 +358,7 @@ pub const Cpu = struct {
 
     pub fn printFlags(cpu: *Cpu) void {
         cpu.flagsToPS();
-        stdout.print("F: {b:0>8}", .{cpu.status}) catch {};
+        stdout.print("FL: {b:0>8}", .{cpu.status}) catch {};
     }
 
     pub fn readByte(cpu: *Cpu, addr: u16) u8 {
@@ -666,31 +714,22 @@ pub const Cpu = struct {
         cpu.flags.c = @intFromBool(reg_val >= op);
     }
 
-    pub fn c64lateD012(cpu: *Cpu) void {
-        cpu.c64.mem.data[0xD012] = cpu.c64.mem.data[0xD012] +% 1;
-        if ((cpu.c64.mem.data[0xD012] == 0) or
-            (((cpu.c64.mem.data[0xD011] & 0x80) != 0) and
-                (cpu.c64.mem.data[0xD012] >= 0x38)))
-        {
-            cpu.c64.mem.data[0xD011] ^= 0x80;
-            cpu.c64.mem.data[0xD012] = 0x00;
-        }
-    }
-
     pub fn runStep(cpu: *Cpu) u8 {
+        cpu.sid_reg_written = false;
+        cpu.c64.vic.vsync_happened = false;
+        cpu.c64.vic.hsync_happened = false;
+        cpu.c64.vic.rasterline_changed = false;
+
         const cycles_now: u32 = cpu.cycles_executed;
         const old_pc = cpu.pc;
         const opcode: u8 = fetchUByte(cpu);
         cpu.opcode_last = opcode;
-        cpu.sid_reg_written = false;
 
-        if (cpu.dbg_enabled)
-            stdout.print("[Cpu ] runStep: {X:0>4}, opcode: {X:0>2}\n", .{
+        if (cpu.c64.cpu_dbg_enabled)
+            stdout.print("[cpu] runStep: {X:0>4}, opcode: {X:0>2}\n", .{
                 old_pc,
                 opcode,
             }) catch {};
-
-        cpu.c64lateD012();
 
         switch (opcode) {
             0x29 => {
@@ -933,8 +972,8 @@ pub const Cpu = struct {
                 cpu.pushW(cpu.pc - 1);
                 cpu.pc = jsr_addr;
                 cpu.cycles_executed +%= 1;
-                if (cpu.dbg_enabled) {
-                    stdout.print("[Cpu ] Calling {X:0>4}, return to {X:0>4}\n", .{
+                if (cpu.c64.cpu_dbg_enabled) {
+                    stdout.print("[cpu] Calling {X:0>4}, return to {X:0>4}\n", .{
                         jsr_addr,
                         ret_addr,
                     }) catch {};
@@ -944,24 +983,19 @@ pub const Cpu = struct {
                 const ret_addr: u16 = popW(cpu);
                 cpu.pc = ret_addr + 1;
                 cpu.cycles_executed +%= 2;
-                if (cpu.dbg_enabled) {
-                    stdout.print("[Cpu ] Return to {X:0>4}\n", .{
+                if (cpu.c64.cpu_dbg_enabled) {
+                    stdout.print("[cpu] Return to {X:0>4}\n", .{
                         ret_addr,
                     }) catch {};
                 }
                 if (ret_addr == 0x0000) {
-                    if (cpu.dbg_enabled) {
-                        stdout.print("[Cpu ] Return EXIT!\n", .{}) catch {};
+                    if (cpu.c64.cpu_dbg_enabled) {
+                        stdout.print("[cpu] Return EXIT!\n", .{}) catch {};
                     }
-                    cpu.cycles_last_step = cpu.cycles_executed -% cycles_now;
+                    cpu.cycles_last_step =
+                        @as(u8, @truncate(cpu.cycles_executed -% cycles_now));
 
-                    if (cpu.c64.vic.model == Vic.Model.pal and
-                        cpu.cycles_executed % Vic.Timing.cyclesVsyncPAL ==
-                            0) cpu.frame_ctr += 1;
-
-                    if (cpu.c64.vic.model == Vic.Model.ntsc and
-                        cpu.cycles_executed %
-                            Vic.Timing.cyclesVsyncNTSC == 0) cpu.frame_ctr += 1;
+                    // skip vic timing on exit
 
                     return 0;
                 }
@@ -1425,22 +1459,55 @@ pub const Cpu = struct {
             },
             else => return 0,
         }
-        cpu.cycles_last_step = cpu.cycles_executed -% cycles_now;
+        cpu.cycles_last_step =
+            @as(u8, @truncate(cpu.cycles_executed -% cycles_now));
 
+        cpu.cycles_since_vsync += cpu.cycles_last_step;
+        cpu.cycles_since_hsync += cpu.cycles_last_step;
+
+        // VIC vertical sync
         if (cpu.c64.vic.model == Vic.Model.pal and
-            cpu.cycles_executed % Vic.Timing.cyclesVsyncPAL == 0) cpu.frame_ctr += 1;
+            cpu.cycles_since_vsync >= Vic.Timing.cyclesVsyncPal)
+        {
+            cpu.c64.vic.frame_ctr += 1;
+            cpu.cycles_since_vsync = 0;
+        }
 
         if (cpu.c64.vic.model == Vic.Model.ntsc and
-            cpu.cycles_executed % Vic.Timing.cyclesVsyncNTSC == 0) cpu.frame_ctr += 1;
+            cpu.cycles_since_vsync >= Vic.Timing.cyclesVsyncNtsc)
+        {
+            cpu.c64.vic.frame_ctr += 1;
+            cpu.cycles_since_vsync = 0;
+        }
 
-        if (cpu.dbg_enabled) {
+        // VIC horizontal sync
+        if (cpu.c64.vic.model == Vic.Model.pal and
+            cpu.cycles_since_hsync >= Vic.Timing.cyclesRasterlinePal)
+        {
+            cpu.c64.vic.emulateD012();
+            cpu.cycles_since_hsync = 0;
+        }
+
+        if (cpu.c64.vic.model == Vic.Model.ntsc and
+            cpu.cycles_since_hsync >= Vic.Timing.cyclesRasterlineNtsc)
+        {
+            cpu.c64.vic.emulateD012();
+            cpu.cycles_since_hsync = 0;
+        }
+
+        // dbg output
+        if (cpu.c64.cpu_dbg_enabled) {
             cpu.printStatus();
         }
 
-        if (cpu.sid_dbg_enabled and cpu.sid_reg_written) {
+        if (cpu.c64.vic_dbg_enabled) {
+            cpu.c64.vic.printStatus();
+        }
+
+        if (cpu.c64.sid_dbg_enabled and cpu.sid_reg_written) {
             cpu.c64.sid.printRegisters();
         }
 
-        return @as(u8, @truncate(cpu.cycles_last_step));
+        return cpu.cycles_last_step;
     }
 };

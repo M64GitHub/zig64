@@ -11,7 +11,7 @@ pub fn build(b: *std.Build) void {
 
     // Example loadprg
     const exe_loadprg = b.addExecutable(.{
-        .name = "loadPrg-example",
+        .name = "loadprg-example",
         .root_source_file = b.path(
             "src/examples/loadprg_example.zig",
         ),
@@ -21,20 +21,9 @@ pub fn build(b: *std.Build) void {
     exe_loadprg.root_module.addImport("zig64", mod_zig64);
     b.installArtifact(exe_loadprg);
 
-    const run_cmd_loadprg = b.addRunArtifact(exe_loadprg);
-    run_cmd_loadprg.step.dependOn(b.getInstallStep());
-    if (b.args) |args| {
-        run_cmd_loadprg.addArgs(args);
-    }
-    const run_step_loadprg = b.step(
-        "run-loadprg",
-        "Run the loadprg example",
-    );
-    run_step_loadprg.dependOn(&run_cmd_loadprg.step);
-
     // Example cpu-writebyte
     const exe_writebyte = b.addExecutable(.{
-        .name = "loadPrg-example",
+        .name = "writebyte-example",
         .root_source_file = b.path(
             "src/examples/cpu-writebyte_example.zig",
         ),
@@ -44,16 +33,28 @@ pub fn build(b: *std.Build) void {
     exe_writebyte.root_module.addImport("zig64", mod_zig64);
     b.installArtifact(exe_writebyte);
 
+    // Run steps for all
+    const run_cmd_loadprg = b.addRunArtifact(exe_loadprg);
     const run_cmd_writebyte = b.addRunArtifact(exe_writebyte);
-    run_cmd_writebyte.step.dependOn(b.getInstallStep());
+
     if (b.args) |args| {
+        run_cmd_loadprg.addArgs(args);
         run_cmd_writebyte.addArgs(args);
     }
+
+    const run_step_loadprg = b.step(
+        "run-loadprg",
+        "Run the loadprg example",
+    );
     const run_step_writebyte = b.step(
         "run-writebyte",
         "Run the cpu-writebyte example",
     );
+
+    run_step_loadprg.dependOn(&run_cmd_loadprg.step);
     run_step_writebyte.dependOn(&run_cmd_writebyte.step);
+    run_cmd_loadprg.step.dependOn(b.getInstallStep());
+    run_cmd_writebyte.step.dependOn(b.getInstallStep());
 
     // CPU Test
     const test_exe = b.addTest(.{
