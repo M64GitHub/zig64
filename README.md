@@ -337,15 +337,10 @@ c64.sid_dbg_enabled = true; // enable debug messages for the sid
 c64.vic_dbg_enabled = true; // enable debug messages for the vic
 
 // or manually call the functions
-// struct Cpu
-pub fn printStatus(cpu: *Cpu) void
-pub fn printFlags(cpu: *Cpu) void
-
-// struct Sid
-pub fn printRegisters(sid: *Sid) void {
-
-//struct Vic
-pub fn printStatus(vic: *Vic) void {
+Cpu.printStatus()
+Cpu.printFlags()
+Sid.printRegisters(sid: *Sid)
+Vic.printStatus(vic: *Vic)
 ```
 
 <br>
