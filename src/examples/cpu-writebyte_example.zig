@@ -54,8 +54,8 @@ pub fn main() !void {
     c64.cpu.writeByte(0x60, 0x080D); //  RTS
     c64.cpu.printStatus();
 
-    // -- manually execute single steps, print cpu status
-    //    and check sid register modifications
+    // manually execute single steps, print cpu status
+    // and check sid register modifications
 
     try stdout.print("[EXE] Executing program ...\n", .{});
     var sid_volume_old = c64.sid.getRegisters()[24];

@@ -114,7 +114,6 @@ pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) !u16 {
             try stdout.print("[c64] file load address: ${X:0>4}\n", .{
                 load_address,
             });
-            c64.cpu.printStatus();
         }
 
         var i: u16 = load_address;
