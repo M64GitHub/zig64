@@ -1,7 +1,7 @@
 # C64 MOS6510 Emulator Core in Zig  
 
 A **Commodore 64 MOS6510 emulator core** written in **Zig**, designed for accuracy, efficiency, and seamless integration into C64-based projects.  
-This emulator provides cycle-accurate execution, video synchronization for PAL and NTSC, and SID register monitoring, making it ideal for real-time SID interaction, analysis, and execution of C64 programs.  
+This emulator delivers cycle-accurate execution, precise rasterbeam emulation for PAL and NTSC video synchronization, and SID register tracking. Designed for C64 software analysis and program execution, it ensures faithful reproduction of C64 behavior with high precision.
 
 It serves as the **computational core of a C64 system**, making it suitable for a range of applications, from testing and debugging C64 software to powering SID music playback engines like [zigreSID](https://github.com/M64GitHub/zigreSID).  
 
@@ -17,11 +17,11 @@ It serves as the **computational core of a C64 system**, making it suitable for 
 <br>
 
 ## 🚀 Features  
-- 🎮 **Fully Functional 6510 CPU Emulator** – Implements all legal 6502/6510 instructions and addressing modes.  
-- 🎞 **Video Synchronization** – Execute CPU cycles in sync with PAL or NTSC, full rasterbeam emulation, exactly handling `bad lines`.  
-- 🎵 **SID Register Modification Detection** – Detects when SID registers (`0xD400-0xD418`) are written to, perfect for tracking SID interaction.  
+- 🎮 **Fully Functional 6510 CPU Emulator** – Implements all legal `MOS 6502/6510` instructions and addressing modes.  
+- 🎞 **Video Synchronization** – Execute CPU cycles in sync with PAL or NTSC, full `rasterbeam` emulation, exactly handling `bad lines`.  
+- 🎵 **SID Register Modification Detection** – Detects when SID registers are written to, perfect for tracking SID interaction.  
 - 💾 **Program Loading Support** – Load PRG files and execute C64 programs.  
-- 🛠 **CPU Debugging** – Functions for inspecting CPU registers, flags, memory, and SID states.
+- 🛠 **CPU Debugging** – Functions for inspecting CPU registers, flags, memory, VIC state, and SID registers.
 
 <br>
 
