@@ -414,7 +414,7 @@ zig build run-loadprg
 
 
 ### Manually writing a program into memory
-The test program `writebytes-example.zig` writes a small routine into the memory, which executes a simple loop. Since it writes to `$D400,X`, the emulator will detect SID register chhanges:
+The test program `writebytes-example.zig` writes a small routine into the memory, which executes a simple loop. Since it writes to `$D400,X`, the emulator will detect SID register hhanges:
 
 
 ```
