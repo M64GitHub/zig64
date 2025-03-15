@@ -93,10 +93,10 @@ const C64 = @import("zig64");
 const gpa = std.heap.page_allocator;
 var c64 = C64.init(gpa, C64.Vic.Type.pal, 0x0800);
 ```
-**Load a program `.prg` file:**
+**Load a `.prg` file:**
 ```zig
-// the second parameter (true) tells loadPrg() to set the PC to the load address,
-// effectively jupming to program start.
+// the second parameter (true) tells loadPrg() to set the Cpu.PC 
+// to the load address, effectively jupming to program start.
 const file_name = "data/test1.prg";
 const load_address = try c64.loadPrg(gpa, file_name, true);
 ```
