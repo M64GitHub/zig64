@@ -44,14 +44,14 @@ zig build test
 
 ## Using zig64 In Your Project
 ```sh
-zig fetch --save https://github.com/M64GitHub/6510-emulator-zig/archive/refs/tags/v0.0.1-alpha.tar.gz
+zig fetch --save https://github.com/M64GitHub/zig64/archive/refs/tags/v0.0.1-alpha.tar.gz 
 ```
 This will add a dependency to your `build.zig.zon`:
 ```zig
 .dependencies = .{
     .zig64 = .{
-        .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.0.0-alpha.tar.gz",
-        .hash = "122055389b1be9d6cd4e60e08ee096f130ff737b7992984305576c14a51a79ebe50a",
+        .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.0.1-alpha.tar.gz",
+        .hash = "1220a3d60d010d4508e775e069152a722a52bcf3b4a9130219c5f0482f76aec1fa59",
     },
 },
 ```
