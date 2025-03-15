@@ -314,7 +314,7 @@ pub fn getRegisters(sid: *Sid) [25]u8
 pub fn printRegisters(sid: *Sid) void
 ```
 
-##### 📺 **VIC Rasterbeam Handling**
+##### 📺 **VIC Rasterbeam Monitoring**
 ```zig
 // struct Vic
 // the following flags will be set by the Cpu on execution, after each step:
