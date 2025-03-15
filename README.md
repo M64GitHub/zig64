@@ -382,7 +382,7 @@ pub fn main() !void {
 ```
 
 
-**Running the Example:***
+**Running the Example:**
 ```sh
 zig build run-loadprg
 ```
@@ -444,7 +444,7 @@ c64.cpu.writeByte(0xf6, 0x080C); //      $0803 (-10)
 c64.cpu.writeByte(0x60, 0x080D); //  RTS
 ```
 
-**Running the Example:***
+**Running the Example:**
 ```sh
 zig build run-loadprg
 ```
