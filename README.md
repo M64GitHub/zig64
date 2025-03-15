@@ -26,10 +26,10 @@ It serves as the **computational core of a C64 system**, making it suitable for 
 <br>
 
 ## Building the Project
-#### Requirements:
-- ⚡ **Zig** (Latest stable version)
+#### Requirements
+- ⚡ **Zig** 0.13.0
 
-#### Building the Example Executable:
+#### Build
 ```sh
 zig build
 ```
