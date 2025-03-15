@@ -34,10 +34,6 @@ It serves as the **computational core of a C64 system**, making it suitable for 
 zig build
 ```
 
-#### Running the Example Executable:
-```sh
-zig build run
-```
 
 #### Run CPU Tests:
 ```sh
@@ -355,6 +351,11 @@ Example code can be found in the folder `src/examples`.
 ### Loading and Executing a demo program
 The program `loadprg-example.zig` demonstrates how to load and run a `.prg`.
 
+**Running the Example:***
+```sh
+zig build run-loadprg
+```
+
 ```zig
 // zig64 - loadPrg() example
 const std = @import("std");
@@ -383,7 +384,8 @@ pub fn main() !void {
     c64.run();
 }
 ```
-#### Output
+
+**Example Output:**
 ```
 [EXE] initializing emulator
 [EXE] Loading 'c64asm/test.prg'
@@ -410,6 +412,8 @@ pub fn main() !void {
 
 ### Manually writing a program into memory
 The test program `writebytes-example.zig` writes a small routine into the memory, which executes a simple loop. Since it writes to `$D400,X`, the emulator will detect SID register chhanges:
+
+
 ```
 0800: A9 0A                       LDA #$0A        ; 2
 0802: AA                          TAX             ; 2
@@ -439,7 +443,12 @@ c64.cpu.writeByte(0xf6, 0x080C); //      $0803 (-10)
 c64.cpu.writeByte(0x60, 0x080D); //  RTS
 ```
 
-Test Output:
+**Running the Example:***
+```sh
+zig build run-loadprg
+```
+
+**Example Output:**
 ```
 [EXE] initializing emulator
 [EXE] cpu init address: 0800
