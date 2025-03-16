@@ -47,7 +47,7 @@ To add zigre64 as a dependency, use:
 ```sh
 zig fetch --save https://github.com/M64GitHub/zig64/archive/refs/tags/v0.0.1-alpha.tar.gz 
 ```
-This will add a dependency to your `build.zig.zon`:
+This will add the dependency to your `build.zig.zon`:
 ```zig
 .dependencies = .{
     .zig64 = .{
