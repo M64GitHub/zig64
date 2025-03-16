@@ -43,6 +43,7 @@ zig build test
 <br>
 
 ## Using zig64 In Your Project
+To add zigre64 as a dependency, use:
 ```sh
 zig fetch --save https://github.com/M64GitHub/zig64/archive/refs/tags/v0.0.1-alpha.tar.gz 
 ```
