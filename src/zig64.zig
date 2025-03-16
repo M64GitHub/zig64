@@ -227,7 +227,7 @@ pub const Vic = struct {
     }
 
     pub fn printStatus(vic: *Vic) void {
-        stdout.print("[vic] RL {X:0>4} | VSYNC: {} | HSYNC: {} | BL: {} | RL-CHG: {} | FRM: {d}\n", .{
+        stdout.print("[vic] RL: {X:0>4} | VSYNC: {} | HSYNC: {} | BL: {} | RL-CHG: {} | FRM: {d}\n", .{
             vic.rasterline,
             vic.vsync_happened,
             vic.hsync_happened,

@@ -75,7 +75,6 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     exe.root_module.addImport("zig64", mod_zig64); // add the module
-    b.installArtifact(exe);
 
     // ...
 }
