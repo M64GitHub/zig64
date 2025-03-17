@@ -338,8 +338,8 @@ c64.vic_dbg_enabled = true; // enable debug messages for the vic
 // or manually call the functions
 Cpu.printStatus()
 Cpu.printFlags()
-Sid.printRegisters(sid: *Sid)
-Vic.printStatus(vic: *Vic)
+Sid.printRegisters()
+Vic.printStatus()
 ```
 
 <br>
