@@ -507,7 +507,7 @@ This emulator is released under the **MIT License**, allowing free modification 
 <br>
 
 ## 🏆 Credits
-Developed with ❤️ by **M64**  
+Developed with ❤️ by M64  
 ### Hall Of Fame
 - **Commodore Business Machines (CBM)** – `The OGs of retro computing!`
   Engineers of the C64, MOS 6510/6581/8580,  sparked the 8-bit uprising! 🔥🔥🔥  
