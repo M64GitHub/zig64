@@ -9,6 +9,9 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/zig64.zig"),
     });
 
+    const dep_flagz = b.dependency("flagz", .{});
+    const mod_flagz = dep_flagz.module("flagz");
+
     // Example loadprg
     const exe_loadprg = b.addExecutable(.{
         .name = "loadprg-example",
@@ -18,6 +21,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    exe_loadprg.root_module.addImport("flagz", mod_flagz);
     exe_loadprg.root_module.addImport("zig64", mod_zig64);
     b.installArtifact(exe_loadprg);
 

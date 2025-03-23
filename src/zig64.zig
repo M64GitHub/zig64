@@ -70,6 +70,7 @@ pub fn loadPrg(
     const file_size = stat.size;
 
     const buffer = try allocator.alloc(u8, file_size);
+    defer allocator.free(buffer);
 
     _ = try file.readAll(buffer);
 

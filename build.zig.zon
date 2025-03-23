@@ -1,10 +1,14 @@
 .{
-    .name = "zig64",
+    .name = .zig64,
     .version = "0.0.1",
-
-    .minimum_zig_version = "0.13.0",
-
-    .dependencies = .{},
+    .fingerprint = 0xd65e0f9f7a67a1bf,
+    .minimum_zig_version = "0.14.0",
+    .dependencies = .{
+        .flagz = .{
+            .url = "https://github.com/M64GitHub/flagZ/archive/refs/tags/v1.0.0.tar.gz",
+            .hash = "flagz-1.0.0-vdU1bOaqAADgZG1WzQsfTlTe91FDMqB4gqozYT59tzEK",
+        },
+    },
 
     .paths = .{
         "build.zig",
