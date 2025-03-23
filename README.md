@@ -30,7 +30,7 @@ It serves as the **computational core of a C64 system**, making it suitable for 
 
 ## Building the Project
 #### Requirements
-- ![Zig](https://img.shields.io/badge/Zig-0.14.0-orange?style=flat)
+![Zig](https://img.shields.io/badge/Zig-0.14.0-orange?style=flat)
 
 #### Build
 ```sh
