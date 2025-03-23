@@ -43,10 +43,11 @@ zig build test
 <br>
 
 ## Using zig64 In Your Project
+To add `zig64` as a dependency, use:
 ```sh
 zig fetch --save https://github.com/M64GitHub/zig64/archive/refs/tags/v0.0.1-alpha.tar.gz 
 ```
-This will add a dependency to your `build.zig.zon`:
+This will add the dependency to your `build.zig.zon`:
 ```zig
 .dependencies = .{
     .zig64 = .{
@@ -337,8 +338,8 @@ c64.vic_dbg_enabled = true; // enable debug messages for the vic
 // or manually call the functions
 Cpu.printStatus()
 Cpu.printFlags()
-Sid.printRegisters(sid: *Sid)
-Vic.printStatus(vic: *Vic)
+Sid.printRegisters()
+Vic.printStatus()
 ```
 
 <br>
@@ -506,7 +507,7 @@ This emulator is released under the **MIT License**, allowing free modification 
 <br>
 
 ## 🏆 Credits
-Developed with ❤️ by **M64**  
+Developed with ❤️ by M64  
 ### Hall Of Fame
 - **Commodore Business Machines (CBM)** – `The OGs of retro computing!`
   Engineers of the C64, MOS 6510/6581/8580,  sparked the 8-bit uprising! 🔥🔥🔥  
