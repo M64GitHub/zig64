@@ -6,7 +6,7 @@
 A **Commodore 64 MOS6510 emulator core** written in **Zig**, designed for accuracy, efficiency, and seamless integration into C64-based projects.  
 This emulator delivers cycle-accurate execution, precise rasterbeam emulation for PAL and NTSC video synchronization, and SID register tracking. Designed for C64 software analysis and program execution, it ensures faithful reproduction of C64 behavior with high precision.
 
-It serves as the **computational core of a C64 system**, making it suitable for a range of applications, from testing and debugging C64 software to powering SID music playback engines like [zigreSID](https://github.com/M64GitHub/zigreSID).  
+It serves as the **computational core of a C64 system**, making it suitable for a range of applications, from testing and debugging C64 software to powering SID music playback engines like 🎧[zigreSID](https://github.com/M64GitHub/zigreSID).  
 
 **PRESS ANY KEY TO CONTINUE!** 🕹🔥  
 
