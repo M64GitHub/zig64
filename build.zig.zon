@@ -9,7 +9,6 @@
             .hash = "flagz-1.0.0-vdU1bOaqAADgZG1WzQsfTlTe91FDMqB4gqozYT59tzEK",
         },
     },
-
     .paths = .{
         "build.zig",
         "build.zig.zon",

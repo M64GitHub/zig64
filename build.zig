@@ -4,7 +4,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // Add zig64 module
+    // -- Add zig64 module
     const mod_zig64 = b.addModule("zig64", .{
         .root_source_file = b.path("src/zig64.zig"),
     });
@@ -12,7 +12,7 @@ pub fn build(b: *std.Build) void {
     const dep_flagz = b.dependency("flagz", .{});
     const mod_flagz = dep_flagz.module("flagz");
 
-    // Example loadprg
+    // -- Example loadprg
     const exe_loadprg = b.addExecutable(.{
         .name = "loadprg-example",
         .root_source_file = b.path(
@@ -25,7 +25,7 @@ pub fn build(b: *std.Build) void {
     exe_loadprg.root_module.addImport("zig64", mod_zig64);
     b.installArtifact(exe_loadprg);
 
-    // Example cpu-writebyte
+    // -- Example cpu-writebyte
     const exe_writebyte = b.addExecutable(.{
         .name = "writebyte-example",
         .root_source_file = b.path(
@@ -37,7 +37,7 @@ pub fn build(b: *std.Build) void {
     exe_writebyte.root_module.addImport("zig64", mod_zig64);
     b.installArtifact(exe_writebyte);
 
-    // Run steps for all
+    // -- Run steps for all
     const run_cmd_loadprg = b.addRunArtifact(exe_loadprg);
     const run_cmd_writebyte = b.addRunArtifact(exe_writebyte);
 
@@ -60,7 +60,7 @@ pub fn build(b: *std.Build) void {
     run_cmd_loadprg.step.dependOn(b.getInstallStep());
     run_cmd_writebyte.step.dependOn(b.getInstallStep());
 
-    // CPU Test
+    // -- Test (C64.Cpu)
     const test_exe = b.addTest(.{
         .root_source_file = b.path(
             "src/test/test-cpu.zig",

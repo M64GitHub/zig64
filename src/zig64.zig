@@ -7,7 +7,7 @@ cpu: Cpu,
 mem: Ram64k,
 vic: Vic,
 sid: Sid,
-resid: ?*opaque {}, // optional resid integration
+resid: ?*opaque {}, // optional resid integration  TODO: tbd
 dbg_enabled: bool,
 cpu_dbg_enabled: bool,
 sid_dbg_enabled: bool,
@@ -87,8 +87,8 @@ pub fn runFrames(c64: *C64, frame_count: u32) u32 {
     var cycles_max: u32 = 0;
     var cycles: u32 = 0;
 
-    if (c64.vic.model == Vic.Model.pal) cycles_max = Vic.Timing.cyclesVsyncPal;
-    if (c64.vic.model == Vic.Model.ntsc) cycles_max = Vic.Timing.cyclesVsyncNtsc;
+    if (c64.vic.model == .pal) cycles_max = Vic.Timing.cyclesVsyncPal;
+    if (c64.vic.model == .ntsc) cycles_max = Vic.Timing.cyclesVsyncNtsc;
 
     while (frames_executed < frame_count) {
         cycles += c64.cpu.runStep();
@@ -268,11 +268,12 @@ pub const Cpu = struct {
     cycles_since_vsync: u16,
     cycles_since_hsync: u8,
     cycles_last_step: u8,
+    sid_reg_changed: bool,
     sid_reg_written: bool,
     ext_sid_reg_written: bool,
     c64: *C64,
 
-    const CpuFlags = struct {
+    pub const CpuFlags = struct {
         c: u1,
         z: u1,
         i: u1,
@@ -315,6 +316,7 @@ pub const Cpu = struct {
             .cycles_executed = 0,
             .cycles_last_step = 0,
             .opcode_last = 0x00, // No opcode executed yet
+            .sid_reg_changed = false,
             .sid_reg_written = false,
             .ext_sid_reg_written = false,
             .cycles_since_vsync = 0,
@@ -382,7 +384,17 @@ pub const Cpu = struct {
     }
 
     pub fn readByte(cpu: *Cpu, addr: u16) u8 {
-        cpu.cycles_executed +%= 1;
+        const sid_base = cpu.c64.sid.base_address;
+        if ((addr >= sid_base) and (addr <= (sid_base + 25))) {
+            const val = cpu.c64.sid.registers[addr - 0xD400];
+            if (cpu.c64.sid_dbg_enabled) {
+                std.debug.print(
+                    "[sid] Read ${X:04} = {X:02}, PC={X:04}\n",
+                    .{ addr, val, cpu.pc },
+                );
+            }
+            return val;
+        }
         return cpu.c64.mem.data[addr];
     }
 
@@ -396,11 +408,15 @@ pub const Cpu = struct {
         const sid_base = cpu.c64.sid.base_address;
         if ((addr >= sid_base) and (addr <= (sid_base + 25))) {
             cpu.sid_reg_written = true;
-            // ext flag only when value changed
-            if (cpu.c64.mem.data[addr] != val) {
-                cpu.c64.sid.registers[addr - sid_base] = val;
-                cpu.ext_sid_reg_written = true;
+            cpu.ext_sid_reg_written = true;
+            cpu.c64.sid.registers[addr - sid_base] = val;
+            if (cpu.c64.sid_dbg_enabled) {
+                std.debug.print(
+                    "[DEBUG] Write ${X:04} = {X:02}, PC={X:04}\n",
+                    .{ addr, val, cpu.pc },
+                );
             }
+            if (cpu.c64.mem.data[addr] != val) cpu.sid_reg_changed = true;
         }
         cpu.c64.mem.data[addr] = val;
         cpu.cycles_executed +%= 1;
@@ -446,14 +462,30 @@ pub const Cpu = struct {
     }
 
     fn psToFlags(cpu: *Cpu) void {
-        cpu.flags.unused = @intFromBool((cpu.status & @intFromEnum(Cpu.FlagBit.unused)) != 0);
-        cpu.flags.c = @intFromBool((cpu.status & @intFromEnum(Cpu.FlagBit.carry)) != 0);
-        cpu.flags.z = @intFromBool((cpu.status & @intFromEnum(Cpu.FlagBit.zero)) != 0);
-        cpu.flags.i = @intFromBool((cpu.status & @intFromEnum(Cpu.FlagBit.intDisable)) != 0);
-        cpu.flags.d = @intFromBool((cpu.status & @intFromEnum(Cpu.FlagBit.decimal)) != 0);
-        cpu.flags.b = @intFromBool((cpu.status & @intFromEnum(Cpu.FlagBit.brk)) != 0);
-        cpu.flags.v = @intFromBool((cpu.status & @intFromEnum(Cpu.FlagBit.overflow)) != 0);
-        cpu.flags.n = @intFromBool((cpu.status & @intFromEnum(Cpu.FlagBit.negative)) != 0);
+        cpu.flags.unused = @intFromBool((cpu.status & @intFromEnum(
+            Cpu.FlagBit.unused,
+        )) != 0);
+        cpu.flags.c = @intFromBool((cpu.status & @intFromEnum(
+            Cpu.FlagBit.carry,
+        )) != 0);
+        cpu.flags.z = @intFromBool((cpu.status & @intFromEnum(
+            Cpu.FlagBit.zero,
+        )) != 0);
+        cpu.flags.i = @intFromBool((cpu.status & @intFromEnum(
+            Cpu.FlagBit.intDisable,
+        )) != 0);
+        cpu.flags.d = @intFromBool((cpu.status & @intFromEnum(
+            Cpu.FlagBit.decimal,
+        )) != 0);
+        cpu.flags.b = @intFromBool((cpu.status & @intFromEnum(
+            Cpu.FlagBit.brk,
+        )) != 0);
+        cpu.flags.v = @intFromBool((cpu.status & @intFromEnum(
+            Cpu.FlagBit.overflow,
+        )) != 0);
+        cpu.flags.n = @intFromBool((cpu.status & @intFromEnum(
+            Cpu.FlagBit.negative,
+        )) != 0);
     }
 
     fn fetchByte(cpu: *Cpu) i8 {
@@ -480,11 +512,11 @@ pub const Cpu = struct {
         return @as(u16, cpu.sp) | 0x100;
     }
 
-    fn pushW(cpu: *Cpu, val: u16) void {
+    pub fn pushW(cpu: *Cpu, val: u16) void {
+        cpu.sp -%= 1;
         cpu.writeByte(@truncate(val >> 8), spToAddr(cpu));
         cpu.sp -%= 1;
         cpu.writeByte(@truncate(val & 0xff), spToAddr(cpu));
-        cpu.sp -%= 1;
     }
 
     fn pushB(cpu: *Cpu, val: u8) void {
@@ -504,14 +536,14 @@ pub const Cpu = struct {
         return val;
     }
 
-    fn popW(cpu: *Cpu) u16 {
-        const val_stack: u16 = cpu.readWord(spToAddr(cpu) + 1);
+    pub fn popW(cpu: *Cpu) u16 {
+        const val_stack: u16 = cpu.readWord(spToAddr(cpu));
         cpu.sp +%= 2;
         cpu.cycles_executed +%= 1;
         return val_stack;
     }
 
-    fn updateFlags(cpu: *Cpu, reg: u8) void {
+    pub fn updateFlags(cpu: *Cpu, reg: u8) void {
         cpu.flags.z = 0;
         if (reg == 0) cpu.flags.z = 1;
         cpu.flags.n = 0;
@@ -523,17 +555,17 @@ pub const Cpu = struct {
         cpu.updateFlags(reg.*);
     }
 
-    fn bitAnd(cpu: *Cpu, addr: u16) void {
+    pub fn bitAnd(cpu: *Cpu, addr: u16) void {
         cpu.a &= cpu.readByte(addr);
         cpu.updateFlags(cpu.a);
     }
 
-    fn bitOra(cpu: *Cpu, addr: u16) void {
+    pub fn bitOra(cpu: *Cpu, addr: u16) void {
         cpu.a |= cpu.readByte(addr);
         cpu.updateFlags(cpu.a);
     }
 
-    fn bitXor(cpu: *Cpu, addr: u16) void {
+    pub fn bitXor(cpu: *Cpu, addr: u16) void {
         cpu.a ^= cpu.readByte(addr);
         cpu.updateFlags(cpu.a);
     }
@@ -554,43 +586,79 @@ pub const Cpu = struct {
     }
 
     pub fn adc(cpu: *Cpu, op: u8) void {
-        const signs_equ: bool = (cpu.a ^ op) &
-            @intFromEnum(Cpu.FlagBit.negative) == 0;
-        const old_sign: bool = (cpu.a &
-            @as(u8, @intFromEnum(Cpu.FlagBit.negative))) != 0;
-        const sum: u16 = @as(u16, cpu.a) + @as(u16, op) +
-            @as(u16, cpu.flags.c);
-        cpu.a = @truncate(sum & 0xFF);
-        cpu.flags.c = @intFromBool(sum > 0xFF);
-        cpu.flags.z = @intFromBool(cpu.a == 0);
-        cpu.flags.n = @intFromBool((cpu.a &
-            @intFromEnum(Cpu.FlagBit.negative)) != 0);
-        const new_sign: bool = (cpu.a &
-            @as(u8, @intFromEnum(Cpu.FlagBit.negative))) != 0;
-        cpu.flags.v = @intFromBool(signs_equ and (old_sign != new_sign));
+        if (cpu.flags.d == 1) {
+            // Decimal mode (BCD)
+            const sum: u16 = @as(u16, cpu.a) + @as(u16, op) +
+                @as(u16, cpu.flags.c);
+            var al: u8 = (cpu.a & 0x0F) + (op & 0x0F) + @as(u8, cpu.flags.c);
+            if (al > 0x09) al += 0x06;
+            var ah: u8 = (cpu.a >> 4) + (op >> 4) +
+                @as(u8, @intFromBool(al > 0x0F));
+            if (ah > 0x09) ah += 0x06;
+            cpu.a = ((ah & 0x0F) << 4) | (al & 0x0F);
+            cpu.flags.c = @intFromBool(sum > 0x99);
+            cpu.flags.z = @intFromBool(cpu.a == 0);
+            cpu.flags.n = @intFromBool((cpu.a & 0x80) != 0);
+            cpu.flags.v = @intFromBool(((cpu.a ^ op) & 0x80) == 0 and
+                ((cpu.a ^ sum) & 0x80) != 0);
+        } else {
+            // Binary mode
+            const signs_equ: bool = (cpu.a ^ op) &
+                @intFromEnum(Cpu.FlagBit.negative) == 0;
+            const old_sign: bool = (cpu.a &
+                @as(u8, @intFromEnum(Cpu.FlagBit.negative))) != 0;
+            const sum: u16 = @as(u16, cpu.a) + @as(u16, op) +
+                @as(u16, cpu.flags.c);
+            cpu.a = @truncate(sum & 0xFF);
+            cpu.flags.c = @intFromBool(sum > 0xFF);
+            cpu.flags.z = @intFromBool(cpu.a == 0);
+            cpu.flags.n = @intFromBool((cpu.a &
+                @intFromEnum(Cpu.FlagBit.negative)) != 0);
+            const new_sign: bool = (cpu.a &
+                @as(u8, @intFromEnum(Cpu.FlagBit.negative))) != 0;
+            cpu.flags.v = @intFromBool(signs_equ and (old_sign != new_sign));
+        }
     }
 
     pub fn sbc(cpu: *Cpu, op: u8) void {
-        const old_sign: bool = (cpu.a &
-            @as(u8, @intFromEnum(Cpu.FlagBit.negative))) != 0;
-
-        const result: i16 =
-            @as(i16, cpu.a) -
-            @as(i16, op) -
-            @as(i16, 1 - cpu.flags.c);
-
-        if (cpu.a > op) cpu.flags.c = 1;
-        cpu.a = @as(u8, @truncate(@as(u16, @bitCast(result & 0xFF))));
-
-        const new_sign: bool = (cpu.a &
-            @as(u8, @intFromEnum(Cpu.FlagBit.negative))) != 0;
-
-        cpu.flags.v = @intFromBool(old_sign != new_sign);
-
-        cpu.updateFlags(cpu.a);
+        if (cpu.flags.d == 1) {
+            // Decimal mode (BCD)
+            var al: i16 = @as(i16, cpu.a & 0x0F) - @as(i16, op & 0x0F) -
+                @as(i16, 1 - cpu.flags.c);
+            if (al < 0) al -= 0x06;
+            var ah: i16 = @as(i16, cpu.a >> 4) - @as(i16, op >> 4) -
+                @as(i16, @intFromBool(al < 0));
+            if (ah < 0) ah -= 0x06;
+            const al_u8: u8 = @as(u8, @truncate(@as(u16, @bitCast(al & 0x0F))));
+            const ah_u8: u8 = @as(u8, @truncate(@as(u16, @bitCast(ah & 0x0F))));
+            cpu.a = (ah_u8 << 4) | al_u8;
+            const result: i16 = @as(i16, cpu.a) - @as(i16, op) -
+                @as(i16, 1 - cpu.flags.c);
+            cpu.flags.c = @intFromBool(result >= 0);
+            cpu.flags.z = @intFromBool(cpu.a == 0);
+            cpu.flags.n = @intFromBool((cpu.a & 0x80) != 0);
+            cpu.flags.v = @intFromBool(((cpu.a ^ op) & 0x80) != 0 and
+                ((cpu.a ^ result) & 0x80) != 0);
+        } else {
+            // Binary mode
+            const old_sign: bool = (cpu.a & @as(u8, @intFromEnum(
+                Cpu.FlagBit.negative,
+            ))) != 0;
+            const result: i16 = @as(i16, cpu.a) - @as(i16, op) - @as(
+                i16,
+                1 - cpu.flags.c,
+            );
+            if (cpu.a > op) cpu.flags.c = 1;
+            cpu.a = @as(u8, @truncate(@as(u16, @bitCast(result & 0xFF))));
+            const new_sign: bool = (cpu.a & @as(u8, @intFromEnum(
+                Cpu.FlagBit.negative,
+            ))) != 0;
+            cpu.flags.v = @intFromBool(old_sign != new_sign);
+            cpu.updateFlags(cpu.a);
+        }
     }
 
-    fn asl(cpu: *Cpu, op: u8) u8 {
+    pub fn asl(cpu: *Cpu, op: u8) u8 {
         cpu.flags.c = @as(u1, @intFromBool(op &
             @intFromEnum(Cpu.FlagBit.negative) > 0));
         const res: u8 = op << 1;
@@ -599,7 +667,7 @@ pub const Cpu = struct {
         return res;
     }
 
-    fn lsr(cpu: *Cpu, op: u8) u8 {
+    pub fn lsr(cpu: *Cpu, op: u8) u8 {
         cpu.flags.c = @as(u1, @intFromBool(op &
             @intFromEnum(Cpu.FlagBit.carry) > 0));
         const res: u8 = op >> 1;
@@ -608,7 +676,7 @@ pub const Cpu = struct {
         return res;
     }
 
-    fn rol(cpu: *Cpu, op: u8) u8 {
+    pub fn rol(cpu: *Cpu, op: u8) u8 {
         const old_carry: u8 = cpu.flags.c;
         cpu.flags.c = @intFromBool((op &
             @intFromEnum(Cpu.FlagBit.negative)) != 0); // Store bit 7 in carry flag
@@ -618,7 +686,7 @@ pub const Cpu = struct {
         return res;
     }
 
-    fn ror(cpu: *Cpu, op: u8) u8 {
+    pub fn ror(cpu: *Cpu, op: u8) u8 {
         const old_carry: u8 = cpu.flags.c; // Store the old carry bit before shifting
         cpu.flags.c = @intFromBool((op &
             @intFromEnum(Cpu.FlagBit.carry)) != 0); // Store bit 0 in carry flag
@@ -668,7 +736,7 @@ pub const Cpu = struct {
 
     fn addrAbsX(cpu: *Cpu) u16 {
         const abs_addr: u16 = fetchWord(cpu);
-        const abs_addr_x: u16 = abs_addr + cpu.x;
+        const abs_addr_x: u16 = abs_addr +% cpu.x;
         const pg_boundary: u16 = (abs_addr ^ abs_addr_x) >> 8;
         if (pg_boundary != 0) {
             cpu.cycles_executed +%= 1;
@@ -678,14 +746,14 @@ pub const Cpu = struct {
 
     fn addrAbsX5(cpu: *Cpu) u16 {
         const abs_addr: u16 = fetchWord(cpu);
-        const abs_addr_x: u16 = abs_addr + cpu.x;
+        const abs_addr_x: u16 = abs_addr +% cpu.x;
         cpu.cycles_executed +%= 1;
         return abs_addr_x;
     }
 
     fn addrAbsY(cpu: *Cpu) u16 {
         const abs_addr: u16 = fetchWord(cpu);
-        const abs_addr_y: u16 = abs_addr + cpu.y;
+        const abs_addr_y: u16 = abs_addr +% cpu.y; // Wrapping addition
         const pg_boundary: u16 = (abs_addr ^ abs_addr_y) >> 8;
         if (pg_boundary != 0) {
             cpu.cycles_executed +%= 1;
@@ -695,7 +763,7 @@ pub const Cpu = struct {
 
     fn addrAbsY5(cpu: *Cpu) u16 {
         const abs_addr: u16 = fetchWord(cpu);
-        const abs_addr_y: u16 = abs_addr + cpu.y;
+        const abs_addr_y: u16 = abs_addr +% cpu.y;
         cpu.cycles_executed +%= 1;
         return abs_addr_y;
     }
@@ -704,14 +772,16 @@ pub const Cpu = struct {
         var zp_addr: u8 = fetchUByte(cpu);
         zp_addr +%= cpu.x;
         cpu.cycles_executed +%= 1;
-        const eff_addr: u16 = cpu.readWord(zp_addr);
+        const lo: u8 = cpu.readByte(zp_addr);
+        const hi: u8 = cpu.readByte(@as(u8, zp_addr +% 1)); // Wrap within $00-$FF
+        const eff_addr: u16 = @as(u16, lo) | (@as(u16, hi) << 8);
         return eff_addr;
     }
 
     fn addrIndY(cpu: *Cpu) u16 {
         const zp_addr: u8 = fetchUByte(cpu);
         const eff_addr: u16 = cpu.readWord(zp_addr);
-        const eff_addr_y: u16 = eff_addr + cpu.y;
+        const eff_addr_y: u16 = eff_addr +% cpu.y; // Wrapping addition
         const pg_boundary: u16 = (eff_addr ^ eff_addr_y) >> 8;
         if (pg_boundary != 0) {
             cpu.cycles_executed +%= 1;
@@ -722,7 +792,7 @@ pub const Cpu = struct {
     fn addrIndY6(cpu: *Cpu) u16 {
         const zp_addr: u8 = fetchUByte(cpu);
         const eff_addr: u16 = cpu.readWord(zp_addr);
-        const eff_addr_y: u16 = eff_addr + cpu.y;
+        const eff_addr_y: u16 = eff_addr +% cpu.y;
         return eff_addr_y;
     }
 
@@ -736,6 +806,7 @@ pub const Cpu = struct {
 
     pub fn runStep(cpu: *Cpu) u8 {
         cpu.sid_reg_written = false;
+        cpu.sid_reg_changed = false;
         cpu.c64.vic.vsync_happened = false;
         cpu.c64.vic.hsync_happened = false;
         cpu.c64.vic.badline_happened = false;
@@ -980,19 +1051,20 @@ pub const Cpu = struct {
                 const addr: u16 = addrAbsY5(cpu);
                 cpu.writeByte(cpu.a, addr);
             },
+
             0x20 => {
                 const jsr_addr: u16 = fetchWord(cpu);
-                const ret_addr: u16 = cpu.pc - 1;
                 cpu.pushW(cpu.pc - 1);
                 cpu.pc = jsr_addr;
                 cpu.cycles_executed +%= 1;
                 if (cpu.c64.cpu_dbg_enabled) {
                     stdout.print("[cpu] Calling {X:0>4}, return to {X:0>4}\n", .{
                         jsr_addr,
-                        ret_addr,
+                        cpu.pc - 1,
                     }) catch {};
                 }
             },
+
             0x60 => {
                 const ret_addr: u16 = popW(cpu);
                 cpu.pc = ret_addr + 1;
@@ -1018,11 +1090,15 @@ pub const Cpu = struct {
                 const addr: u16 = addrAbs(cpu);
                 cpu.pc = addr;
             },
+
             0x6C => {
-                var addr: u16 = addrAbs(cpu);
-                addr = cpu.readWord(addr);
-                cpu.pc = addr;
+                const addr: u16 = addrAbs(cpu);
+                const lo: u8 = cpu.readByte(addr);
+                const hi_addr: u16 = (addr & 0xFF00) | ((addr + 1) & 0x00FF); // Wrap to $xx00
+                const hi: u8 = cpu.readByte(hi_addr);
+                cpu.pc = @as(u16, lo) | (@as(u16, hi) << 8);
             },
+
             0xBA => {
                 cpu.x = cpu.sp;
                 cpu.cycles_executed +%= 1;
