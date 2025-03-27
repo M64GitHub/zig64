@@ -1290,3 +1290,611 @@ test "JSR and RTS" {
     try std.testing.expectEqual(0x1003, c64.cpu.pc);
     try std.testing.expectEqual(0xFD, c64.cpu.sp);
 }
+
+test "STA to SID D417" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+    resetCpu(&c64.cpu);
+    c64.cpu.a = 0xCF;
+    c64.mem.data[0x1000] = 0x8D; // STA $D417
+    c64.mem.data[0x1001] = 0x17;
+    c64.mem.data[0x1002] = 0xD4;
+    _ = c64.cpu.runStep();
+    try std.testing.expectEqual(0xCF, c64.cpu.c64.sid.registers[23]);
+}
+
+test "AND immediate preserves bit 7" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.a = 0xFF; // All bits set
+    c64.mem.data[0x1000] = 0x29; // AND #$CF
+    c64.mem.data[0x1001] = 0xCF;
+    c64.mem.data[0x1002] = 0x8D; // STA $D417
+    c64.mem.data[0x1003] = 0x17;
+    c64.mem.data[0x1004] = 0xD4;
+    _ = c64.cpu.runStep(); // AND
+    try std.testing.expectEqual(0xCF, c64.cpu.a);
+    _ = c64.cpu.runStep(); // STA
+    try std.testing.expectEqual(0xCF, c64.cpu.c64.sid.registers[23]);
+}
+
+test "ORA immediate sets bit 7" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.a = 0x00;
+    c64.mem.data[0x1000] = 0x09; // ORA #$80
+    c64.mem.data[0x1001] = 0x80;
+    c64.mem.data[0x1002] = 0x8D; // STA $D417
+    c64.mem.data[0x1003] = 0x17;
+    c64.mem.data[0x1004] = 0xD4;
+    _ = c64.cpu.runStep(); // ORA
+    try std.testing.expectEqual(0x80, c64.cpu.a);
+    _ = c64.cpu.runStep(); // STA
+    try std.testing.expectEqual(0x80, c64.cpu.c64.sid.registers[23]);
+}
+
+test "EOR immediate flips bit 7" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.a = 0x4F; // Bit 7 off
+    c64.mem.data[0x1000] = 0x49; // EOR #$80
+    c64.mem.data[0x1001] = 0x80;
+    c64.mem.data[0x1002] = 0x8D; // STA $D417
+    c64.mem.data[0x1003] = 0x17;
+    c64.mem.data[0x1004] = 0xD4;
+    _ = c64.cpu.runStep(); // EOR
+    try std.testing.expectEqual(0xCF, c64.cpu.a); // $4F ^ $80 = $CF
+    _ = c64.cpu.runStep(); // STA
+    try std.testing.expectEqual(0xCF, c64.cpu.c64.sid.registers[23]);
+}
+
+test "ASL shifts into bit 7" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.a = 0x67; // 01100111
+    c64.mem.data[0x1000] = 0x0A; // ASL A
+    c64.mem.data[0x1001] = 0x8D; // STA $D417
+    c64.mem.data[0x1002] = 0x17;
+    c64.mem.data[0x1003] = 0xD4;
+    _ = c64.cpu.runStep(); // ASL
+    try std.testing.expectEqual(0xCE, c64.cpu.a); // $67 << 1 = $CE
+    try std.testing.expectEqual(0, c64.cpu.flags.c); // No carry
+    _ = c64.cpu.runStep(); // STA
+    try std.testing.expectEqual(0xCE, c64.cpu.c64.sid.registers[23]);
+}
+
+test "LSR clears bit 7" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.a = 0xCF; // 11001111
+    c64.mem.data[0x1000] = 0x4A; // LSR A
+    c64.mem.data[0x1001] = 0x8D; // STA $D417
+    c64.mem.data[0x1002] = 0x17;
+    c64.mem.data[0x1003] = 0xD4;
+    _ = c64.cpu.runStep(); // LSR
+    try std.testing.expectEqual(0x67, c64.cpu.a); // $CF >> 1 = $67
+    try std.testing.expectEqual(1, c64.cpu.flags.c); // Carry set
+    _ = c64.cpu.runStep(); // STA
+    try std.testing.expectEqual(0x67, c64.cpu.c64.sid.registers[23]);
+}
+
+test "ADC sets bit 7" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.a = 0x7F; // 01111111
+    c64.cpu.flags.c = 0;
+    c64.mem.data[0x1000] = 0x69; // ADC #$50
+    c64.mem.data[0x1001] = 0x50;
+    c64.mem.data[0x1002] = 0x8D; // STA $D417
+    c64.mem.data[0x1003] = 0x17;
+    c64.mem.data[0x1004] = 0xD4;
+    _ = c64.cpu.runStep(); // ADC
+    try std.testing.expectEqual(0xCF, c64.cpu.a); // $7F + $50 = $CF
+    try std.testing.expectEqual(0, c64.cpu.flags.c);
+    try std.testing.expectEqual(1, c64.cpu.flags.n);
+    _ = c64.cpu.runStep(); // STA
+    try std.testing.expectEqual(0xCF, c64.cpu.c64.sid.registers[23]);
+}
+
+test "ROL with carry sets bit 7" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.a = 0x4F; // 01001111
+    c64.cpu.flags.c = 1;
+    c64.mem.data[0x1000] = 0x2A; // ROL A
+    c64.mem.data[0x1001] = 0x8D; // STA $D417
+    c64.mem.data[0x1002] = 0x17;
+    c64.mem.data[0x1003] = 0xD4;
+    _ = c64.cpu.runStep(); // ROL
+    try std.testing.expectEqual(0x9F, c64.cpu.a); // ($4F << 1) | 1 = $9F
+    try std.testing.expectEqual(0, c64.cpu.flags.c);
+    _ = c64.cpu.runStep(); // STA
+    try std.testing.expectEqual(0x9F, c64.cpu.c64.sid.registers[23]);
+}
+
+test "STA absolute X to D417" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.a = 0xCF;
+    c64.cpu.x = 0x02;
+    c64.mem.data[0x1000] = 0x9D; // STA $D415,X
+    c64.mem.data[0x1001] = 0x15;
+    c64.mem.data[0x1002] = 0xD4;
+    _ = c64.cpu.runStep();
+    try std.testing.expectEqual(0xCF, c64.cpu.c64.sid.registers[23]); // $D417 = 23
+}
+
+// Test 1: Basic Indirect Indexed Read
+test "Basic Indirect Indexed LDA ($46),Y" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 0x00; // Start at Y=0
+    c64.cpu.pc = 0x1000;
+
+    // Set up pointer at $46,$47
+    c64.cpu.writeByte(0x50, 0x0046); // Low byte
+    c64.cpu.writeByte(0xAF, 0x0047); // High byte: $AF50
+    c64.cpu.writeByte(0xAA, 0xAF50); // Data at $AF50
+
+    // Program: LDA ($46),Y
+    c64.mem.data[0x1000] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0x1001] = 0x46;
+
+    _ = c64.cpu.runStep();
+    try testing.expectEqual(@as(u8, 0xAA), c64.cpu.a);
+    try testing.expectEqual(@as(u1, 0), c64.cpu.flags.z);
+    try testing.expectEqual(@as(u1, 1), c64.cpu.flags.n); // $AA is negative
+}
+
+// Test 2: Indirect Indexed with Y Increment
+test "Indirect Indexed LDA ($46),Y with Y Increment" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 0x00;
+    c64.cpu.pc = 0x1000;
+
+    // Fake table at $AF60
+    c64.cpu.writeByte(0x60, 0x0046); // $46 = $60
+    c64.cpu.writeByte(0xAF, 0x0047); // $47 = $AF
+    c64.cpu.writeByte(0x11, 0xAF60); // Y=0
+    c64.cpu.writeByte(0x22, 0xAF61); // Y=1
+    c64.cpu.writeByte(0x33, 0xAF62); // Y=2
+
+    // Program:
+    // LDA ($46),Y  ; $11
+    // INY
+    // LDA ($46),Y  ; $22
+    // INY
+    // LDA ($46),Y  ; $33
+    // STA $D401    ; Write to SID freq hi
+    c64.mem.data[0x1000] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0x1001] = 0x46;
+    c64.mem.data[0x1002] = 0xC8; // INY
+    c64.mem.data[0x1003] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0x1004] = 0x46;
+    c64.mem.data[0x1005] = 0xC8; // INY
+    c64.mem.data[0x1006] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0x1007] = 0x46;
+    c64.mem.data[0x1008] = 0x8D; // STA $D401
+    c64.mem.data[0x1009] = 0x01;
+    c64.mem.data[0x100A] = 0xD4;
+
+    _ = c64.cpu.runStep(); // LDA $11
+    _ = c64.cpu.runStep(); // INY
+    _ = c64.cpu.runStep(); // LDA $22
+    _ = c64.cpu.runStep(); // INY
+    _ = c64.cpu.runStep(); // LDA $33
+    _ = c64.cpu.runStep(); // STA $D401
+
+    try testing.expectEqual(@as(u8, 0x33), c64.cpu.a);
+    try testing.expectEqual(@as(u8, 0x33), c64.cpu.c64.sid.registers[1]);
+    try testing.expectEqual(@as(u8, 0x02), c64.cpu.y);
+}
+
+// Test 3: Replicate Log at $A7E1
+test "Indirect Indexed LDA ($46),Y from Log A7E1" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0xA7E1);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 0x01; // From log: Y=1 at $A7E1
+    c64.cpu.x = 0x01; // From log: X=1
+    c64.cpu.pc = 0xA7E1;
+
+    // From log: $46,$47 = $B22C
+    c64.cpu.writeByte(0x2C, 0x0046);
+    c64.cpu.writeByte(0xB2, 0x0047);
+    c64.cpu.writeByte(0x82, 0xB22D); // Y=1 should load $82 (matches $D417 write)
+
+    // Program from log
+    c64.mem.data[0xA7E1] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0xA7E2] = 0x46;
+    c64.mem.data[0xA7E3] = 0x8D; // STA $D417 (next in log)
+    c64.mem.data[0xA7E4] = 0x17;
+    c64.mem.data[0xA7E5] = 0xD4;
+
+    _ = c64.cpu.runStep(); // LDA ($46),Y
+    try testing.expectEqual(@as(u8, 0x82), c64.cpu.a); // Should load $82
+    _ = c64.cpu.runStep(); // STA $D417
+    try testing.expectEqual(@as(u8, 0x82), c64.cpu.c64.sid.registers[23]);
+}
+
+// Test 5: Pointer Update and Read
+test "Indirect Indexed LDA ($46),Y with Pointer Update" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 0x00;
+    c64.cpu.pc = 0x1000;
+
+    // Initial table at $AF70, then switch to $AF80
+    c64.cpu.writeByte(0x70, 0x0046);
+    c64.cpu.writeByte(0xAF, 0x0047);
+    c64.cpu.writeByte(0xBB, 0xAF70);
+    c64.cpu.writeByte(0xCC, 0xAF80);
+
+    // Program:
+    // LDA ($46),Y  ; $BB from $AF70
+    // STA $D418
+    // LDA #$80     ; Update $46 to $80
+    // STA $46
+    // LDA ($46),Y  ; $CC from $AF80
+    // STA $D418
+    c64.mem.data[0x1000] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0x1001] = 0x46;
+    c64.mem.data[0x1002] = 0x8D; // STA $D418
+    c64.mem.data[0x1003] = 0x18;
+    c64.mem.data[0x1004] = 0xD4;
+    c64.mem.data[0x1005] = 0xA9; // LDA #$80
+    c64.mem.data[0x1006] = 0x80;
+    c64.mem.data[0x1007] = 0x85; // STA $46
+    c64.mem.data[0x1008] = 0x46;
+    c64.mem.data[0x1009] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0x100A] = 0x46;
+    c64.mem.data[0x100B] = 0x8D; // STA $D418
+    c64.mem.data[0x100C] = 0x18;
+    c64.mem.data[0x100D] = 0xD4;
+
+    _ = c64.cpu.runStep(); // LDA $BB
+    _ = c64.cpu.runStep(); // STA $D418
+    try testing.expectEqual(@as(u8, 0xBB), c64.cpu.c64.sid.registers[24]);
+    _ = c64.cpu.runStep(); // LDA #$80
+    _ = c64.cpu.runStep(); // STA $46
+    _ = c64.cpu.runStep(); // LDA $CC
+    _ = c64.cpu.runStep(); // STA $D418
+    try testing.expectEqual(@as(u8, 0xCC), c64.cpu.c64.sid.registers[24]);
+    try testing.expectEqual(@as(u8, 0x80), c64.cpu.readByte(0x0046));
+}
+
+test "Indirect Indexed LDA ($46),Y Table Sequence" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 0x00;
+    c64.cpu.pc = 0x1000;
+
+    c64.cpu.writeByte(0x90, 0x0046);
+    c64.cpu.writeByte(0xAF, 0x0047);
+    c64.cpu.writeByte(0x04, 0xAF90);
+    c64.cpu.writeByte(0x1A, 0xAF91);
+    c64.cpu.writeByte(0xFF, 0xAF92);
+
+    c64.mem.data[0x1000] = 0xA0; // LDY #$00
+    c64.mem.data[0x1001] = 0x00;
+    c64.mem.data[0x1002] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0x1003] = 0x46;
+    c64.mem.data[0x1004] = 0xC9; // CMP #$FF
+    c64.mem.data[0x1005] = 0xFF;
+    c64.mem.data[0x1006] = 0xF0; // BEQ END
+    c64.mem.data[0x1007] = 0x07; // Offset +7 to $100F
+    c64.mem.data[0x1008] = 0x8D; // STA $D401
+    c64.mem.data[0x1009] = 0x01;
+    c64.mem.data[0x100A] = 0xD4;
+    c64.mem.data[0x100B] = 0xC8; // INY
+    c64.mem.data[0x100C] = 0x4C; // JMP LOOP
+    c64.mem.data[0x100D] = 0x02;
+    c64.mem.data[0x100E] = 0x10;
+    c64.mem.data[0x100F] = 0xEA; // NOP (END)
+
+    _ = c64.cpu.runStep(); // LDY #$00
+    _ = c64.cpu.runStep(); // LDA $04
+    try testing.expectEqual(@as(u8, 0x04), c64.cpu.a);
+    _ = c64.cpu.runStep(); // CMP #$FF
+    _ = c64.cpu.runStep(); // BEQ (no)
+    _ = c64.cpu.runStep(); // STA $D401
+    try testing.expectEqual(@as(u8, 0x04), c64.cpu.c64.sid.registers[1]);
+    _ = c64.cpu.runStep(); // INY
+    _ = c64.cpu.runStep(); // JMP $1002
+    _ = c64.cpu.runStep(); // LDA $1A
+    try testing.expectEqual(@as(u8, 0x1A), c64.cpu.a);
+    _ = c64.cpu.runStep(); // CMP #$FF
+    _ = c64.cpu.runStep(); // BEQ (no)
+    _ = c64.cpu.runStep(); // STA $D401
+    try testing.expectEqual(@as(u8, 0x1A), c64.cpu.c64.sid.registers[1]);
+    _ = c64.cpu.runStep(); // INY
+    _ = c64.cpu.runStep(); // JMP $1002
+    _ = c64.cpu.runStep(); // LDA $FF
+    try testing.expectEqual(@as(u8, 0xFF), c64.cpu.a);
+    _ = c64.cpu.runStep(); // CMP #$FF
+    _ = c64.cpu.runStep(); // BEQ (yes)
+    try testing.expectEqual(@as(u16, 0x100F), c64.cpu.pc);
+}
+
+// Test Indirect Indexed with Page Crossing and Bit Manipulation
+test "Indirect Indexed LDA ($46),Y with Page Cross and ASL" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 0xFF; // Y=255, will cross page
+    c64.cpu.pc = 0x1000;
+
+    // Pointer at $46: $AFFE + $FF = $B0FD -> $B0FE
+    c64.cpu.writeByte(0xFE, 0x0046);
+    c64.cpu.writeByte(0xAF, 0x0047);
+    c64.cpu.writeByte(0x42, 0xB0FD); // $AFFE + $FF = $B0FD
+
+    // Program:
+    // LDA ($46),Y  ; Load $42 from $B0FD
+    // ASL A        ; Shift left: $42 -> $84
+    // STA $D401    ; Write to SID freq hi
+    c64.mem.data[0x1000] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0x1001] = 0x46;
+    c64.mem.data[0x1002] = 0x0A; // ASL A
+    c64.mem.data[0x1003] = 0x8D; // STA $D401
+    c64.mem.data[0x1004] = 0x01;
+    c64.mem.data[0x1005] = 0xD4;
+
+    _ = c64.cpu.runStep(); // LDA $42
+    try testing.expectEqual(@as(u8, 0x42), c64.cpu.a);
+    _ = c64.cpu.runStep(); // ASL
+    try testing.expectEqual(@as(u8, 0x84), c64.cpu.a);
+    try testing.expectEqual(@as(u1, 0), c64.cpu.flags.c); // No carry
+    try testing.expectEqual(@as(u1, 1), c64.cpu.flags.n); // Negative
+    _ = c64.cpu.runStep(); // STA
+    try testing.expectEqual(@as(u8, 0x84), c64.cpu.c64.sid.registers[1]);
+}
+
+// Test Table Read with Stack Wrap and EOR
+test "Indirect Indexed LDA ($46),Y with Stack Wrap and EOR" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 0x01;
+    c64.cpu.sp = 0x00; // Stack at $0100
+    c64.cpu.pc = 0x1000;
+
+    // Pointer at $46: $AF00
+    c64.cpu.writeByte(0x00, 0x0046);
+    c64.cpu.writeByte(0xAF, 0x0047);
+    c64.cpu.writeByte(0x55, 0xAF01); // Y=1
+
+    // Program:
+    // LDA ($46),Y  ; Load $55
+    // PHA          ; Push to stack ($0100)
+    // LDA #$AA     ; Load mask
+    // EOR $0100    ; XOR with stack value: $55 ^ $AA = $FF
+    // STA $D418    ; Write to SID volume
+    c64.mem.data[0x1000] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0x1001] = 0x46;
+    c64.mem.data[0x1002] = 0x48; // PHA
+    c64.mem.data[0x1003] = 0xA9; // LDA #$AA
+    c64.mem.data[0x1004] = 0xAA;
+    c64.mem.data[0x1005] = 0x4D; // EOR $0100
+    c64.mem.data[0x1006] = 0x00;
+    c64.mem.data[0x1007] = 0x01;
+    c64.mem.data[0x1008] = 0x8D; // STA $D418
+    c64.mem.data[0x1009] = 0x18;
+    c64.mem.data[0x100A] = 0xD4;
+
+    _ = c64.cpu.runStep(); // LDA $55
+    try testing.expectEqual(@as(u8, 0x55), c64.cpu.a);
+    _ = c64.cpu.runStep(); // PHA
+    try testing.expectEqual(@as(u8, 0x55), c64.cpu.readByte(0x0100));
+    try testing.expectEqual(@as(u8, 0xFF), c64.cpu.sp);
+    _ = c64.cpu.runStep(); // LDA #$AA
+    _ = c64.cpu.runStep(); // EOR $0100
+    try testing.expectEqual(@as(u8, 0xFF), c64.cpu.a); // $55 ^ $AA
+    try testing.expectEqual(@as(u1, 1), c64.cpu.flags.n);
+    _ = c64.cpu.runStep(); // STA $D418
+    try testing.expectEqual(@as(u8, 0xFF), c64.cpu.c64.sid.registers[24]);
+}
+
+// Test Indirect Indexed with AND and Negative Offset Branch
+test "Indirect Indexed LDA ($46),Y with AND and BNE Edge" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 0x00;
+    c64.cpu.pc = 0x1000;
+
+    // Table at $AF00
+    c64.cpu.writeByte(0x00, 0x0046);
+    c64.cpu.writeByte(0xAF, 0x0047);
+    c64.cpu.writeByte(0xF0, 0xAF00); // Y=0
+    c64.cpu.writeByte(0x0F, 0xAF01); // Y=1 (end)
+
+    // Program:
+    // LDY #$00
+    // LOOP:
+    // LDA ($46),Y  ; Load table value
+    // AND #$0F     ; Mask lower nibble
+    // BNE LOOP     ; Branch back if not zero (offset -6)
+    // STA $D417    ; Write to SID filter
+    c64.mem.data[0x1000] = 0xA0; // LDY #$00
+    c64.mem.data[0x1001] = 0x00;
+    c64.mem.data[0x1002] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0x1003] = 0x46;
+    c64.mem.data[0x1004] = 0x29; // AND #$0F
+    c64.mem.data[0x1005] = 0x0F;
+    c64.mem.data[0x1006] = 0xD0; // BNE LOOP
+    c64.mem.data[0x1007] = 0xFA; // Offset -6 to $1002 (-6 = 0xFA in two’s complement)
+    c64.mem.data[0x1008] = 0x8D; // STA $D417
+    c64.mem.data[0x1009] = 0x17;
+    c64.mem.data[0x100A] = 0xD4;
+
+    _ = c64.cpu.runStep(); // LDY #$00
+    _ = c64.cpu.runStep(); // LDA $F0
+    try testing.expectEqual(@as(u8, 0xF0), c64.cpu.a);
+    _ = c64.cpu.runStep(); // AND #$0F
+    try testing.expectEqual(@as(u8, 0x00), c64.cpu.a); // $F0 & $0F = $00
+    try testing.expectEqual(@as(u1, 1), c64.cpu.flags.z);
+    _ = c64.cpu.runStep(); // BNE (no branch, z=1)
+    try testing.expectEqual(@as(u16, 0x1008), c64.cpu.pc);
+    _ = c64.cpu.runStep(); // STA $D417
+    try testing.expectEqual(@as(u8, 0x00), c64.cpu.c64.sid.registers[23]);
+    // Reset and loop again
+    c64.cpu.y = 0x01;
+    c64.cpu.pc = 0x1002;
+    _ = c64.cpu.runStep(); // LDA $0F
+    try testing.expectEqual(@as(u8, 0x0F), c64.cpu.a);
+    _ = c64.cpu.runStep(); // AND #$0F
+    try testing.expectEqual(@as(u8, 0x0F), c64.cpu.a);
+    try testing.expectEqual(@as(u1, 0), c64.cpu.flags.z);
+    _ = c64.cpu.runStep(); // BNE (branch to $1002)
+    try testing.expectEqual(@as(u16, 0x1002), c64.cpu.pc);
+}
+
+// Test ROR with Debug
+test "Indirect Indexed LDA ($46),Y Loop with ROR and BEQ Edge" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 0x00;
+    c64.cpu.pc = 0x1000;
+
+    c64.cpu.writeByte(0xFF, 0x0046);
+    c64.cpu.writeByte(0xAF, 0x0047);
+    c64.cpu.writeByte(0x81, 0xAFFF);
+    c64.cpu.writeByte(0x01, 0xB000);
+    c64.cpu.writeByte(0x00, 0xB001);
+
+    c64.mem.data[0x1000] = 0xA0;
+    c64.mem.data[0x1001] = 0x00;
+    c64.mem.data[0x1002] = 0xB1;
+    c64.mem.data[0x1003] = 0x46;
+    c64.mem.data[0x1004] = 0x6A;
+    c64.mem.data[0x1005] = 0xC9;
+    c64.mem.data[0x1006] = 0x00;
+    c64.mem.data[0x1007] = 0xF0;
+    c64.mem.data[0x1008] = 0x07;
+    c64.mem.data[0x1009] = 0x8D;
+    c64.mem.data[0x100A] = 0x01;
+    c64.mem.data[0x100B] = 0xD4;
+    c64.mem.data[0x100C] = 0xC8;
+    c64.mem.data[0x100D] = 0x4C;
+    c64.mem.data[0x100E] = 0x02;
+    c64.mem.data[0x100F] = 0x10;
+    c64.mem.data[0x1010] = 0xEA;
+
+    _ = c64.cpu.runStep(); // LDY
+    _ = c64.cpu.runStep(); // LDA $81
+    try testing.expectEqual(@as(u8, 0x81), c64.cpu.a);
+    _ = c64.cpu.runStep(); // ROR
+    try testing.expectEqual(@as(u8, 0x40), c64.cpu.a);
+    try testing.expectEqual(@as(u1, 1), c64.cpu.flags.c);
+}
+
+test "Indirect Indexed LDA ($FF),Y with Zero-Page Wrap" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 0x02;
+    c64.cpu.pc = 0x1000;
+
+    c64.cpu.writeByte(0xFE, 0x00FF);
+    c64.cpu.writeByte(0xAF, 0x0000);
+    c64.cpu.writeByte(0x77, 0xB000);
+
+    c64.mem.data[0x1000] = 0xB1;
+    c64.mem.data[0x1001] = 0xFF;
+    c64.mem.data[0x1002] = 0x8D;
+    c64.mem.data[0x1003] = 0x18;
+    c64.mem.data[0x1004] = 0xD4;
+
+    _ = c64.cpu.runStep(); // Execute $B1
+    try testing.expectEqual(@as(u8, 0x77), c64.cpu.a);
+    _ = c64.cpu.runStep();
+    try testing.expectEqual(@as(u8, 0x77), c64.cpu.c64.sid.registers[24]);
+}
+
+test "SID $D419 Write" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.a = 0xCF;
+    c64.mem.data[0x1000] = 0x8D; // STA $D419
+    c64.mem.data[0x1001] = 0x18;
+    c64.mem.data[0x1002] = 0xD4;
+
+    _ = c64.cpu.runStep();
+    try std.testing.expectEqual(0xCF, c64.cpu.c64.sid.registers[24]);
+}
+
+test "SID $A7E6 to $D418" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0xA7E1);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 0x01;
+    c64.cpu.x = 0x01;
+    c64.cpu.sp = 0xFB;
+    c64.cpu.pc = 0xA7E1;
+
+    c64.cpu.writeByte(0x2C, 0x0046);
+    c64.cpu.writeByte(0xB2, 0x0047);
+    c64.cpu.writeByte(0x82, 0xB22D); // From log
+
+    // $A7E1 to $A7E8
+    c64.mem.data[0xA7E1] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0xA7E2] = 0x46;
+    c64.mem.data[0xA7E3] = 0x8D; // STA $D417
+    c64.mem.data[0xA7E4] = 0x17;
+    c64.mem.data[0xA7E5] = 0xD4;
+    c64.mem.data[0xA7E6] = 0x20; // JSR $A932
+    c64.mem.data[0xA7E7] = 0x32;
+    c64.mem.data[0xA7E8] = 0xA9;
+
+    // $A932 subroutine (from log)
+    c64.mem.data[0xA932] = 0xFE; // INC $30A6,X (placeholder)
+    c64.mem.data[0xA933] = 0x30;
+    c64.mem.data[0xA934] = 0xA6;
+    c64.mem.data[0xA935] = 0xC8; // INY
+    c64.mem.data[0xA936] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0xA937] = 0x46;
+    c64.mem.data[0xA938] = 0xC9; // CMP #$FF
+    c64.mem.data[0xA939] = 0xFF;
+
+    _ = c64.cpu.runStep(); // LDA $82
+    _ = c64.cpu.runStep(); // STA $D417
+    try std.testing.expectEqual(0x82, c64.cpu.c64.sid.registers[23]);
+    _ = c64.cpu.runStep(); // JSR $A932
+    // Add more steps if $D418 write is here
+}

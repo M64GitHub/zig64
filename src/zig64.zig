@@ -403,7 +403,13 @@ pub const Cpu = struct {
 
     pub fn readWord(cpu: *Cpu, addr: u16) u16 {
         const LoByte: u8 = cpu.readByte(addr);
-        const HiByte: u8 = cpu.readByte(addr + 1);
+        const HiByte: u8 = cpu.readByte(addr + 1); // No wrap for stack, etc.
+        return @as(u16, LoByte) | (@as(u16, HiByte) << 8);
+    }
+
+    pub fn readWordZP(cpu: *Cpu, addr: u8) u16 {
+        const LoByte: u8 = cpu.readByte(addr);
+        const HiByte: u8 = cpu.readByte((addr +% 1) & 0xFF); // Wrap for zero page
         return @as(u16, LoByte) | (@as(u16, HiByte) << 8);
     }
 
@@ -751,9 +757,18 @@ pub const Cpu = struct {
     fn addrAbsX5(cpu: *Cpu) u16 {
         const abs_addr: u16 = fetchWord(cpu);
         const abs_addr_x: u16 = abs_addr +% cpu.x;
-        cpu.cycles_executed +%= 1;
+        const pg_boundary: u16 = (abs_addr ^ abs_addr_x) >> 8;
+        if (pg_boundary != 0) {
+            cpu.cycles_executed +%= 1;
+        }
         return abs_addr_x;
     }
+    // fn addrAbsX5(cpu: *Cpu) u16 {
+    //     const abs_addr: u16 = fetchWord(cpu);
+    //     const abs_addr_x: u16 = abs_addr +% cpu.x;
+    //     cpu.cycles_executed +%= 1;
+    //     return abs_addr_x;
+    // }
 
     fn addrAbsY(cpu: *Cpu) u16 {
         const abs_addr: u16 = fetchWord(cpu);
@@ -765,27 +780,17 @@ pub const Cpu = struct {
         return abs_addr_y;
     }
 
-    fn addrAbsY5(cpu: *Cpu) u16 {
-        const abs_addr: u16 = fetchWord(cpu);
-        const abs_addr_y: u16 = abs_addr +% cpu.y;
-        cpu.cycles_executed +%= 1;
-        return abs_addr_y;
-    }
-
     fn addrIndX(cpu: *Cpu) u16 {
         var zp_addr: u8 = fetchUByte(cpu);
         zp_addr +%= cpu.x;
         cpu.cycles_executed +%= 1;
-        const lo: u8 = cpu.readByte(zp_addr);
-        const hi: u8 = cpu.readByte(@as(u8, zp_addr +% 1)); // Wrap within $00-$FF
-        const eff_addr: u16 = @as(u16, lo) | (@as(u16, hi) << 8);
-        return eff_addr;
+        return cpu.readWordZP(zp_addr);
     }
 
     fn addrIndY(cpu: *Cpu) u16 {
         const zp_addr: u8 = fetchUByte(cpu);
-        const eff_addr: u16 = cpu.readWord(zp_addr);
-        const eff_addr_y: u16 = eff_addr +% cpu.y; // Wrapping addition
+        const eff_addr: u16 = cpu.readWordZP(zp_addr); // Use zero-page version
+        const eff_addr_y: u16 = eff_addr +% cpu.y;
         const pg_boundary: u16 = (eff_addr ^ eff_addr_y) >> 8;
         if (pg_boundary != 0) {
             cpu.cycles_executed +%= 1;
@@ -793,12 +798,38 @@ pub const Cpu = struct {
         return eff_addr_y;
     }
 
+    fn addrAbsY5(cpu: *Cpu) u16 {
+        const abs_addr: u16 = fetchWord(cpu);
+        const abs_addr_y: u16 = abs_addr +% cpu.y;
+        const pg_boundary: u16 = (abs_addr ^ abs_addr_y) >> 8;
+        if (pg_boundary != 0) {
+            cpu.cycles_executed +%= 1;
+        }
+        return abs_addr_y;
+    }
+    // fn addrAbsY5(cpu: *Cpu) u16 {
+    //     const abs_addr: u16 = fetchWord(cpu);
+    //     const abs_addr_y: u16 = abs_addr +% cpu.y;
+    //     cpu.cycles_executed +%= 1;
+    //     return abs_addr_y;
+    // }
+
     fn addrIndY6(cpu: *Cpu) u16 {
         const zp_addr: u8 = fetchUByte(cpu);
-        const eff_addr: u16 = cpu.readWord(zp_addr);
+        const eff_addr: u16 = cpu.readWordZP(zp_addr);
         const eff_addr_y: u16 = eff_addr +% cpu.y;
+        const pg_boundary: u16 = (eff_addr ^ eff_addr_y) >> 8;
+        if (pg_boundary != 0) {
+            cpu.cycles_executed +%= 1;
+        }
         return eff_addr_y;
     }
+    // fn addrIndY6(cpu: *Cpu) u16 {
+    //     const zp_addr: u8 = fetchUByte(cpu);
+    //     const eff_addr: u16 = cpu.readWord(zp_addr);
+    //     const eff_addr_y: u16 = eff_addr +% cpu.y;
+    //     return eff_addr_y;
+    // }
 
     fn cmpReg(cpu: *Cpu, op: u8, reg_val: u8) void {
         const tmp: i8 = @as(i8, @bitCast(reg_val -% op));
