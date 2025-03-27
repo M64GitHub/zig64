@@ -347,8 +347,9 @@ Vic.printStatus()
 ## 🕹️ Examples
 Example code can be found in the folder `src/examples`.
 
-### Loading and Executing a demo program
-The program `loadprg-example.zig` demonstrates how to load and run a `.prg`.
+### Loading and Executing a demo program, disassembler
+The program `loadprg-example.zig` demonstrates how to load and run a `.prg`. 
+It also shows how to disassemble code.
 
 
 ```zig
@@ -365,7 +366,7 @@ pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
 
     const Args = struct {
-        file_name: []const u8,
+        prg: []const u8,
     };
 
     const args = try flagz.parse(Args, allocator);
@@ -382,10 +383,16 @@ pub fn main() !void {
     c64.sid_dbg_enabled = true;
 
     // load a .prg file from disk
-    try stdout.print("[EXE] Loading '{s}'\n", .{args.file_name});
-    const load_address = try c64.loadPrg(allocator, args.file_name, true);
-    try stdout.print("[EXE] Load address: {X:0>4}\n", .{load_address});
+    try stdout.print("[EXE] Loading '{s}'\n", .{args.prg});
+    const load_address = try c64.loadPrg(allocator, args.prg, true);
+    try stdout.print("[EXE] Load address: {X:0>4}\n\n", .{load_address});
 
+    // disassemble 31 instructions
+    try stdout.print("[EXE] Disassembling from: {X:0>4}\n", .{load_address});
+    c64.cpu.disassemble(load_address, 31);
+    try stdout.print("\n\n", .{});
+
+    try stdout.print("[EXE] RUN\n", .{});
     c64.run();
 }
 ```
@@ -407,6 +414,38 @@ zig build run-loadprg -- -f c64asm/test.prg
 [c64] writing mem: C002 offs: 0004 data: 00
 ...
 ...
+[EXE] Disassembling from: C000
+$C000: SEI
+$C001: LDA #$00
+$C003: STA $01
+$C005: LDX #$FF
+$C007: TXS
+$C008: LDY #$00
+$C00A: LDA #$41
+$C00C: STA $0400,Y
+$C00F: LDA #$01
+$C011: STA $D800,Y
+$C014: INY
+$C015: CPY #$FF
+$C017: BNE $C00A
+$C019: LDA #$05
+$C01B: LDX #$03
+$C01D: CLC
+$C01E: ADC #$02
+$C020: DEX
+$C021: BNE $C01D
+$C023: STA $D020
+$C026: LDA #$00
+$C028: CMP #$01
+$C02A: BEQ $C02E
+$C02C: BMI $C031
+$C02E: JMP $C036
+$C031: LDA #$FF
+$C033: STA $D021
+$C036: LDA #$37
+$C038: STA $01
+$C03A: CLI
+$C03B: RTS
 [cpu] PC: C001 | A: 00 | X: 00 | Y: 00 | Last Opc: 78 | Last Cycl: 2 | Cycl-TT: 2 | FL: 00100100
 [vic] RL 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
 [cpu] PC: C003 | A: 00 | X: 00 | Y: 00 | Last Opc: A9 | Last Cycl: 2 | Cycl-TT: 4 | FL: 00100110
