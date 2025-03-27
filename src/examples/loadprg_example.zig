@@ -11,7 +11,7 @@ pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
 
     const Args = struct {
-        file_name: []const u8,
+        prg: []const u8,
     };
 
     const args = try flagz.parse(Args, allocator);
@@ -28,8 +28,8 @@ pub fn main() !void {
     c64.sid_dbg_enabled = true;
 
     // load a .prg file from disk
-    try stdout.print("[EXE] Loading '{s}'\n", .{args.file_name});
-    const load_address = try c64.loadPrg(allocator, args.file_name, true);
+    try stdout.print("[EXE] Loading '{s}'\n", .{args.prg});
+    const load_address = try c64.loadPrg(allocator, args.prg, true);
     try stdout.print("[EXE] Load address: {X:0>4}\n", .{load_address});
 
     c64.run();

@@ -393,7 +393,7 @@ pub fn main() !void {
 
 **Running the Example:**
 ```sh
-zig build run-loadprg
+zig build run-loadprg -- -f c64asm/test.prg
 ```
 
 **Example Output:**
