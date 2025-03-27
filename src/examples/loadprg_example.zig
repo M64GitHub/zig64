@@ -30,7 +30,12 @@ pub fn main() !void {
     // load a .prg file from disk
     try stdout.print("[EXE] Loading '{s}'\n", .{args.prg});
     const load_address = try c64.loadPrg(allocator, args.prg, true);
-    try stdout.print("[EXE] Load address: {X:0>4}\n", .{load_address});
+    try stdout.print("[EXE] Load address: {X:0>4}\n\n", .{load_address});
 
+    try stdout.print("[EXE] Disassembling from: {X:0>4}\n", .{load_address});
+    c64.cpu.disassemble(load_address, 31);
+    try stdout.print("\n\n", .{});
+
+    try stdout.print("[EXE] RUN\n", .{});
     c64.run();
 }
