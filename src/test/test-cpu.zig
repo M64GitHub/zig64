@@ -448,46 +448,6 @@ test "PHP and PLP" {
     try std.testing.expectEqual(1, c64.cpu.flags.n);
 }
 
-test "pushW and popW word" {
-    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
-    defer c64.deinit(gpa);
-
-    resetCpu(&c64.cpu);
-    c64.cpu.pushW(0xABCD);
-    try std.testing.expectEqual(0xABCD, c64.cpu.popW());
-    try std.testing.expectEqual(0xFD, c64.cpu.sp);
-}
-
-test "pushW stack contents" {
-    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
-    defer c64.deinit(gpa);
-
-    resetCpu(&c64.cpu);
-    c64.cpu.pushW(0x1234);
-    try std.testing.expectEqual(0x34, c64.cpu.readByte(0x01FB));
-    try std.testing.expectEqual(0x12, c64.cpu.readByte(0x01FC));
-    try std.testing.expectEqual(0xFB, c64.cpu.sp);
-}
-
-test "JSR and RTS" {
-    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
-    defer c64.deinit(gpa);
-
-    resetCpu(&c64.cpu);
-    c64.mem.data[0x1000] = 0x20; // JSR $1234
-    c64.mem.data[0x1001] = 0x34;
-    c64.mem.data[0x1002] = 0x12;
-    _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0x1234, c64.cpu.pc);
-    try std.testing.expectEqual(0x1002, c64.cpu.readWord(0x01FB)); // Check stack, don’t pop
-
-    c64.cpu.pc = 0x1234;
-    c64.mem.data[0x1234] = 0x60; // RTS
-    _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0x1003, c64.cpu.pc);
-    try std.testing.expectEqual(0xFD, c64.cpu.sp);
-}
-
 test "CMP immediate" {
     var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
     defer c64.deinit(gpa);
@@ -1205,4 +1165,128 @@ test "SID multiple writes" {
     try std.testing.expectEqual(0xCF, c64.sid.registers[23]);
     try std.testing.expectEqual(0xCF, c64.sid.getRegisters()[23]);
     try std.testing.expectEqual(0xCF, c64.mem.data[0xD417]);
+}
+
+test "indirect indexed LDA - Frame 0 A7E1" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 1; // Frame 0: Y=1
+    c64.cpu.x = 1; // Frame 0: X=1
+    c64.cpu.pc = 0xA7E1;
+    c64.mem.data[0xA7E1] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0xA7E2] = 0x46; // ZP $46
+    c64.mem.data[0x46] = 0x2C; // Low byte
+    c64.mem.data[0x47] = 0xB2; // High byte: $B22C
+    c64.mem.data[0xB22D] = 0x82; // Expected $82 (adjust after dump)
+    _ = c64.cpu.runStep();
+    try std.testing.expectEqual(@as(u8, 0x82), c64.cpu.a); // Loads $82?
+}
+
+test "indirect indexed LDA - Frame 1 AC90" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 5; // Frame 1: Y=5
+    c64.cpu.x = 2; // Frame 1: X=2
+    c64.cpu.pc = 0xAC90;
+    c64.mem.data[0xAC90] = 0xB1; // LDA ($44),Y
+    c64.mem.data[0xAC91] = 0x44; // ZP $44
+    c64.mem.data[0x44] = 0xD6; // Low byte
+    c64.mem.data[0x45] = 0xAF; // High byte: $AFD6
+    c64.mem.data[0xAFDB] = 0x3F; // Expected $3F (adjust after dump)
+    _ = c64.cpu.runStep();
+    try std.testing.expectEqual(@as(u8, 0x3F), c64.cpu.a); // Loads $3F?
+}
+
+test "indirect indexed LDA - Hunt for CF" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 1; // Frame 0: Y=1
+    c64.cpu.x = 1; // Frame 0: X=1
+    c64.cpu.pc = 0xA7E1;
+    c64.mem.data[0xA7E1] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0xA7E2] = 0x46; // ZP $46
+    c64.mem.data[0x46] = 0x2C; // Low byte
+    c64.mem.data[0x47] = 0xB2; // High byte: $B22C
+    c64.mem.data[0xB22D] = 0xCF; // Force $CF
+    _ = c64.cpu.runStep();
+    try std.testing.expectEqual(@as(u8, 0xCF), c64.cpu.a); // Loads $CF?
+}
+
+test "indirect indexed LDA - Check Next Offset" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 2; // Try Y=2—$B22E = C4?
+    c64.cpu.x = 1;
+    c64.cpu.pc = 0xA7E1;
+    c64.mem.data[0xA7E1] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0xA7E2] = 0x46;
+    c64.mem.data[0x46] = 0x2C;
+    c64.mem.data[0x47] = 0xB2; // $B22C
+    c64.mem.data[0xB22E] = 0xC4; // From dump
+    _ = c64.cpu.runStep();
+    try std.testing.expectEqual(@as(u8, 0xC4), c64.cpu.a);
+}
+
+test "indirect indexed LDA - Hunt CF Offset" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu);
+    c64.cpu.y = 3; // Try Y=3—$B22F = A0?
+    c64.cpu.x = 1;
+    c64.cpu.pc = 0xA7E1;
+    c64.mem.data[0xA7E1] = 0xB1; // LDA ($46),Y
+    c64.mem.data[0xA7E2] = 0x46;
+    c64.mem.data[0x46] = 0x2C;
+    c64.mem.data[0x47] = 0xB2; // $B22C
+    c64.mem.data[0xB22F] = 0xA0; // From dump
+    _ = c64.cpu.runStep();
+    try std.testing.expectEqual(@as(u8, 0xA0), c64.cpu.a); // $A0?
+}
+
+test "pushW and popW word" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu); // SP = $FD
+    c64.cpu.pushW(0xABCD);
+    try std.testing.expectEqual(0xABCD, c64.cpu.popW());
+    try std.testing.expectEqual(0xFD, c64.cpu.sp);
+}
+
+test "pushW stack contents" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu); // SP = $FD
+    c64.cpu.pushW(0x1234);
+    try std.testing.expectEqual(0x34, c64.cpu.readByte(0x01FC)); // Low byte at $01FC
+    try std.testing.expectEqual(0x12, c64.cpu.readByte(0x01FD)); // High byte at $01FD
+    try std.testing.expectEqual(0xFB, c64.cpu.sp);
+}
+
+test "JSR and RTS" {
+    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
+    defer c64.deinit(gpa);
+
+    resetCpu(&c64.cpu); // SP = $FD
+    c64.mem.data[0x1000] = 0x20; // JSR $1234
+    c64.mem.data[0x1001] = 0x34;
+    c64.mem.data[0x1002] = 0x12;
+    _ = c64.cpu.runStep();
+    try std.testing.expectEqual(0x1234, c64.cpu.pc);
+    try std.testing.expectEqual(0x1002, c64.cpu.readWord(0x01FC)); // $01FC-$01FD holds $1002
+    c64.cpu.pc = 0x1234;
+    c64.mem.data[0x1234] = 0x60; // RTS
+    _ = c64.cpu.runStep();
+    try std.testing.expectEqual(0x1003, c64.cpu.pc);
+    try std.testing.expectEqual(0xFD, c64.cpu.sp);
 }

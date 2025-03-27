@@ -365,12 +365,15 @@ pub const Cpu = struct {
     }
 
     pub fn printStatus(cpu: *Cpu) void {
-        stdout.print("[cpu] PC: {X:0>4} | A: {X:0>2} | X: {X:0>2} | Y: {X:0>2} | Last Opc: {X:0>2} | Last Cycl: {d} | Cycl-TT: {d} | ", .{
+        stdout.print("[cpu] PC: {X:0>4} | A: {X:0>2} | X: {X:0>2} | Y: {X:0>2} | SP: {X:0>2} | Opc: {X:0>2} {X:0>2} {X:0>2} | Last Cycl: {d} | Cycl-TT: {d} | ", .{
             cpu.pc,
             cpu.a,
             cpu.x,
             cpu.y,
+            cpu.sp,
             cpu.opcode_last,
+            cpu.c64.mem.data[cpu.pc +% 1],
+            cpu.c64.mem.data[cpu.pc +% 2],
             cpu.cycles_last_step,
             cpu.cycles_executed,
         }) catch {};
@@ -512,13 +515,6 @@ pub const Cpu = struct {
         return @as(u16, cpu.sp) | 0x100;
     }
 
-    pub fn pushW(cpu: *Cpu, val: u16) void {
-        cpu.sp -%= 1;
-        cpu.writeByte(@truncate(val >> 8), spToAddr(cpu));
-        cpu.sp -%= 1;
-        cpu.writeByte(@truncate(val & 0xff), spToAddr(cpu));
-    }
-
     fn pushB(cpu: *Cpu, val: u8) void {
         const sp_word: u16 = spToAddr(cpu);
         cpu.c64.mem.data[sp_word] = val;
@@ -536,11 +532,19 @@ pub const Cpu = struct {
         return val;
     }
 
+    pub fn pushW(cpu: *Cpu, val: u16) void {
+        cpu.writeByte(@truncate(val >> 8), spToAddr(cpu)); // High byte at current sp
+        cpu.sp -%= 1;
+        cpu.writeByte(@truncate(val & 0xff), spToAddr(cpu)); // Low byte at sp - 1
+        cpu.sp -%= 1;
+    }
+
     pub fn popW(cpu: *Cpu) u16 {
-        const val_stack: u16 = cpu.readWord(spToAddr(cpu));
-        cpu.sp +%= 2;
-        cpu.cycles_executed +%= 1;
-        return val_stack;
+        cpu.sp +%= 1;
+        const low = cpu.readByte(spToAddr(cpu)); // Low byte first
+        cpu.sp +%= 1;
+        const high = cpu.readByte(spToAddr(cpu)); // High byte second
+        return (@as(u16, high) << 8) | low;
     }
 
     pub fn updateFlags(cpu: *Cpu, reg: u8) void {
@@ -812,6 +816,12 @@ pub const Cpu = struct {
         cpu.c64.vic.badline_happened = false;
         cpu.c64.vic.rasterline_changed = false;
 
+        // dbg output
+        if (cpu.c64.cpu_dbg_enabled) {
+            cpu.opcode_last = cpu.c64.mem.data[cpu.pc];
+            cpu.printStatus();
+        }
+
         const cycles_now: u32 = cpu.cycles_executed;
         const opcode: u8 = fetchUByte(cpu);
         cpu.opcode_last = opcode;
@@ -1054,13 +1064,14 @@ pub const Cpu = struct {
 
             0x20 => {
                 const jsr_addr: u16 = fetchWord(cpu);
-                cpu.pushW(cpu.pc - 1);
+                const ret_addr = cpu.pc - 1;
+                cpu.pushW(ret_addr);
                 cpu.pc = jsr_addr;
-                cpu.cycles_executed +%= 1;
+                cpu.cycles_executed +%= 1; // Matches 6 cycles with fetch and push
                 if (cpu.c64.cpu_dbg_enabled) {
-                    stdout.print("[cpu] Calling {X:0>4}, return to {X:0>4}\n", .{
+                    stdout.print("[cpu] JSR {X:0>4}, return to {X:0>4}\n", .{
                         jsr_addr,
-                        cpu.pc - 1,
+                        ret_addr,
                     }) catch {};
                 }
             },
@@ -1070,13 +1081,13 @@ pub const Cpu = struct {
                 cpu.pc = ret_addr + 1;
                 cpu.cycles_executed +%= 2;
                 if (cpu.c64.cpu_dbg_enabled) {
-                    stdout.print("[cpu] Return to {X:0>4}\n", .{
-                        ret_addr,
+                    stdout.print("[cpu] RTS to {X:0>4}\n", .{
+                        ret_addr + 1,
                     }) catch {};
                 }
                 if (ret_addr == 0x0000) {
                     if (cpu.c64.cpu_dbg_enabled) {
-                        stdout.print("[cpu] Return EXIT!\n", .{}) catch {};
+                        stdout.print("[cpu] RTS EXIT!\n", .{}) catch {};
                     }
                     cpu.cycles_last_step =
                         @as(u8, @truncate(cpu.cycles_executed -% cycles_now));
@@ -1089,6 +1100,9 @@ pub const Cpu = struct {
             0x4C => {
                 const addr: u16 = addrAbs(cpu);
                 cpu.pc = addr;
+                if (cpu.c64.cpu_dbg_enabled) {
+                    stdout.print("[cpu] JMP {X:0>4}\n", .{addr}) catch {};
+                }
             },
 
             0x6C => {
@@ -1585,10 +1599,7 @@ pub const Cpu = struct {
             cpu.cycles_since_hsync = 0;
         }
 
-        // dbg output
-        if (cpu.c64.cpu_dbg_enabled) {
-            cpu.printStatus();
-        }
+        // dbg output vic, sid
 
         if (cpu.c64.vic_dbg_enabled) {
             cpu.c64.vic.printStatus();
@@ -1596,6 +1607,15 @@ pub const Cpu = struct {
 
         if (cpu.c64.sid_dbg_enabled and cpu.sid_reg_written) {
             cpu.c64.sid.printRegisters();
+        }
+
+        // return from interrupt vector
+        if ((cpu.c64.mem.data[0x01] & 0x07) != 0x5 and
+            ((cpu.pc == 0xea31) or (cpu.pc == 0xea81)))
+        {
+            stdout.print("[cpu] RTI\n", .{}) catch {};
+
+            return 0;
         }
 
         return cpu.cycles_last_step;
