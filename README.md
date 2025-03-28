@@ -558,7 +558,7 @@ rasterline: u16,            // number of the current rasterline
 frame_ctr: usize,           // total number of video frames
 ```
 
-##### 🔍 **Debugging**
+##### 🛠 **Debugging**
 ```zig
 // enable specific debugging on struct C64
 // struct C64
@@ -568,10 +568,117 @@ c64.sid_dbg_enabled = true; // enable debug messages for the sid
 c64.vic_dbg_enabled = true; // enable debug messages for the vic
 
 // or manually call the functions
-Cpu.printStatus()
-Cpu.printFlags()
-Sid.printRegisters()
-Vic.printStatus()
+Cpu.printStatus() // prints a traceline showing current PC, registers, flags, disassembly, and opcodes
+Cpu.printFlags()  // prints flags only
+Sid.printRegisters() // prints current sid register values 
+Vic.printStatus() // prints sid status: current rasterline, frame, and hsync/vsync status
+```
+
+##### 🔍 **Disassembling / Instruction Metadata Decoding**
+```zig
+// disassembles a number of instructions, starting from pc.
+// no control flow analysis, just a linear disassembly
+disasmForward(cpu: *Cpu, pc_start: u16, count: usize) void
+
+// return the Opcode struct for a given opcode
+opcode2Insn(opcode_value: u8) Opcode
+
+// return the size of an instruction in bytes (ie 1 for nop, 2 for lda #$10)
+getInsnSize(insn: Opcode) u8
+
+// get the disassembly string of an opcode / byte sequence, used internally
+disassembleOpcode(buffer: []u8, pc: u16, opcode_value: u8, byte2: u8, byte3: u8) ![]const u8
+```
+
+#### Opcode / Instruction Metadata
+
+```zig
+    pub const Group = enum {
+        branch, // Jumps and branches (e.g., JSR, BEQ)
+        load_store, // Load/store ops (e.g., LDA, STA)
+        control, // CPU control (e.g., NOP, CLI)
+        math, // Arithmetic (e.g., ADC, SBC)
+        logic, // Bitwise (e.g., AND, ORA)
+        compare, // Comparisons (e.g., CMP, CPX)
+        shift, // Bit shifts (e.g., ASL, ROR)
+        stack, // Stack ops (e.g., PHA, PHP)
+        transfer, // Register transfers (e.g., TAX, TSX)
+    };
+
+    pub const AddrMode = enum {
+        implied,
+        immediate,
+        zero_page,
+        zero_page_x,
+        zero_page_y,
+        absolute,
+        absolute_x,
+        absolute_y,
+        indirect,
+        indexed_indirect_x, // (zp,x)
+        indirect_indexed_y, // (zp),y
+    };
+
+    pub const OperandType = enum {
+        none, // No operand source/target (e.g., NOP)
+        register, // Direct register ops (e.g., TAX)
+        memory, // Memory access (e.g., STA)
+        immediate, // Literal value (e.g., LDA #$xx)
+    };
+
+    pub const OperandSize = enum {
+        none,
+        byte,
+        word,
+    };
+
+    pub const AccessType = struct {
+        pub const none: u2 = 0x00;
+        pub const read: u2 = 0x01;
+        pub const write: u2 = 0x02;
+        pub const read_write: u2 = read | write; // 0x03
+    };
+
+    pub const Operand = struct {
+        pub const none: u8 = 0x00;
+        pub const a: u8 = 0x01; // Accumulator
+        pub const x: u8 = 0x02; // X register
+        pub const y: u8 = 0x04; // Y register
+        pub const sp: u8 = 0x08; // Stack pointer
+        pub const memory: u8 = 0x10; // Memory access
+    };
+
+    pub const Opcode = struct {
+        value: u8,
+        mnemonic: []const u8,
+        addr_mode: AddrMode,
+        group: Group,
+        operand_type: OperandType,
+        operand_size: OperandSize,
+        access_type: u2,
+        operand: u8,
+    };
+
+// Struct Insn contains all Opcodes:
+pub const Insn = struct {
+        // Branch instructions
+        // ...
+        // ...
+
+        pub const lsr_zpx = Opcode{
+            .value = 0x56,
+            .mnemonic = "LSR",
+            .addr_mode = .zero_page_x,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x | Operand.memory,
+        };
+
+        // ...
+        // ...
+};
 ```
 
 <br>
