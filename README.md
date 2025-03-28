@@ -277,14 +277,14 @@ zig build test
 ## Using zig64 In Your Project
 To add `zig64` as a dependency, use:
 ```sh
-zig fetch --save https://github.com/M64GitHub/zig64/archive/refs/tags/v0.1.0-alpha.tar.gz
+zig fetch --save https://github.com/M64GitHub/zig64/archive/refs/tags/v0.2.0-alpha.tar.gz
 ```
 This will add the dependency to your `build.zig.zon`:
 ```zig
 .dependencies = .{
     .zig64 = .{
-        .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.1.0-alpha.tar.gz",
-        .hash = "zig64-0.0.1-v6Fnep8yAQAjAZlp64lmwl3GNnMjO1wo5yY3IYWMse9p",
+        .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.2.0-alpha.tar.gz",
+        .hash = "zig64-0.2.0-v6FnenGTAwDaoHtbiQl5nw2ym9S_fgTm1k7e-4ouFD4f",
     },
 },
 ```
