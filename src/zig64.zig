@@ -305,11 +305,11 @@ pub const Cpu = struct {
     pub fn init(c64: *C64, pc_start: u16) Cpu {
         return Cpu{
             .pc = pc_start,
-            .sp = 0xFD,
+            .sp = 0xFF,
             .a = 0,
             .x = 0,
             .y = 0,
-            .status = 0x24, // Default status flags (Interrupt disable set)
+            .status = 0x00, // Default status flags (Interrupt disable set)
             .flags = CpuFlags{
                 .c = 0,
                 .z = 0,

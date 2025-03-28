@@ -21,6 +21,7 @@ const resetCpu = struct {
             .v = 0,
             .n = 0,
         };
+        cpu.sp = 0xFD;
         cpu.cycles_executed = 0;
         cpu.c64.mem.clear(); // Clear RAM
     }
@@ -455,6 +456,7 @@ test "PHA and PLA" {
     defer c64.deinit(gpa);
 
     resetCpu(&c64.cpu);
+    c64.cpu.sp = 0xFD;
     c64.cpu.a = 0x42;
     c64.mem.data[0x1000] = 0x48; // PHA
     _ = c64.cpu.runStep();
@@ -471,6 +473,7 @@ test "PHP and PLP" {
     defer c64.deinit(gpa);
 
     resetCpu(&c64.cpu);
+    c64.cpu.sp = 0xFD;
     c64.cpu.flags.c = 1;
     c64.cpu.flags.z = 0;
     c64.cpu.flags.n = 1;
@@ -1016,6 +1019,7 @@ test "PHA with stack wrap" {
     defer c64.deinit(gpa);
 
     resetCpu(&c64.cpu);
+    c64.cpu.sp = 0xFD;
     c64.cpu.sp = 0x00; // Stack at $0100
     c64.cpu.a = 0x42;
     c64.mem.data[0x1000] = 0x48; // PHA
