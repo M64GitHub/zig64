@@ -1655,6 +1655,7 @@ pub const Cpu = struct {
 
         return cpu.cycles_last_step;
     }
+
     pub fn disassemble(cpu: *Cpu, pc_start: u16, count: usize) void {
         var pc = pc_start; // Current program counter
         var counter: usize = 0; // Instruction counter
@@ -1747,173 +1748,1532 @@ pub const Cpu = struct {
 
     pub const Insn = struct {
         // Branch instructions
-        pub const brk = Opcode{ .value = 0x00, .mnemonic = "BRK", .addr_mode = .implied, .group = .branch, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.sp };
-        pub const rti = Opcode{ .value = 0x40, .mnemonic = "RTI", .addr_mode = .implied, .group = .branch, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.sp };
-        pub const rts = Opcode{ .value = 0x60, .mnemonic = "RTS", .addr_mode = .implied, .group = .branch, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.sp };
-        pub const jsr = Opcode{ .value = 0x20, .mnemonic = "JSR", .addr_mode = .absolute, .group = .branch, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.none, .operand = Operand.sp | Operand.memory };
-        pub const jmp_abs = Opcode{ .value = 0x4C, .mnemonic = "JMP", .addr_mode = .absolute, .group = .branch, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.none, .operand = Operand.memory };
-        pub const jmp_ind = Opcode{ .value = 0x6C, .mnemonic = "JMP", .addr_mode = .indirect, .group = .branch, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.memory };
-        pub const beq = Opcode{ .value = 0xF0, .mnemonic = "BEQ", .addr_mode = .immediate, .group = .branch, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.none, .operand = Operand.none };
-        pub const bne = Opcode{ .value = 0xD0, .mnemonic = "BNE", .addr_mode = .immediate, .group = .branch, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.none, .operand = Operand.none };
-        pub const bcs = Opcode{ .value = 0xB0, .mnemonic = "BCS", .addr_mode = .immediate, .group = .branch, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.none, .operand = Operand.none };
-        pub const bcc = Opcode{ .value = 0x90, .mnemonic = "BCC", .addr_mode = .immediate, .group = .branch, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.none, .operand = Operand.none };
-        pub const bmi = Opcode{ .value = 0x30, .mnemonic = "BMI", .addr_mode = .immediate, .group = .branch, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.none, .operand = Operand.none };
-        pub const bpl = Opcode{ .value = 0x10, .mnemonic = "BPL", .addr_mode = .immediate, .group = .branch, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.none, .operand = Operand.none };
-        pub const bvc = Opcode{ .value = 0x50, .mnemonic = "BVC", .addr_mode = .immediate, .group = .branch, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.none, .operand = Operand.none };
-        pub const bvs = Opcode{ .value = 0x70, .mnemonic = "BVS", .addr_mode = .immediate, .group = .branch, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.none, .operand = Operand.none };
+        pub const brk = Opcode{
+            .value = 0x00,
+            .mnemonic = "BRK",
+            .addr_mode = .implied,
+            .group = .branch,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.sp,
+        };
+        pub const rti = Opcode{
+            .value = 0x40,
+            .mnemonic = "RTI",
+            .addr_mode = .implied,
+            .group = .branch,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.sp,
+        };
+        pub const rts = Opcode{
+            .value = 0x60,
+            .mnemonic = "RTS",
+            .addr_mode = .implied,
+            .group = .branch,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.sp,
+        };
+        pub const jsr = Opcode{
+            .value = 0x20,
+            .mnemonic = "JSR",
+            .addr_mode = .absolute,
+            .group = .branch,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.none,
+            .operand = Operand.sp | Operand.memory,
+        };
+        pub const jmp_abs = Opcode{
+            .value = 0x4C,
+            .mnemonic = "JMP",
+            .addr_mode = .absolute,
+            .group = .branch,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.none,
+            .operand = Operand.memory,
+        };
+        pub const jmp_ind = Opcode{
+            .value = 0x6C,
+            .mnemonic = "JMP",
+            .addr_mode = .indirect,
+            .group = .branch,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.memory,
+        };
+        pub const beq = Opcode{
+            .value = 0xF0,
+            .mnemonic = "BEQ",
+            .addr_mode = .immediate,
+            .group = .branch,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
+        pub const bne = Opcode{
+            .value = 0xD0,
+            .mnemonic = "BNE",
+            .addr_mode = .immediate,
+            .group = .branch,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
+        pub const bcs = Opcode{
+            .value = 0xB0,
+            .mnemonic = "BCS",
+            .addr_mode = .immediate,
+            .group = .branch,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
+        pub const bcc = Opcode{
+            .value = 0x90,
+            .mnemonic = "BCC",
+            .addr_mode = .immediate,
+            .group = .branch,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
+        pub const bmi = Opcode{
+            .value = 0x30,
+            .mnemonic = "BMI",
+            .addr_mode = .immediate,
+            .group = .branch,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
+        pub const bpl = Opcode{
+            .value = 0x10,
+            .mnemonic = "BPL",
+            .addr_mode = .immediate,
+            .group = .branch,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
+        pub const bvc = Opcode{
+            .value = 0x50,
+            .mnemonic = "BVC",
+            .addr_mode = .immediate,
+            .group = .branch,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
+        pub const bvs = Opcode{
+            .value = 0x70,
+            .mnemonic = "BVS",
+            .addr_mode = .immediate,
+            .group = .branch,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
 
         // Load/Store instructions
-        pub const lda_imm = Opcode{ .value = 0xA9, .mnemonic = "LDA", .addr_mode = .immediate, .group = .load_store, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a };
-        pub const lda_zp = Opcode{ .value = 0xA5, .mnemonic = "LDA", .addr_mode = .zero_page, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const lda_zpx = Opcode{ .value = 0xB5, .mnemonic = "LDA", .addr_mode = .zero_page_x, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const lda_abs = Opcode{ .value = 0xAD, .mnemonic = "LDA", .addr_mode = .absolute, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const lda_absx = Opcode{ .value = 0xBD, .mnemonic = "LDA", .addr_mode = .absolute_x, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const lda_absy = Opcode{ .value = 0xB9, .mnemonic = "LDA", .addr_mode = .absolute_y, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const lda_indx = Opcode{ .value = 0xA1, .mnemonic = "LDA", .addr_mode = .indexed_indirect_x, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const lda_indy = Opcode{ .value = 0xB1, .mnemonic = "LDA", .addr_mode = .indirect_indexed_y, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const ldx_imm = Opcode{ .value = 0xA2, .mnemonic = "LDX", .addr_mode = .immediate, .group = .load_store, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.x };
-        pub const ldx_zp = Opcode{ .value = 0xA6, .mnemonic = "LDX", .addr_mode = .zero_page, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.x | Operand.memory };
-        pub const ldx_zpy = Opcode{ .value = 0xB6, .mnemonic = "LDX", .addr_mode = .zero_page_y, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.x | Operand.y | Operand.memory };
-        pub const ldx_abs = Opcode{ .value = 0xAE, .mnemonic = "LDX", .addr_mode = .absolute, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.x | Operand.memory };
-        pub const ldx_absy = Opcode{ .value = 0xBE, .mnemonic = "LDX", .addr_mode = .absolute_y, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.x | Operand.y | Operand.memory };
-        pub const ldy_imm = Opcode{ .value = 0xA0, .mnemonic = "LDY", .addr_mode = .immediate, .group = .load_store, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.y };
-        pub const ldy_zp = Opcode{ .value = 0xA4, .mnemonic = "LDY", .addr_mode = .zero_page, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.y | Operand.memory };
-        pub const ldy_zpx = Opcode{ .value = 0xB4, .mnemonic = "LDY", .addr_mode = .zero_page_x, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.y | Operand.x | Operand.memory };
-        pub const ldy_abs = Opcode{ .value = 0xAC, .mnemonic = "LDY", .addr_mode = .absolute, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.y | Operand.memory };
-        pub const ldy_absx = Opcode{ .value = 0xBC, .mnemonic = "LDY", .addr_mode = .absolute_x, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.y | Operand.x | Operand.memory };
-        pub const sta_zp = Opcode{ .value = 0x85, .mnemonic = "STA", .addr_mode = .zero_page, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.write, .operand = Operand.a | Operand.memory };
-        pub const sta_zpx = Opcode{ .value = 0x95, .mnemonic = "STA", .addr_mode = .zero_page_x, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.write, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const sta_abs = Opcode{ .value = 0x8D, .mnemonic = "STA", .addr_mode = .absolute, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.write, .operand = Operand.a | Operand.memory };
-        pub const sta_absx = Opcode{ .value = 0x9D, .mnemonic = "STA", .addr_mode = .absolute_x, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.write, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const sta_absy = Opcode{ .value = 0x99, .mnemonic = "STA", .addr_mode = .absolute_y, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.write, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const sta_indx = Opcode{ .value = 0x81, .mnemonic = "STA", .addr_mode = .indexed_indirect_x, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.write, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const sta_indy = Opcode{ .value = 0x91, .mnemonic = "STA", .addr_mode = .indirect_indexed_y, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.write, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const stx_zp = Opcode{ .value = 0x86, .mnemonic = "STX", .addr_mode = .zero_page, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.write, .operand = Operand.x | Operand.memory };
-        pub const stx_zpy = Opcode{ .value = 0x96, .mnemonic = "STX", .addr_mode = .zero_page_y, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.write, .operand = Operand.x | Operand.y | Operand.memory };
-        pub const stx_abs = Opcode{ .value = 0x8E, .mnemonic = "STX", .addr_mode = .absolute, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.write, .operand = Operand.x | Operand.memory };
-        pub const sty_zp = Opcode{ .value = 0x84, .mnemonic = "STY", .addr_mode = .zero_page, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.write, .operand = Operand.y | Operand.memory };
-        pub const sty_zpx = Opcode{ .value = 0x94, .mnemonic = "STY", .addr_mode = .zero_page_x, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.write, .operand = Operand.y | Operand.x | Operand.memory };
-        pub const sty_abs = Opcode{ .value = 0x8C, .mnemonic = "STY", .addr_mode = .absolute, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.write, .operand = Operand.y | Operand.memory };
-        pub const dec_zp = Opcode{ .value = 0xC6, .mnemonic = "DEC", .addr_mode = .zero_page, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read_write, .operand = Operand.memory };
-        pub const dec_zpx = Opcode{ .value = 0xD6, .mnemonic = "DEC", .addr_mode = .zero_page_x, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read_write, .operand = Operand.x | Operand.memory };
-        pub const dec_abs = Opcode{ .value = 0xCE, .mnemonic = "DEC", .addr_mode = .absolute, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read_write, .operand = Operand.memory };
-        pub const dec_absx = Opcode{ .value = 0xDE, .mnemonic = "DEC", .addr_mode = .absolute_x, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read_write, .operand = Operand.x | Operand.memory };
-        pub const inc_zp = Opcode{ .value = 0xE6, .mnemonic = "INC", .addr_mode = .zero_page, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read_write, .operand = Operand.memory };
-        pub const inc_zpx = Opcode{ .value = 0xF6, .mnemonic = "INC", .addr_mode = .zero_page_x, .group = .load_store, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read_write, .operand = Operand.x | Operand.memory };
-        pub const inc_abs = Opcode{ .value = 0xEE, .mnemonic = "INC", .addr_mode = .absolute, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read_write, .operand = Operand.memory };
-        pub const inc_absx = Opcode{ .value = 0xFE, .mnemonic = "INC", .addr_mode = .absolute_x, .group = .load_store, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read_write, .operand = Operand.x | Operand.memory };
+        pub const lda_imm = Opcode{
+            .value = 0xA9,
+            .mnemonic = "LDA",
+            .addr_mode = .immediate,
+            .group = .load_store,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a,
+        };
+        pub const lda_zp = Opcode{
+            .value = 0xA5,
+            .mnemonic = "LDA",
+            .addr_mode = .zero_page,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const lda_zpx = Opcode{
+            .value = 0xB5,
+            .mnemonic = "LDA",
+            .addr_mode = .zero_page_x,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const lda_abs = Opcode{
+            .value = 0xAD,
+            .mnemonic = "LDA",
+            .addr_mode = .absolute,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const lda_absx = Opcode{
+            .value = 0xBD,
+            .mnemonic = "LDA",
+            .addr_mode = .absolute_x,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const lda_absy = Opcode{
+            .value = 0xB9,
+            .mnemonic = "LDA",
+            .addr_mode = .absolute_y,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const lda_indx = Opcode{
+            .value = 0xA1,
+            .mnemonic = "LDA",
+            .addr_mode = .indexed_indirect_x,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const lda_indy = Opcode{
+            .value = 0xB1,
+            .mnemonic = "LDA",
+            .addr_mode = .indirect_indexed_y,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const ldx_imm = Opcode{
+            .value = 0xA2,
+            .mnemonic = "LDX",
+            .addr_mode = .immediate,
+            .group = .load_store,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.x,
+        };
+        pub const ldx_zp = Opcode{
+            .value = 0xA6,
+            .mnemonic = "LDX",
+            .addr_mode = .zero_page,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const ldx_zpy = Opcode{
+            .value = 0xB6,
+            .mnemonic = "LDX",
+            .addr_mode = .zero_page_y,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.x | Operand.y | Operand.memory,
+        };
+        pub const ldx_abs = Opcode{
+            .value = 0xAE,
+            .mnemonic = "LDX",
+            .addr_mode = .absolute,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const ldx_absy = Opcode{
+            .value = 0xBE,
+            .mnemonic = "LDX",
+            .addr_mode = .absolute_y,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.x | Operand.y | Operand.memory,
+        };
+        pub const ldy_imm = Opcode{
+            .value = 0xA0,
+            .mnemonic = "LDY",
+            .addr_mode = .immediate,
+            .group = .load_store,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.y,
+        };
+        pub const ldy_zp = Opcode{
+            .value = 0xA4,
+            .mnemonic = "LDY",
+            .addr_mode = .zero_page,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.y | Operand.memory,
+        };
+        pub const ldy_zpx = Opcode{
+            .value = 0xB4,
+            .mnemonic = "LDY",
+            .addr_mode = .zero_page_x,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.y | Operand.x | Operand.memory,
+        };
+        pub const ldy_abs = Opcode{
+            .value = 0xAC,
+            .mnemonic = "LDY",
+            .addr_mode = .absolute,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.y | Operand.memory,
+        };
+        pub const ldy_absx = Opcode{
+            .value = 0xBC,
+            .mnemonic = "LDY",
+            .addr_mode = .absolute_x,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.y | Operand.x | Operand.memory,
+        };
+        pub const sta_zp = Opcode{
+            .value = 0x85,
+            .mnemonic = "STA",
+            .addr_mode = .zero_page,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.write,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const sta_zpx = Opcode{
+            .value = 0x95,
+            .mnemonic = "STA",
+            .addr_mode = .zero_page_x,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.write,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const sta_abs = Opcode{
+            .value = 0x8D,
+            .mnemonic = "STA",
+            .addr_mode = .absolute,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.write,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const sta_absx = Opcode{
+            .value = 0x9D,
+            .mnemonic = "STA",
+            .addr_mode = .absolute_x,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.write,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const sta_absy = Opcode{
+            .value = 0x99,
+            .mnemonic = "STA",
+            .addr_mode = .absolute_y,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.write,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const sta_indx = Opcode{
+            .value = 0x81,
+            .mnemonic = "STA",
+            .addr_mode = .indexed_indirect_x,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.write,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const sta_indy = Opcode{
+            .value = 0x91,
+            .mnemonic = "STA",
+            .addr_mode = .indirect_indexed_y,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.write,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const stx_zp = Opcode{
+            .value = 0x86,
+            .mnemonic = "STX",
+            .addr_mode = .zero_page,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.write,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const stx_zpy = Opcode{
+            .value = 0x96,
+            .mnemonic = "STX",
+            .addr_mode = .zero_page_y,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.write,
+            .operand = Operand.x | Operand.y | Operand.memory,
+        };
+        pub const stx_abs = Opcode{
+            .value = 0x8E,
+            .mnemonic = "STX",
+            .addr_mode = .absolute,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.write,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const sty_zp = Opcode{
+            .value = 0x84,
+            .mnemonic = "STY",
+            .addr_mode = .zero_page,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.write,
+            .operand = Operand.y | Operand.memory,
+        };
+        pub const sty_zpx = Opcode{
+            .value = 0x94,
+            .mnemonic = "STY",
+            .addr_mode = .zero_page_x,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.write,
+            .operand = Operand.y | Operand.x | Operand.memory,
+        };
+        pub const sty_abs = Opcode{
+            .value = 0x8C,
+            .mnemonic = "STY",
+            .addr_mode = .absolute,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.write,
+            .operand = Operand.y | Operand.memory,
+        };
+        pub const dec_zp = Opcode{
+            .value = 0xC6,
+            .mnemonic = "DEC",
+            .addr_mode = .zero_page,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read_write,
+            .operand = Operand.memory,
+        };
+        pub const dec_zpx = Opcode{
+            .value = 0xD6,
+            .mnemonic = "DEC",
+            .addr_mode = .zero_page_x,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const dec_abs = Opcode{
+            .value = 0xCE,
+            .mnemonic = "DEC",
+            .addr_mode = .absolute,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read_write,
+            .operand = Operand.memory,
+        };
+        pub const dec_absx = Opcode{
+            .value = 0xDE,
+            .mnemonic = "DEC",
+            .addr_mode = .absolute_x,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const inc_zp = Opcode{
+            .value = 0xE6,
+            .mnemonic = "INC",
+            .addr_mode = .zero_page,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read_write,
+            .operand = Operand.memory,
+        };
+        pub const inc_zpx = Opcode{
+            .value = 0xF6,
+            .mnemonic = "INC",
+            .addr_mode = .zero_page_x,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const inc_abs = Opcode{
+            .value = 0xEE,
+            .mnemonic = "INC",
+            .addr_mode = .absolute,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read_write,
+            .operand = Operand.memory,
+        };
+        pub const inc_absx = Opcode{
+            .value = 0xFE,
+            .mnemonic = "INC",
+            .addr_mode = .absolute_x,
+            .group = .load_store,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x | Operand.memory,
+        };
 
         // Control instructions
-        pub const nop = Opcode{ .value = 0xEA, .mnemonic = "NOP", .addr_mode = .implied, .group = .control, .operand_type = .none, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.none };
-        pub const clc = Opcode{ .value = 0x18, .mnemonic = "CLC", .addr_mode = .implied, .group = .control, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.none };
-        pub const sec = Opcode{ .value = 0x38, .mnemonic = "SEC", .addr_mode = .implied, .group = .control, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.none };
-        pub const cli = Opcode{ .value = 0x58, .mnemonic = "CLI", .addr_mode = .implied, .group = .control, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.none };
-        pub const sei = Opcode{ .value = 0x78, .mnemonic = "SEI", .addr_mode = .implied, .group = .control, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.none };
-        pub const cld = Opcode{ .value = 0xD8, .mnemonic = "CLD", .addr_mode = .implied, .group = .control, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.none };
-        pub const sed = Opcode{ .value = 0xF8, .mnemonic = "SED", .addr_mode = .implied, .group = .control, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.none };
-        pub const clv = Opcode{ .value = 0xB8, .mnemonic = "CLV", .addr_mode = .implied, .group = .control, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.none };
+        pub const nop = Opcode{
+            .value = 0xEA,
+            .mnemonic = "NOP",
+            .addr_mode = .implied,
+            .group = .control,
+            .operand_type = .none,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
+        pub const clc = Opcode{
+            .value = 0x18,
+            .mnemonic = "CLC",
+            .addr_mode = .implied,
+            .group = .control,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
+        pub const sec = Opcode{
+            .value = 0x38,
+            .mnemonic = "SEC",
+            .addr_mode = .implied,
+            .group = .control,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
+        pub const cli = Opcode{
+            .value = 0x58,
+            .mnemonic = "CLI",
+            .addr_mode = .implied,
+            .group = .control,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
+        pub const sei = Opcode{
+            .value = 0x78,
+            .mnemonic = "SEI",
+            .addr_mode = .implied,
+            .group = .control,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
+        pub const cld = Opcode{
+            .value = 0xD8,
+            .mnemonic = "CLD",
+            .addr_mode = .implied,
+            .group = .control,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
+        pub const sed = Opcode{
+            .value = 0xF8,
+            .mnemonic = "SED",
+            .addr_mode = .implied,
+            .group = .control,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
+        pub const clv = Opcode{
+            .value = 0xB8,
+            .mnemonic = "CLV",
+            .addr_mode = .implied,
+            .group = .control,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.none,
+        };
 
         // Math instructions
-        pub const adc_imm = Opcode{ .value = 0x69, .mnemonic = "ADC", .addr_mode = .immediate, .group = .math, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a };
-        pub const adc_zp = Opcode{ .value = 0x65, .mnemonic = "ADC", .addr_mode = .zero_page, .group = .math, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const adc_zpx = Opcode{ .value = 0x75, .mnemonic = "ADC", .addr_mode = .zero_page_x, .group = .math, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const adc_abs = Opcode{ .value = 0x6D, .mnemonic = "ADC", .addr_mode = .absolute, .group = .math, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const adc_absx = Opcode{ .value = 0x7D, .mnemonic = "ADC", .addr_mode = .absolute_x, .group = .math, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const adc_absy = Opcode{ .value = 0x79, .mnemonic = "ADC", .addr_mode = .absolute_y, .group = .math, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const adc_indx = Opcode{ .value = 0x61, .mnemonic = "ADC", .addr_mode = .indexed_indirect_x, .group = .math, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const adc_indy = Opcode{ .value = 0x71, .mnemonic = "ADC", .addr_mode = .indirect_indexed_y, .group = .math, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const sbc_imm = Opcode{ .value = 0xE9, .mnemonic = "SBC", .addr_mode = .immediate, .group = .math, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a };
-        pub const sbc_zp = Opcode{ .value = 0xE5, .mnemonic = "SBC", .addr_mode = .zero_page, .group = .math, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const sbc_zpx = Opcode{ .value = 0xF5, .mnemonic = "SBC", .addr_mode = .zero_page_x, .group = .math, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const sbc_abs = Opcode{ .value = 0xED, .mnemonic = "SBC", .addr_mode = .absolute, .group = .math, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const sbc_absx = Opcode{ .value = 0xFD, .mnemonic = "SBC", .addr_mode = .absolute_x, .group = .math, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const sbc_absy = Opcode{ .value = 0xF9, .mnemonic = "SBC", .addr_mode = .absolute_y, .group = .math, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const sbc_indx = Opcode{ .value = 0xE1, .mnemonic = "SBC", .addr_mode = .indexed_indirect_x, .group = .math, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const sbc_indy = Opcode{ .value = 0xF1, .mnemonic = "SBC", .addr_mode = .indirect_indexed_y, .group = .math, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.y | Operand.memory };
+        pub const adc_imm = Opcode{
+            .value = 0x69,
+            .mnemonic = "ADC",
+            .addr_mode = .immediate,
+            .group = .math,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a,
+        };
+        pub const adc_zp = Opcode{
+            .value = 0x65,
+            .mnemonic = "ADC",
+            .addr_mode = .zero_page,
+            .group = .math,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const adc_zpx = Opcode{
+            .value = 0x75,
+            .mnemonic = "ADC",
+            .addr_mode = .zero_page_x,
+            .group = .math,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const adc_abs = Opcode{
+            .value = 0x6D,
+            .mnemonic = "ADC",
+            .addr_mode = .absolute,
+            .group = .math,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const adc_absx = Opcode{
+            .value = 0x7D,
+            .mnemonic = "ADC",
+            .addr_mode = .absolute_x,
+            .group = .math,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const adc_absy = Opcode{
+            .value = 0x79,
+            .mnemonic = "ADC",
+            .addr_mode = .absolute_y,
+            .group = .math,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const adc_indx = Opcode{
+            .value = 0x61,
+            .mnemonic = "ADC",
+            .addr_mode = .indexed_indirect_x,
+            .group = .math,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const adc_indy = Opcode{
+            .value = 0x71,
+            .mnemonic = "ADC",
+            .addr_mode = .indirect_indexed_y,
+            .group = .math,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const sbc_imm = Opcode{
+            .value = 0xE9,
+            .mnemonic = "SBC",
+            .addr_mode = .immediate,
+            .group = .math,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a,
+        };
+        pub const sbc_zp = Opcode{
+            .value = 0xE5,
+            .mnemonic = "SBC",
+            .addr_mode = .zero_page,
+            .group = .math,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const sbc_zpx = Opcode{
+            .value = 0xF5,
+            .mnemonic = "SBC",
+            .addr_mode = .zero_page_x,
+            .group = .math,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const sbc_abs = Opcode{
+            .value = 0xED,
+            .mnemonic = "SBC",
+            .addr_mode = .absolute,
+            .group = .math,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const sbc_absx = Opcode{
+            .value = 0xFD,
+            .mnemonic = "SBC",
+            .addr_mode = .absolute_x,
+            .group = .math,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const sbc_absy = Opcode{
+            .value = 0xF9,
+            .mnemonic = "SBC",
+            .addr_mode = .absolute_y,
+            .group = .math,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const sbc_indx = Opcode{
+            .value = 0xE1,
+            .mnemonic = "SBC",
+            .addr_mode = .indexed_indirect_x,
+            .group = .math,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const sbc_indy = Opcode{
+            .value = 0xF1,
+            .mnemonic = "SBC",
+            .addr_mode = .indirect_indexed_y,
+            .group = .math,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
 
         // Logic instructions
-        pub const and_imm = Opcode{ .value = 0x29, .mnemonic = "AND", .addr_mode = .immediate, .group = .logic, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a };
-        pub const and_zp = Opcode{ .value = 0x25, .mnemonic = "AND", .addr_mode = .zero_page, .group = .logic, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const and_zpx = Opcode{ .value = 0x35, .mnemonic = "AND", .addr_mode = .zero_page_x, .group = .logic, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const and_abs = Opcode{ .value = 0x2D, .mnemonic = "AND", .addr_mode = .absolute, .group = .logic, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const and_absx = Opcode{ .value = 0x3D, .mnemonic = "AND", .addr_mode = .absolute_x, .group = .logic, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const and_absy = Opcode{ .value = 0x39, .mnemonic = "AND", .addr_mode = .absolute_y, .group = .logic, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const and_indx = Opcode{ .value = 0x21, .mnemonic = "AND", .addr_mode = .indexed_indirect_x, .group = .logic, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const and_indy = Opcode{ .value = 0x31, .mnemonic = "AND", .addr_mode = .indirect_indexed_y, .group = .logic, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const ora_imm = Opcode{ .value = 0x09, .mnemonic = "ORA", .addr_mode = .immediate, .group = .logic, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a };
-        pub const ora_zp = Opcode{ .value = 0x05, .mnemonic = "ORA", .addr_mode = .zero_page, .group = .logic, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const ora_zpx = Opcode{ .value = 0x15, .mnemonic = "ORA", .addr_mode = .zero_page_x, .group = .logic, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const ora_abs = Opcode{ .value = 0x0D, .mnemonic = "ORA", .addr_mode = .absolute, .group = .logic, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const ora_absx = Opcode{ .value = 0x1D, .mnemonic = "ORA", .addr_mode = .absolute_x, .group = .logic, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const ora_absy = Opcode{ .value = 0x19, .mnemonic = "ORA", .addr_mode = .absolute_y, .group = .logic, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const ora_indx = Opcode{ .value = 0x01, .mnemonic = "ORA", .addr_mode = .indexed_indirect_x, .group = .logic, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const ora_indy = Opcode{ .value = 0x11, .mnemonic = "ORA", .addr_mode = .indirect_indexed_y, .group = .logic, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const eor_imm = Opcode{ .value = 0x49, .mnemonic = "EOR", .addr_mode = .immediate, .group = .logic, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a };
-        pub const eor_zp = Opcode{ .value = 0x45, .mnemonic = "EOR", .addr_mode = .zero_page, .group = .logic, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const eor_zpx = Opcode{ .value = 0x55, .mnemonic = "EOR", .addr_mode = .zero_page_x, .group = .logic, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const eor_abs = Opcode{ .value = 0x4D, .mnemonic = "EOR", .addr_mode = .absolute, .group = .logic, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const eor_absx = Opcode{ .value = 0x5D, .mnemonic = "EOR", .addr_mode = .absolute_x, .group = .logic, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const eor_absy = Opcode{ .value = 0x59, .mnemonic = "EOR", .addr_mode = .absolute_y, .group = .logic, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const eor_indx = Opcode{ .value = 0x41, .mnemonic = "EOR", .addr_mode = .indexed_indirect_x, .group = .logic, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const eor_indy = Opcode{ .value = 0x51, .mnemonic = "EOR", .addr_mode = .indirect_indexed_y, .group = .logic, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const bit_zp = Opcode{ .value = 0x24, .mnemonic = "BIT", .addr_mode = .zero_page, .group = .logic, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const bit_abs = Opcode{ .value = 0x2C, .mnemonic = "BIT", .addr_mode = .absolute, .group = .logic, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
+        pub const and_imm = Opcode{
+            .value = 0x29,
+            .mnemonic = "AND",
+            .addr_mode = .immediate,
+            .group = .logic,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a,
+        };
+        pub const and_zp = Opcode{
+            .value = 0x25,
+            .mnemonic = "AND",
+            .addr_mode = .zero_page,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const and_zpx = Opcode{
+            .value = 0x35,
+            .mnemonic = "AND",
+            .addr_mode = .zero_page_x,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const and_abs = Opcode{
+            .value = 0x2D,
+            .mnemonic = "AND",
+            .addr_mode = .absolute,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const and_absx = Opcode{
+            .value = 0x3D,
+            .mnemonic = "AND",
+            .addr_mode = .absolute_x,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const and_absy = Opcode{
+            .value = 0x39,
+            .mnemonic = "AND",
+            .addr_mode = .absolute_y,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const and_indx = Opcode{
+            .value = 0x21,
+            .mnemonic = "AND",
+            .addr_mode = .indexed_indirect_x,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const and_indy = Opcode{
+            .value = 0x31,
+            .mnemonic = "AND",
+            .addr_mode = .indirect_indexed_y,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const ora_imm = Opcode{
+            .value = 0x09,
+            .mnemonic = "ORA",
+            .addr_mode = .immediate,
+            .group = .logic,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a,
+        };
+        pub const ora_zp = Opcode{
+            .value = 0x05,
+            .mnemonic = "ORA",
+            .addr_mode = .zero_page,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const ora_zpx = Opcode{
+            .value = 0x15,
+            .mnemonic = "ORA",
+            .addr_mode = .zero_page_x,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const ora_abs = Opcode{
+            .value = 0x0D,
+            .mnemonic = "ORA",
+            .addr_mode = .absolute,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const ora_absx = Opcode{
+            .value = 0x1D,
+            .mnemonic = "ORA",
+            .addr_mode = .absolute_x,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const ora_absy = Opcode{
+            .value = 0x19,
+            .mnemonic = "ORA",
+            .addr_mode = .absolute_y,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const ora_indx = Opcode{
+            .value = 0x01,
+            .mnemonic = "ORA",
+            .addr_mode = .indexed_indirect_x,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const ora_indy = Opcode{
+            .value = 0x11,
+            .mnemonic = "ORA",
+            .addr_mode = .indirect_indexed_y,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const eor_imm = Opcode{
+            .value = 0x49,
+            .mnemonic = "EOR",
+            .addr_mode = .immediate,
+            .group = .logic,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a,
+        };
+        pub const eor_zp = Opcode{
+            .value = 0x45,
+            .mnemonic = "EOR",
+            .addr_mode = .zero_page,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const eor_zpx = Opcode{
+            .value = 0x55,
+            .mnemonic = "EOR",
+            .addr_mode = .zero_page_x,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const eor_abs = Opcode{
+            .value = 0x4D,
+            .mnemonic = "EOR",
+            .addr_mode = .absolute,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const eor_absx = Opcode{
+            .value = 0x5D,
+            .mnemonic = "EOR",
+            .addr_mode = .absolute_x,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const eor_absy = Opcode{
+            .value = 0x59,
+            .mnemonic = "EOR",
+            .addr_mode = .absolute_y,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const eor_indx = Opcode{
+            .value = 0x41,
+            .mnemonic = "EOR",
+            .addr_mode = .indexed_indirect_x,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const eor_indy = Opcode{
+            .value = 0x51,
+            .mnemonic = "EOR",
+            .addr_mode = .indirect_indexed_y,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const bit_zp = Opcode{
+            .value = 0x24,
+            .mnemonic = "BIT",
+            .addr_mode = .zero_page,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const bit_abs = Opcode{
+            .value = 0x2C,
+            .mnemonic = "BIT",
+            .addr_mode = .absolute,
+            .group = .logic,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
 
         // Compare instructions
-        pub const cmp_imm = Opcode{ .value = 0xC9, .mnemonic = "CMP", .addr_mode = .immediate, .group = .compare, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a };
-        pub const cmp_zp = Opcode{ .value = 0xC5, .mnemonic = "CMP", .addr_mode = .zero_page, .group = .compare, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const cmp_zpx = Opcode{ .value = 0xD5, .mnemonic = "CMP", .addr_mode = .zero_page_x, .group = .compare, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const cmp_abs = Opcode{ .value = 0xCD, .mnemonic = "CMP", .addr_mode = .absolute, .group = .compare, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.memory };
-        pub const cmp_absx = Opcode{ .value = 0xDD, .mnemonic = "CMP", .addr_mode = .absolute_x, .group = .compare, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const cmp_absy = Opcode{ .value = 0xD9, .mnemonic = "CMP", .addr_mode = .absolute_y, .group = .compare, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const cmp_indx = Opcode{ .value = 0xC1, .mnemonic = "CMP", .addr_mode = .indexed_indirect_x, .group = .compare, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.x | Operand.memory };
-        pub const cmp_indy = Opcode{ .value = 0xD1, .mnemonic = "CMP", .addr_mode = .indirect_indexed_y, .group = .compare, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.a | Operand.y | Operand.memory };
-        pub const cpx_imm = Opcode{ .value = 0xE0, .mnemonic = "CPX", .addr_mode = .immediate, .group = .compare, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.x };
-        pub const cpx_zp = Opcode{ .value = 0xE4, .mnemonic = "CPX", .addr_mode = .zero_page, .group = .compare, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.x | Operand.memory };
-        pub const cpx_abs = Opcode{ .value = 0xEC, .mnemonic = "CPX", .addr_mode = .absolute, .group = .compare, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.x | Operand.memory };
-        pub const cpy_imm = Opcode{ .value = 0xC0, .mnemonic = "CPY", .addr_mode = .immediate, .group = .compare, .operand_type = .immediate, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.y };
-        pub const cpy_zp = Opcode{ .value = 0xC4, .mnemonic = "CPY", .addr_mode = .zero_page, .group = .compare, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read, .operand = Operand.y | Operand.memory };
-        pub const cpy_abs = Opcode{ .value = 0xCC, .mnemonic = "CPY", .addr_mode = .absolute, .group = .compare, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read, .operand = Operand.y | Operand.memory };
+        pub const cmp_imm = Opcode{
+            .value = 0xC9,
+            .mnemonic = "CMP",
+            .addr_mode = .immediate,
+            .group = .compare,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a,
+        };
+        pub const cmp_zp = Opcode{
+            .value = 0xC5,
+            .mnemonic = "CMP",
+            .addr_mode = .zero_page,
+            .group = .compare,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const cmp_zpx = Opcode{
+            .value = 0xD5,
+            .mnemonic = "CMP",
+            .addr_mode = .zero_page_x,
+            .group = .compare,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const cmp_abs = Opcode{
+            .value = 0xCD,
+            .mnemonic = "CMP",
+            .addr_mode = .absolute,
+            .group = .compare,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.memory,
+        };
+        pub const cmp_absx = Opcode{
+            .value = 0xDD,
+            .mnemonic = "CMP",
+            .addr_mode = .absolute_x,
+            .group = .compare,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const cmp_absy = Opcode{
+            .value = 0xD9,
+            .mnemonic = "CMP",
+            .addr_mode = .absolute_y,
+            .group = .compare,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const cmp_indx = Opcode{
+            .value = 0xC1,
+            .mnemonic = "CMP",
+            .addr_mode = .indexed_indirect_x,
+            .group = .compare,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.x | Operand.memory,
+        };
+        pub const cmp_indy = Opcode{
+            .value = 0xD1,
+            .mnemonic = "CMP",
+            .addr_mode = .indirect_indexed_y,
+            .group = .compare,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.y | Operand.memory,
+        };
+        pub const cpx_imm = Opcode{
+            .value = 0xE0,
+            .mnemonic = "CPX",
+            .addr_mode = .immediate,
+            .group = .compare,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.x,
+        };
+        pub const cpx_zp = Opcode{
+            .value = 0xE4,
+            .mnemonic = "CPX",
+            .addr_mode = .zero_page,
+            .group = .compare,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const cpx_abs = Opcode{
+            .value = 0xEC,
+            .mnemonic = "CPX",
+            .addr_mode = .absolute,
+            .group = .compare,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const cpy_imm = Opcode{
+            .value = 0xC0,
+            .mnemonic = "CPY",
+            .addr_mode = .immediate,
+            .group = .compare,
+            .operand_type = .immediate,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.y,
+        };
+        pub const cpy_zp = Opcode{
+            .value = 0xC4,
+            .mnemonic = "CPY",
+            .addr_mode = .zero_page,
+            .group = .compare,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read,
+            .operand = Operand.y | Operand.memory,
+        };
+        pub const cpy_abs = Opcode{
+            .value = 0xCC,
+            .mnemonic = "CPY",
+            .addr_mode = .absolute,
+            .group = .compare,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read,
+            .operand = Operand.y | Operand.memory,
+        };
 
         // Shift instructions
-        pub const asl_a = Opcode{ .value = 0x0A, .mnemonic = "ASL", .addr_mode = .implied, .group = .shift, .operand_type = .register, .operand_size = .none, .access_type = AccessType.read_write, .operand = Operand.a };
-        pub const asl_zp = Opcode{ .value = 0x06, .mnemonic = "ASL", .addr_mode = .zero_page, .group = .shift, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read_write, .operand = Operand.memory };
-        pub const asl_zpx = Opcode{ .value = 0x16, .mnemonic = "ASL", .addr_mode = .zero_page_x, .group = .shift, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read_write, .operand = Operand.x | Operand.memory };
-        pub const asl_abs = Opcode{ .value = 0x0E, .mnemonic = "ASL", .addr_mode = .absolute, .group = .shift, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read_write, .operand = Operand.memory };
-        pub const asl_absx = Opcode{ .value = 0x1E, .mnemonic = "ASL", .addr_mode = .absolute_x, .group = .shift, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read_write, .operand = Operand.x | Operand.memory };
-        pub const lsr_a = Opcode{ .value = 0x4A, .mnemonic = "LSR", .addr_mode = .implied, .group = .shift, .operand_type = .register, .operand_size = .none, .access_type = AccessType.read_write, .operand = Operand.a };
-        pub const lsr_zp = Opcode{ .value = 0x46, .mnemonic = "LSR", .addr_mode = .zero_page, .group = .shift, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read_write, .operand = Operand.memory };
-        pub const lsr_zpx = Opcode{ .value = 0x56, .mnemonic = "LSR", .addr_mode = .zero_page_x, .group = .shift, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read_write, .operand = Operand.x | Operand.memory };
-        pub const lsr_abs = Opcode{ .value = 0x4E, .mnemonic = "LSR", .addr_mode = .absolute, .group = .shift, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read_write, .operand = Operand.memory };
-        pub const lsr_absx = Opcode{ .value = 0x5E, .mnemonic = "LSR", .addr_mode = .absolute_x, .group = .shift, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read_write, .operand = Operand.x | Operand.memory };
-        pub const rol_a = Opcode{ .value = 0x2A, .mnemonic = "ROL", .addr_mode = .implied, .group = .shift, .operand_type = .register, .operand_size = .none, .access_type = AccessType.read_write, .operand = Operand.a };
-        pub const rol_zp = Opcode{ .value = 0x26, .mnemonic = "ROL", .addr_mode = .zero_page, .group = .shift, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read_write, .operand = Operand.memory };
-        pub const rol_zpx = Opcode{ .value = 0x36, .mnemonic = "ROL", .addr_mode = .zero_page_x, .group = .shift, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read_write, .operand = Operand.x | Operand.memory };
-        pub const rol_abs = Opcode{ .value = 0x2E, .mnemonic = "ROL", .addr_mode = .absolute, .group = .shift, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read_write, .operand = Operand.memory };
-        pub const rol_absx = Opcode{ .value = 0x3E, .mnemonic = "ROL", .addr_mode = .absolute_x, .group = .shift, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read_write, .operand = Operand.x | Operand.memory };
-        pub const ror_a = Opcode{ .value = 0x6A, .mnemonic = "ROR", .addr_mode = .implied, .group = .shift, .operand_type = .register, .operand_size = .none, .access_type = AccessType.read_write, .operand = Operand.a };
-        pub const ror_zp = Opcode{ .value = 0x66, .mnemonic = "ROR", .addr_mode = .zero_page, .group = .shift, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read_write, .operand = Operand.memory };
-        pub const ror_zpx = Opcode{ .value = 0x76, .mnemonic = "ROR", .addr_mode = .zero_page_x, .group = .shift, .operand_type = .memory, .operand_size = .byte, .access_type = AccessType.read_write, .operand = Operand.x | Operand.memory };
-        pub const ror_abs = Opcode{ .value = 0x6E, .mnemonic = "ROR", .addr_mode = .absolute, .group = .shift, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read_write, .operand = Operand.memory };
-        pub const ror_absx = Opcode{ .value = 0x7E, .mnemonic = "ROR", .addr_mode = .absolute_x, .group = .shift, .operand_type = .memory, .operand_size = .word, .access_type = AccessType.read_write, .operand = Operand.x | Operand.memory };
+        pub const asl_a = Opcode{
+            .value = 0x0A,
+            .mnemonic = "ASL",
+            .addr_mode = .implied,
+            .group = .shift,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.read_write,
+            .operand = Operand.a,
+        };
+        pub const asl_zp = Opcode{
+            .value = 0x06,
+            .mnemonic = "ASL",
+            .addr_mode = .zero_page,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read_write,
+            .operand = Operand.memory,
+        };
+        pub const asl_zpx = Opcode{
+            .value = 0x16,
+            .mnemonic = "ASL",
+            .addr_mode = .zero_page_x,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const asl_abs = Opcode{
+            .value = 0x0E,
+            .mnemonic = "ASL",
+            .addr_mode = .absolute,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read_write,
+            .operand = Operand.memory,
+        };
+        pub const asl_absx = Opcode{
+            .value = 0x1E,
+            .mnemonic = "ASL",
+            .addr_mode = .absolute_x,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const lsr_a = Opcode{
+            .value = 0x4A,
+            .mnemonic = "LSR",
+            .addr_mode = .implied,
+            .group = .shift,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.read_write,
+            .operand = Operand.a,
+        };
+        pub const lsr_zp = Opcode{
+            .value = 0x46,
+            .mnemonic = "LSR",
+            .addr_mode = .zero_page,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read_write,
+            .operand = Operand.memory,
+        };
+        pub const lsr_zpx = Opcode{
+            .value = 0x56,
+            .mnemonic = "LSR",
+            .addr_mode = .zero_page_x,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const lsr_abs = Opcode{
+            .value = 0x4E,
+            .mnemonic = "LSR",
+            .addr_mode = .absolute,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read_write,
+            .operand = Operand.memory,
+        };
+        pub const lsr_absx = Opcode{
+            .value = 0x5E,
+            .mnemonic = "LSR",
+            .addr_mode = .absolute_x,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const rol_a = Opcode{
+            .value = 0x2A,
+            .mnemonic = "ROL",
+            .addr_mode = .implied,
+            .group = .shift,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.read_write,
+            .operand = Operand.a,
+        };
+        pub const rol_zp = Opcode{
+            .value = 0x26,
+            .mnemonic = "ROL",
+            .addr_mode = .zero_page,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read_write,
+            .operand = Operand.memory,
+        };
+        pub const rol_zpx = Opcode{
+            .value = 0x36,
+            .mnemonic = "ROL",
+            .addr_mode = .zero_page_x,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const rol_abs = Opcode{
+            .value = 0x2E,
+            .mnemonic = "ROL",
+            .addr_mode = .absolute,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read_write,
+            .operand = Operand.memory,
+        };
+        pub const rol_absx = Opcode{
+            .value = 0x3E,
+            .mnemonic = "ROL",
+            .addr_mode = .absolute_x,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const ror_a = Opcode{
+            .value = 0x6A,
+            .mnemonic = "ROR",
+            .addr_mode = .implied,
+            .group = .shift,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.read_write,
+            .operand = Operand.a,
+        };
+        pub const ror_zp = Opcode{
+            .value = 0x66,
+            .mnemonic = "ROR",
+            .addr_mode = .zero_page,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read_write,
+            .operand = Operand.memory,
+        };
+        pub const ror_zpx = Opcode{
+            .value = 0x76,
+            .mnemonic = "ROR",
+            .addr_mode = .zero_page_x,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .byte,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x | Operand.memory,
+        };
+        pub const ror_abs = Opcode{
+            .value = 0x6E,
+            .mnemonic = "ROR",
+            .addr_mode = .absolute,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read_write,
+            .operand = Operand.memory,
+        };
+        pub const ror_absx = Opcode{
+            .value = 0x7E,
+            .mnemonic = "ROR",
+            .addr_mode = .absolute_x,
+            .group = .shift,
+            .operand_type = .memory,
+            .operand_size = .word,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x | Operand.memory,
+        };
 
         // Stack instructions
-        pub const pha = Opcode{ .value = 0x48, .mnemonic = "PHA", .addr_mode = .implied, .group = .stack, .operand_type = .register, .operand_size = .none, .access_type = AccessType.write, .operand = Operand.a | Operand.sp | Operand.memory };
-        pub const pla = Opcode{ .value = 0x68, .mnemonic = "PLA", .addr_mode = .implied, .group = .stack, .operand_type = .register, .operand_size = .none, .access_type = AccessType.read, .operand = Operand.a | Operand.sp | Operand.memory };
-        pub const php = Opcode{ .value = 0x08, .mnemonic = "PHP", .addr_mode = .implied, .group = .stack, .operand_type = .register, .operand_size = .none, .access_type = AccessType.write, .operand = Operand.sp | Operand.memory };
-        pub const plp = Opcode{ .value = 0x28, .mnemonic = "PLP", .addr_mode = .implied, .group = .stack, .operand_type = .register, .operand_size = .none, .access_type = AccessType.read, .operand = Operand.sp | Operand.memory };
+        pub const pha = Opcode{
+            .value = 0x48,
+            .mnemonic = "PHA",
+            .addr_mode = .implied,
+            .group = .stack,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.write,
+            .operand = Operand.a | Operand.sp | Operand.memory,
+        };
+        pub const pla = Opcode{
+            .value = 0x68,
+            .mnemonic = "PLA",
+            .addr_mode = .implied,
+            .group = .stack,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.read,
+            .operand = Operand.a | Operand.sp | Operand.memory,
+        };
+        pub const php = Opcode{
+            .value = 0x08,
+            .mnemonic = "PHP",
+            .addr_mode = .implied,
+            .group = .stack,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.write,
+            .operand = Operand.sp | Operand.memory,
+        };
+        pub const plp = Opcode{
+            .value = 0x28,
+            .mnemonic = "PLP",
+            .addr_mode = .implied,
+            .group = .stack,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.read,
+            .operand = Operand.sp | Operand.memory,
+        };
 
         // Transfer instructions
-        pub const tax = Opcode{ .value = 0xAA, .mnemonic = "TAX", .addr_mode = .implied, .group = .transfer, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.a | Operand.x };
-        pub const tay = Opcode{ .value = 0xA8, .mnemonic = "TAY", .addr_mode = .implied, .group = .transfer, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.a | Operand.y };
-        pub const txa = Opcode{ .value = 0x8A, .mnemonic = "TXA", .addr_mode = .implied, .group = .transfer, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.x | Operand.a };
-        pub const tya = Opcode{ .value = 0x98, .mnemonic = "TYA", .addr_mode = .implied, .group = .transfer, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.y | Operand.a };
-        pub const tsx = Opcode{ .value = 0xBA, .mnemonic = "TSX", .addr_mode = .implied, .group = .transfer, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.sp | Operand.x };
-        pub const txs = Opcode{ .value = 0x9A, .mnemonic = "TXS", .addr_mode = .implied, .group = .transfer, .operand_type = .register, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.x | Operand.sp };
-        pub const dex = Opcode{ .value = 0xCA, .mnemonic = "DEX", .addr_mode = .implied, .group = .transfer, .operand_type = .register, .operand_size = .none, .access_type = AccessType.read_write, .operand = Operand.x };
-        pub const dey = Opcode{ .value = 0x88, .mnemonic = "DEY", .addr_mode = .implied, .group = .transfer, .operand_type = .register, .operand_size = .none, .access_type = AccessType.read_write, .operand = Operand.y };
-        pub const inx = Opcode{ .value = 0xE8, .mnemonic = "INX", .addr_mode = .implied, .group = .transfer, .operand_type = .register, .operand_size = .none, .access_type = AccessType.read_write, .operand = Operand.x };
-        pub const iny = Opcode{ .value = 0xC8, .mnemonic = "INY", .addr_mode = .implied, .group = .transfer, .operand_type = .register, .operand_size = .none, .access_type = AccessType.read_write, .operand = Operand.y };
+        pub const tax = Opcode{
+            .value = 0xAA,
+            .mnemonic = "TAX",
+            .addr_mode = .implied,
+            .group = .transfer,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.a | Operand.x,
+        };
+        pub const tay = Opcode{
+            .value = 0xA8,
+            .mnemonic = "TAY",
+            .addr_mode = .implied,
+            .group = .transfer,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.a | Operand.y,
+        };
+        pub const txa = Opcode{
+            .value = 0x8A,
+            .mnemonic = "TXA",
+            .addr_mode = .implied,
+            .group = .transfer,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.x | Operand.a,
+        };
+        pub const tya = Opcode{
+            .value = 0x98,
+            .mnemonic = "TYA",
+            .addr_mode = .implied,
+            .group = .transfer,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.y | Operand.a,
+        };
+        pub const tsx = Opcode{
+            .value = 0xBA,
+            .mnemonic = "TSX",
+            .addr_mode = .implied,
+            .group = .transfer,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.sp | Operand.x,
+        };
+        pub const txs = Opcode{
+            .value = 0x9A,
+            .mnemonic = "TXS",
+            .addr_mode = .implied,
+            .group = .transfer,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.none,
+            .operand = Operand.x | Operand.sp,
+        };
+        pub const dex = Opcode{
+            .value = 0xCA,
+            .mnemonic = "DEX",
+            .addr_mode = .implied,
+            .group = .transfer,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x,
+        };
+        pub const dey = Opcode{
+            .value = 0x88,
+            .mnemonic = "DEY",
+            .addr_mode = .implied,
+            .group = .transfer,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.read_write,
+            .operand = Operand.y,
+        };
+        pub const inx = Opcode{
+            .value = 0xE8,
+            .mnemonic = "INX",
+            .addr_mode = .implied,
+            .group = .transfer,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.read_write,
+            .operand = Operand.x,
+        };
+        pub const iny = Opcode{
+            .value = 0xC8,
+            .mnemonic = "INY",
+            .addr_mode = .implied,
+            .group = .transfer,
+            .operand_type = .register,
+            .operand_size = .none,
+            .access_type = AccessType.read_write,
+            .operand = Operand.y,
+        };
     };
 
     pub fn opcode2Insn(opcode_value: u8) Opcode {
@@ -2088,7 +3448,16 @@ pub const Cpu = struct {
             0xC8 => Insn.iny,
 
             // Unknown opcode fallback
-            else => Opcode{ .value = opcode_value, .mnemonic = "???", .addr_mode = .implied, .group = .control, .operand_type = .none, .operand_size = .none, .access_type = AccessType.none, .operand = Operand.none },
+            else => Opcode{
+                .value = opcode_value,
+                .mnemonic = "???",
+                .addr_mode = .implied,
+                .group = .control,
+                .operand_type = .none,
+                .operand_size = .none,
+                .access_type = AccessType.none,
+                .operand = Operand.none,
+            },
         };
     }
 
@@ -2105,58 +3474,160 @@ pub const Cpu = struct {
             Insn.brk.value => return "BRK",
             Insn.rti.value => return "RTI",
             Insn.rts.value => return "RTS",
-            Insn.jsr.value => return std.fmt.bufPrint(buffer, "JSR ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.jmp_abs.value => return std.fmt.bufPrint(buffer, "JMP ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.jmp_ind.value => return std.fmt.bufPrint(buffer, "JMP (${X:0>4})", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
+            Insn.jsr.value => return std.fmt.bufPrint(buffer, "JSR ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.jmp_abs.value => return std.fmt.bufPrint(buffer, "JMP ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.jmp_ind.value => return std.fmt.bufPrint(
+                buffer,
+                "JMP (${X:0>4})",
+                .{(@as(u16, byte2) | (@as(u16, byte3) << 8))},
+            ),
 
-            Insn.beq.value => return std.fmt.bufPrint(buffer, "BEQ ${X:0>4}", .{pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256}),
-            Insn.bne.value => return std.fmt.bufPrint(buffer, "BNE ${X:0>4}", .{pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256}),
-            Insn.bcs.value => return std.fmt.bufPrint(buffer, "BCS ${X:0>4}", .{pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256}),
-            Insn.bcc.value => return std.fmt.bufPrint(buffer, "BCC ${X:0>4}", .{pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256}),
-            Insn.bmi.value => return std.fmt.bufPrint(buffer, "BMI ${X:0>4}", .{pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256}),
-            Insn.bpl.value => return std.fmt.bufPrint(buffer, "BPL ${X:0>4}", .{pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256}),
-            Insn.bvc.value => return std.fmt.bufPrint(buffer, "BVC ${X:0>4}", .{pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256}),
-            Insn.bvs.value => return std.fmt.bufPrint(buffer, "BVS ${X:0>4}", .{pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256}),
+            Insn.beq.value => return std.fmt.bufPrint(buffer, "BEQ ${X:0>4}", .{
+                pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256,
+            }),
+            Insn.bne.value => return std.fmt.bufPrint(buffer, "BNE ${X:0>4}", .{
+                pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256,
+            }),
+            Insn.bcs.value => return std.fmt.bufPrint(buffer, "BCS ${X:0>4}", .{
+                pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256,
+            }),
+            Insn.bcc.value => return std.fmt.bufPrint(buffer, "BCC ${X:0>4}", .{
+                pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256,
+            }),
+            Insn.bmi.value => return std.fmt.bufPrint(buffer, "BMI ${X:0>4}", .{
+                pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256,
+            }),
+            Insn.bpl.value => return std.fmt.bufPrint(buffer, "BPL ${X:0>4}", .{
+                pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256,
+            }),
+            Insn.bvc.value => return std.fmt.bufPrint(buffer, "BVC ${X:0>4}", .{
+                pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256,
+            }),
+            Insn.bvs.value => return std.fmt.bufPrint(buffer, "BVS ${X:0>4}", .{
+                pc +% 2 +% if (byte2 < 128) @as(u16, byte2) else @as(u16, byte2) -% 256,
+            }),
 
-            Insn.lda_imm.value => return std.fmt.bufPrint(buffer, "LDA #${X:0>2}", .{byte2}),
-            Insn.lda_zp.value => return std.fmt.bufPrint(buffer, "LDA ${X:0>2}", .{byte2}),
-            Insn.lda_zpx.value => return std.fmt.bufPrint(buffer, "LDA ${X:0>2},X", .{byte2}),
-            Insn.lda_abs.value => return std.fmt.bufPrint(buffer, "LDA ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.lda_absx.value => return std.fmt.bufPrint(buffer, "LDA ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.lda_absy.value => return std.fmt.bufPrint(buffer, "LDA ${X:0>4},Y", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.lda_indx.value => return std.fmt.bufPrint(buffer, "LDA (${X:0>2},X)", .{byte2}),
-            Insn.lda_indy.value => return std.fmt.bufPrint(buffer, "LDA (${X:0>2}),Y", .{byte2}),
-            Insn.ldx_imm.value => return std.fmt.bufPrint(buffer, "LDX #${X:0>2}", .{byte2}),
-            Insn.ldx_zp.value => return std.fmt.bufPrint(buffer, "LDX ${X:0>2}", .{byte2}),
-            Insn.ldx_zpy.value => return std.fmt.bufPrint(buffer, "LDX ${X:0>2},Y", .{byte2}),
-            Insn.ldx_abs.value => return std.fmt.bufPrint(buffer, "LDX ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.ldx_absy.value => return std.fmt.bufPrint(buffer, "LDX ${X:0>4},Y", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.ldy_imm.value => return std.fmt.bufPrint(buffer, "LDY #${X:0>2}", .{byte2}),
-            Insn.ldy_zp.value => return std.fmt.bufPrint(buffer, "LDY ${X:0>2}", .{byte2}),
-            Insn.ldy_zpx.value => return std.fmt.bufPrint(buffer, "LDY ${X:0>2},X", .{byte2}),
-            Insn.ldy_abs.value => return std.fmt.bufPrint(buffer, "LDY ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.ldy_absx.value => return std.fmt.bufPrint(buffer, "LDY ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.sta_zp.value => return std.fmt.bufPrint(buffer, "STA ${X:0>2}", .{byte2}),
-            Insn.sta_zpx.value => return std.fmt.bufPrint(buffer, "STA ${X:0>2},X", .{byte2}),
-            Insn.sta_abs.value => return std.fmt.bufPrint(buffer, "STA ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.sta_absx.value => return std.fmt.bufPrint(buffer, "STA ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.sta_absy.value => return std.fmt.bufPrint(buffer, "STA ${X:0>4},Y", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.sta_indx.value => return std.fmt.bufPrint(buffer, "STA (${X:0>2},X)", .{byte2}),
-            Insn.sta_indy.value => return std.fmt.bufPrint(buffer, "STA (${X:0>2}),Y", .{byte2}),
-            Insn.stx_zp.value => return std.fmt.bufPrint(buffer, "STX ${X:0>2}", .{byte2}),
-            Insn.stx_zpy.value => return std.fmt.bufPrint(buffer, "STX ${X:0>2},Y", .{byte2}),
-            Insn.stx_abs.value => return std.fmt.bufPrint(buffer, "STX ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.sty_zp.value => return std.fmt.bufPrint(buffer, "STY ${X:0>2}", .{byte2}),
-            Insn.sty_zpx.value => return std.fmt.bufPrint(buffer, "STY ${X:0>2},X", .{byte2}),
-            Insn.sty_abs.value => return std.fmt.bufPrint(buffer, "STY ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.dec_zp.value => return std.fmt.bufPrint(buffer, "DEC ${X:0>2}", .{byte2}),
-            Insn.dec_zpx.value => return std.fmt.bufPrint(buffer, "DEC ${X:0>2},X", .{byte2}),
-            Insn.dec_abs.value => return std.fmt.bufPrint(buffer, "DEC ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.dec_absx.value => return std.fmt.bufPrint(buffer, "DEC ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.inc_zp.value => return std.fmt.bufPrint(buffer, "INC ${X:0>2}", .{byte2}),
-            Insn.inc_zpx.value => return std.fmt.bufPrint(buffer, "INC ${X:0>2},X", .{byte2}),
-            Insn.inc_abs.value => return std.fmt.bufPrint(buffer, "INC ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.inc_absx.value => return std.fmt.bufPrint(buffer, "INC ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
+            Insn.lda_imm.value => return std.fmt.bufPrint(buffer, "LDA #${X:0>2}", .{
+                byte2,
+            }),
+            Insn.lda_zp.value => return std.fmt.bufPrint(buffer, "LDA ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.lda_zpx.value => return std.fmt.bufPrint(buffer, "LDA ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.lda_abs.value => return std.fmt.bufPrint(buffer, "LDA ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.lda_absx.value => return std.fmt.bufPrint(buffer, "LDA ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.lda_absy.value => return std.fmt.bufPrint(buffer, "LDA ${X:0>4},Y", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.lda_indx.value => return std.fmt.bufPrint(buffer, "LDA (${X:0>2},X)", .{
+                byte2,
+            }),
+            Insn.lda_indy.value => return std.fmt.bufPrint(buffer, "LDA (${X:0>2}),Y", .{
+                byte2,
+            }),
+            Insn.ldx_imm.value => return std.fmt.bufPrint(buffer, "LDX #${X:0>2}", .{
+                byte2,
+            }),
+            Insn.ldx_zp.value => return std.fmt.bufPrint(buffer, "LDX ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.ldx_zpy.value => return std.fmt.bufPrint(buffer, "LDX ${X:0>2},Y", .{
+                byte2,
+            }),
+            Insn.ldx_abs.value => return std.fmt.bufPrint(buffer, "LDX ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.ldx_absy.value => return std.fmt.bufPrint(buffer, "LDX ${X:0>4},Y", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.ldy_imm.value => return std.fmt.bufPrint(buffer, "LDY #${X:0>2}", .{
+                byte2,
+            }),
+            Insn.ldy_zp.value => return std.fmt.bufPrint(buffer, "LDY ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.ldy_zpx.value => return std.fmt.bufPrint(buffer, "LDY ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.ldy_abs.value => return std.fmt.bufPrint(buffer, "LDY ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.ldy_absx.value => return std.fmt.bufPrint(buffer, "LDY ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.sta_zp.value => return std.fmt.bufPrint(buffer, "STA ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.sta_zpx.value => return std.fmt.bufPrint(buffer, "STA ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.sta_abs.value => return std.fmt.bufPrint(buffer, "STA ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.sta_absx.value => return std.fmt.bufPrint(buffer, "STA ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.sta_absy.value => return std.fmt.bufPrint(buffer, "STA ${X:0>4},Y", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.sta_indx.value => return std.fmt.bufPrint(buffer, "STA (${X:0>2},X)", .{
+                byte2,
+            }),
+            Insn.sta_indy.value => return std.fmt.bufPrint(buffer, "STA (${X:0>2}),Y", .{
+                byte2,
+            }),
+            Insn.stx_zp.value => return std.fmt.bufPrint(buffer, "STX ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.stx_zpy.value => return std.fmt.bufPrint(buffer, "STX ${X:0>2},Y", .{
+                byte2,
+            }),
+            Insn.stx_abs.value => return std.fmt.bufPrint(buffer, "STX ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.sty_zp.value => return std.fmt.bufPrint(buffer, "STY ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.sty_zpx.value => return std.fmt.bufPrint(buffer, "STY ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.sty_abs.value => return std.fmt.bufPrint(buffer, "STY ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.dec_zp.value => return std.fmt.bufPrint(buffer, "DEC ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.dec_zpx.value => return std.fmt.bufPrint(buffer, "DEC ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.dec_abs.value => return std.fmt.bufPrint(buffer, "DEC ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.dec_absx.value => return std.fmt.bufPrint(buffer, "DEC ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.inc_zp.value => return std.fmt.bufPrint(buffer, "INC ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.inc_zpx.value => return std.fmt.bufPrint(buffer, "INC ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.inc_abs.value => return std.fmt.bufPrint(buffer, "INC ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.inc_absx.value => return std.fmt.bufPrint(buffer, "INC ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
             Insn.nop.value => return "NOP",
             Insn.clc.value => return "CLC",
             Insn.sec.value => return "SEC",
@@ -2165,82 +3636,226 @@ pub const Cpu = struct {
             Insn.cld.value => return "CLD",
             Insn.sed.value => return "SED",
             Insn.clv.value => return "CLV",
-            Insn.adc_imm.value => return std.fmt.bufPrint(buffer, "ADC #${X:0>2}", .{byte2}),
-            Insn.adc_zp.value => return std.fmt.bufPrint(buffer, "ADC ${X:0>2}", .{byte2}),
-            Insn.adc_zpx.value => return std.fmt.bufPrint(buffer, "ADC ${X:0>2},X", .{byte2}),
-            Insn.adc_abs.value => return std.fmt.bufPrint(buffer, "ADC ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.adc_absx.value => return std.fmt.bufPrint(buffer, "ADC ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.adc_absy.value => return std.fmt.bufPrint(buffer, "ADC ${X:0>4},Y", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.adc_indx.value => return std.fmt.bufPrint(buffer, "ADC (${X:0>2},X)", .{byte2}),
-            Insn.adc_indy.value => return std.fmt.bufPrint(buffer, "ADC (${X:0>2}),Y", .{byte2}),
-            Insn.sbc_imm.value => return std.fmt.bufPrint(buffer, "SBC #${X:0>2}", .{byte2}),
-            Insn.sbc_zp.value => return std.fmt.bufPrint(buffer, "SBC ${X:0>2}", .{byte2}),
-            Insn.sbc_zpx.value => return std.fmt.bufPrint(buffer, "SBC ${X:0>2},X", .{byte2}),
-            Insn.sbc_abs.value => return std.fmt.bufPrint(buffer, "SBC ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.sbc_absx.value => return std.fmt.bufPrint(buffer, "SBC ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.sbc_absy.value => return std.fmt.bufPrint(buffer, "SBC ${X:0>4},Y", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.sbc_indx.value => return std.fmt.bufPrint(buffer, "SBC (${X:0>2},X)", .{byte2}),
-            Insn.sbc_indy.value => return std.fmt.bufPrint(buffer, "SBC (${X:0>2}),Y", .{byte2}),
-            Insn.and_imm.value => return std.fmt.bufPrint(buffer, "AND #${X:0>2}", .{byte2}),
-            Insn.and_zp.value => return std.fmt.bufPrint(buffer, "AND ${X:0>2}", .{byte2}),
-            Insn.and_zpx.value => return std.fmt.bufPrint(buffer, "AND ${X:0>2},X", .{byte2}),
-            Insn.and_abs.value => return std.fmt.bufPrint(buffer, "AND ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.and_absx.value => return std.fmt.bufPrint(buffer, "AND ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.and_absy.value => return std.fmt.bufPrint(buffer, "AND ${X:0>4},Y", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.and_indx.value => return std.fmt.bufPrint(buffer, "AND (${X:0>2},X)", .{byte2}),
-            Insn.and_indy.value => return std.fmt.bufPrint(buffer, "AND (${X:0>2}),Y", .{byte2}),
-            Insn.ora_imm.value => return std.fmt.bufPrint(buffer, "ORA #${X:0>2}", .{byte2}),
-            Insn.ora_zp.value => return std.fmt.bufPrint(buffer, "ORA ${X:0>2}", .{byte2}),
-            Insn.ora_zpx.value => return std.fmt.bufPrint(buffer, "ORA ${X:0>2},X", .{byte2}),
-            Insn.ora_abs.value => return std.fmt.bufPrint(buffer, "ORA ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.ora_absx.value => return std.fmt.bufPrint(buffer, "ORA ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.ora_absy.value => return std.fmt.bufPrint(buffer, "ORA ${X:0>4},Y", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.ora_indx.value => return std.fmt.bufPrint(buffer, "ORA (${X:0>2},X)", .{byte2}),
-            Insn.ora_indy.value => return std.fmt.bufPrint(buffer, "ORA (${X:0>2}),Y", .{byte2}),
-            Insn.eor_imm.value => return std.fmt.bufPrint(buffer, "EOR #${X:0>2}", .{byte2}),
-            Insn.eor_zp.value => return std.fmt.bufPrint(buffer, "EOR ${X:0>2}", .{byte2}),
-            Insn.eor_zpx.value => return std.fmt.bufPrint(buffer, "EOR ${X:0>2},X", .{byte2}),
-            Insn.eor_abs.value => return std.fmt.bufPrint(buffer, "EOR ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.eor_absx.value => return std.fmt.bufPrint(buffer, "EOR ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.eor_absy.value => return std.fmt.bufPrint(buffer, "EOR ${X:0>4},Y", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.eor_indx.value => return std.fmt.bufPrint(buffer, "EOR (${X:0>2},X)", .{byte2}),
-            Insn.eor_indy.value => return std.fmt.bufPrint(buffer, "EOR (${X:0>2}),Y", .{byte2}),
-            Insn.bit_zp.value => return std.fmt.bufPrint(buffer, "BIT ${X:0>2}", .{byte2}),
-            Insn.bit_abs.value => return std.fmt.bufPrint(buffer, "BIT ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.cmp_imm.value => return std.fmt.bufPrint(buffer, "CMP #${X:0>2}", .{byte2}),
-            Insn.cmp_zp.value => return std.fmt.bufPrint(buffer, "CMP ${X:0>2}", .{byte2}),
-            Insn.cmp_zpx.value => return std.fmt.bufPrint(buffer, "CMP ${X:0>2},X", .{byte2}),
-            Insn.cmp_abs.value => return std.fmt.bufPrint(buffer, "CMP ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.cmp_absx.value => return std.fmt.bufPrint(buffer, "CMP ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.cmp_absy.value => return std.fmt.bufPrint(buffer, "CMP ${X:0>4},Y", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.cmp_indx.value => return std.fmt.bufPrint(buffer, "CMP (${X:0>2},X)", .{byte2}),
-            Insn.cmp_indy.value => return std.fmt.bufPrint(buffer, "CMP (${X:0>2}),Y", .{byte2}),
-            Insn.cpx_imm.value => return std.fmt.bufPrint(buffer, "CPX #${X:0>2}", .{byte2}),
-            Insn.cpx_zp.value => return std.fmt.bufPrint(buffer, "CPX ${X:0>2}", .{byte2}),
-            Insn.cpx_abs.value => return std.fmt.bufPrint(buffer, "CPX ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.cpy_imm.value => return std.fmt.bufPrint(buffer, "CPY #${X:0>2}", .{byte2}),
-            Insn.cpy_zp.value => return std.fmt.bufPrint(buffer, "CPY ${X:0>2}", .{byte2}),
-            Insn.cpy_abs.value => return std.fmt.bufPrint(buffer, "CPY ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
+            Insn.adc_imm.value => return std.fmt.bufPrint(buffer, "ADC #${X:0>2}", .{
+                byte2,
+            }),
+            Insn.adc_zp.value => return std.fmt.bufPrint(buffer, "ADC ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.adc_zpx.value => return std.fmt.bufPrint(buffer, "ADC ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.adc_abs.value => return std.fmt.bufPrint(buffer, "ADC ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.adc_absx.value => return std.fmt.bufPrint(buffer, "ADC ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.adc_absy.value => return std.fmt.bufPrint(buffer, "ADC ${X:0>4},Y", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.adc_indx.value => return std.fmt.bufPrint(buffer, "ADC (${X:0>2},X)", .{
+                byte2,
+            }),
+            Insn.adc_indy.value => return std.fmt.bufPrint(buffer, "ADC (${X:0>2}),Y", .{
+                byte2,
+            }),
+            Insn.sbc_imm.value => return std.fmt.bufPrint(buffer, "SBC #${X:0>2}", .{
+                byte2,
+            }),
+            Insn.sbc_zp.value => return std.fmt.bufPrint(buffer, "SBC ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.sbc_zpx.value => return std.fmt.bufPrint(buffer, "SBC ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.sbc_abs.value => return std.fmt.bufPrint(buffer, "SBC ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.sbc_absx.value => return std.fmt.bufPrint(buffer, "SBC ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.sbc_absy.value => return std.fmt.bufPrint(buffer, "SBC ${X:0>4},Y", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.sbc_indx.value => return std.fmt.bufPrint(buffer, "SBC (${X:0>2},X)", .{
+                byte2,
+            }),
+            Insn.sbc_indy.value => return std.fmt.bufPrint(buffer, "SBC (${X:0>2}),Y", .{
+                byte2,
+            }),
+            Insn.and_imm.value => return std.fmt.bufPrint(buffer, "AND #${X:0>2}", .{
+                byte2,
+            }),
+            Insn.and_zp.value => return std.fmt.bufPrint(buffer, "AND ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.and_zpx.value => return std.fmt.bufPrint(buffer, "AND ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.and_abs.value => return std.fmt.bufPrint(buffer, "AND ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.and_absx.value => return std.fmt.bufPrint(buffer, "AND ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.and_absy.value => return std.fmt.bufPrint(buffer, "AND ${X:0>4},Y", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.and_indx.value => return std.fmt.bufPrint(buffer, "AND (${X:0>2},X)", .{
+                byte2,
+            }),
+            Insn.and_indy.value => return std.fmt.bufPrint(buffer, "AND (${X:0>2}),Y", .{
+                byte2,
+            }),
+            Insn.ora_imm.value => return std.fmt.bufPrint(buffer, "ORA #${X:0>2}", .{
+                byte2,
+            }),
+            Insn.ora_zp.value => return std.fmt.bufPrint(buffer, "ORA ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.ora_zpx.value => return std.fmt.bufPrint(buffer, "ORA ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.ora_abs.value => return std.fmt.bufPrint(buffer, "ORA ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.ora_absx.value => return std.fmt.bufPrint(buffer, "ORA ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.ora_absy.value => return std.fmt.bufPrint(buffer, "ORA ${X:0>4},Y", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.ora_indx.value => return std.fmt.bufPrint(buffer, "ORA (${X:0>2},X)", .{
+                byte2,
+            }),
+            Insn.ora_indy.value => return std.fmt.bufPrint(buffer, "ORA (${X:0>2}),Y", .{
+                byte2,
+            }),
+            Insn.eor_imm.value => return std.fmt.bufPrint(buffer, "EOR #${X:0>2}", .{
+                byte2,
+            }),
+            Insn.eor_zp.value => return std.fmt.bufPrint(buffer, "EOR ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.eor_zpx.value => return std.fmt.bufPrint(buffer, "EOR ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.eor_abs.value => return std.fmt.bufPrint(buffer, "EOR ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.eor_absx.value => return std.fmt.bufPrint(buffer, "EOR ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.eor_absy.value => return std.fmt.bufPrint(buffer, "EOR ${X:0>4},Y", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.eor_indx.value => return std.fmt.bufPrint(buffer, "EOR (${X:0>2},X)", .{
+                byte2,
+            }),
+            Insn.eor_indy.value => return std.fmt.bufPrint(buffer, "EOR (${X:0>2}),Y", .{
+                byte2,
+            }),
+            Insn.bit_zp.value => return std.fmt.bufPrint(buffer, "BIT ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.bit_abs.value => return std.fmt.bufPrint(buffer, "BIT ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.cmp_imm.value => return std.fmt.bufPrint(buffer, "CMP #${X:0>2}", .{
+                byte2,
+            }),
+            Insn.cmp_zp.value => return std.fmt.bufPrint(buffer, "CMP ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.cmp_zpx.value => return std.fmt.bufPrint(buffer, "CMP ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.cmp_abs.value => return std.fmt.bufPrint(buffer, "CMP ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.cmp_absx.value => return std.fmt.bufPrint(buffer, "CMP ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.cmp_absy.value => return std.fmt.bufPrint(buffer, "CMP ${X:0>4},Y", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.cmp_indx.value => return std.fmt.bufPrint(buffer, "CMP (${X:0>2},X)", .{
+                byte2,
+            }),
+            Insn.cmp_indy.value => return std.fmt.bufPrint(buffer, "CMP (${X:0>2}),Y", .{
+                byte2,
+            }),
+            Insn.cpx_imm.value => return std.fmt.bufPrint(buffer, "CPX #${X:0>2}", .{
+                byte2,
+            }),
+            Insn.cpx_zp.value => return std.fmt.bufPrint(buffer, "CPX ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.cpx_abs.value => return std.fmt.bufPrint(buffer, "CPX ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.cpy_imm.value => return std.fmt.bufPrint(buffer, "CPY #${X:0>2}", .{
+                byte2,
+            }),
+            Insn.cpy_zp.value => return std.fmt.bufPrint(buffer, "CPY ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.cpy_abs.value => return std.fmt.bufPrint(buffer, "CPY ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
             Insn.asl_a.value => return "ASL A",
-            Insn.asl_zp.value => return std.fmt.bufPrint(buffer, "ASL ${X:0>2}", .{byte2}),
-            Insn.asl_zpx.value => return std.fmt.bufPrint(buffer, "ASL ${X:0>2},X", .{byte2}),
-            Insn.asl_abs.value => return std.fmt.bufPrint(buffer, "ASL ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.asl_absx.value => return std.fmt.bufPrint(buffer, "ASL ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
+            Insn.asl_zp.value => return std.fmt.bufPrint(buffer, "ASL ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.asl_zpx.value => return std.fmt.bufPrint(buffer, "ASL ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.asl_abs.value => return std.fmt.bufPrint(buffer, "ASL ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.asl_absx.value => return std.fmt.bufPrint(buffer, "ASL ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
             Insn.lsr_a.value => return "LSR A",
-            Insn.lsr_zp.value => return std.fmt.bufPrint(buffer, "LSR ${X:0>2}", .{byte2}),
-            Insn.lsr_zpx.value => return std.fmt.bufPrint(buffer, "LSR ${X:0>2},X", .{byte2}),
-            Insn.lsr_abs.value => return std.fmt.bufPrint(buffer, "LSR ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.lsr_absx.value => return std.fmt.bufPrint(buffer, "LSR ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
+            Insn.lsr_zp.value => return std.fmt.bufPrint(buffer, "LSR ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.lsr_zpx.value => return std.fmt.bufPrint(buffer, "LSR ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.lsr_abs.value => return std.fmt.bufPrint(buffer, "LSR ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.lsr_absx.value => return std.fmt.bufPrint(buffer, "LSR ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
             Insn.rol_a.value => return "ROL A",
-            Insn.rol_zp.value => return std.fmt.bufPrint(buffer, "ROL ${X:0>2}", .{byte2}),
-            Insn.rol_zpx.value => return std.fmt.bufPrint(buffer, "ROL ${X:0>2},X", .{byte2}),
-            Insn.rol_abs.value => return std.fmt.bufPrint(buffer, "ROL ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.rol_absx.value => return std.fmt.bufPrint(buffer, "ROL ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
+            Insn.rol_zp.value => return std.fmt.bufPrint(buffer, "ROL ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.rol_zpx.value => return std.fmt.bufPrint(buffer, "ROL ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.rol_abs.value => return std.fmt.bufPrint(buffer, "ROL ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.rol_absx.value => return std.fmt.bufPrint(buffer, "ROL ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
             Insn.ror_a.value => return "ROR A",
-            Insn.ror_zp.value => return std.fmt.bufPrint(buffer, "ROR ${X:0>2}", .{byte2}),
-            Insn.ror_zpx.value => return std.fmt.bufPrint(buffer, "ROR ${X:0>2},X", .{byte2}),
-            Insn.ror_abs.value => return std.fmt.bufPrint(buffer, "ROR ${X:0>4}", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
-            Insn.ror_absx.value => return std.fmt.bufPrint(buffer, "ROR ${X:0>4},X", .{(@as(u16, byte2) | (@as(u16, byte3) << 8))}),
+            Insn.ror_zp.value => return std.fmt.bufPrint(buffer, "ROR ${X:0>2}", .{
+                byte2,
+            }),
+            Insn.ror_zpx.value => return std.fmt.bufPrint(buffer, "ROR ${X:0>2},X", .{
+                byte2,
+            }),
+            Insn.ror_abs.value => return std.fmt.bufPrint(buffer, "ROR ${X:0>4}", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
+            Insn.ror_absx.value => return std.fmt.bufPrint(buffer, "ROR ${X:0>4},X", .{
+                (@as(u16, byte2) | (@as(u16, byte3) << 8)),
+            }),
             Insn.pha.value => return "PHA",
             Insn.pla.value => return "PLA",
             Insn.php.value => return "PHP",
