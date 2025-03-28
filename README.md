@@ -446,18 +446,29 @@ $C036: LDA #$37
 $C038: STA $01
 $C03A: CLI
 $C03B: RTS
-[cpu] PC: C001 | A: 00 | X: 00 | Y: 00 | Last Opc: 78 | Last Cycl: 2 | Cycl-TT: 2 | FL: 00100100
-[vic] RL 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
-[cpu] PC: C003 | A: 00 | X: 00 | Y: 00 | Last Opc: A9 | Last Cycl: 2 | Cycl-TT: 4 | FL: 00100110
-[vic] RL 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
-[cpu] PC: C005 | A: 00 | X: 00 | Y: 00 | Last Opc: 85 | Last Cycl: 3 | Cycl-TT: 7 | FL: 00100110
-[vic] RL 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
+
+[EXE] RUN
+[cpu] PC: C000 | DIS: SEI (sz: 1) | A: 00 | X: 00 | Y: 00 | SP: FD | Opc: 78 | A9 00 | Last Cycl: 0 | Cycl-TT: 0 | FL: 00100100
+[vic] RL: 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
+[cpu] PC: C001 | DIS: LDA #$00 (sz: 2) | A: 00 | X: 00 | Y: 00 | SP: FD | Opc: A9 | 00 85 | Last Cycl: 2 | Cycl-TT: 2 | FL: 00100100
+[vic] RL: 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
+[cpu] PC: C003 | DIS: STA $01 (sz: 2) | A: 00 | X: 00 | Y: 00 | SP: FD | Opc: 85 | 01 A2 | Last Cycl: 2 | Cycl-TT: 4 | FL: 00100110
+[vic] RL: 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
 ...
 ...
-[cpu] PC: C03B | A: 37 | X: 00 | Y: FF | Last Opc: 58 | Last Cycl: 2 | Cycl-TT: 5863 | FL: 00100000
-[vic] RL 0056 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
-[cpu] Return to 0000
-[cpu] Return EXIT!
+[cpu] PC: C031 | DIS: LDA #$FF (sz: 2) | A: 00 | X: 00 | Y: FF | SP: FF | Opc: A9 | FF 8D | Last Cycl: 3 | Cycl-TT: 5300 | FL: 10100100
+[vic] RL: 004D | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
+[cpu] PC: C033 | DIS: STA $D021 (sz: 3) | A: FF | X: 00 | Y: FF | SP: FF | Opc: 8D | 21 D0 | Last Cycl: 2 | Cycl-TT: 5302 | FL: 10100100
+[vic] RL: 004D | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
+[cpu] PC: C036 | DIS: LDA #$37 (sz: 2) | A: FF | X: 00 | Y: FF | SP: FF | Opc: A9 | 37 85 | Last Cycl: 4 | Cycl-TT: 5306 | FL: 10100100
+[vic] RL: 004D | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
+[cpu] PC: C038 | DIS: STA $01 (sz: 2) | A: 37 | X: 00 | Y: FF | SP: FF | Opc: 85 | 01 58 | Last Cycl: 2 | Cycl-TT: 5308 | FL: 00100100
+[vic] RL: 004D | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
+[cpu] PC: C03A | DIS: CLI (sz: 1) | A: 37 | X: 00 | Y: FF | SP: FF | Opc: 58 | 60 00 | Last Cycl: 3 | Cycl-TT: 5311 | FL: 00100100
+[vic] RL: 004D | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
+[cpu] PC: C03B | DIS: RTS (sz: 1) | A: 37 | X: 00 | Y: FF | SP: FF | Opc: 60 | 00 00 | Last Cycl: 2 | Cycl-TT: 5313 | FL: 00100000
+[cpu] RTS to 0001
+[cpu] RTS EXIT!
 ```
 
 
