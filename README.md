@@ -61,17 +61,16 @@ pub fn main() !void {
     // full debug output
     c64.dbg_enabled = true;
     c64.cpu_dbg_enabled = true;
-    c64.vic_dbg_enabled = true;
-    c64.sid_dbg_enabled = true;
+    // c64.vic_dbg_enabled = true;
+    // c64.sid_dbg_enabled = true;
 
     // load a .prg file from disk
     try stdout.print("[EXE] Loading '{s}'\n", .{args.prg});
     const load_address = try c64.loadPrg(allocator, args.prg, true);
     try stdout.print("[EXE] Load address: {X:0>4}\n\n", .{load_address});
 
-    // disassemble 31 instructions
     try stdout.print("[EXE] Disassembling from: {X:0>4}\n", .{load_address});
-    c64.cpu.disassemble(load_address, 31);
+    c64.cpu.disasmForward(load_address, 31);
     try stdout.print("\n\n", .{});
 
     try stdout.print("[EXE] RUN\n", .{});
@@ -153,6 +152,14 @@ $C03B: RTS
 [cpu] PC: C03B | 60       | RTS          | A: 37 | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5313 | FL: 00100000
 [cpu] RTS EXIT!
 ```
+When you enable `c64.vic_dbg_enabled = true;`, the output will show additional lines for the vic (for the cycle after executing the last opcode):
+```
+[vic] RL: 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
+[vic] RL: 0000 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
+[vic] RL: 0001 | VSYNC: false | HSYNC: true | BL: false | RL-CHG: true | FRM: 0
+[vic] RL: 0001 | VSYNC: false | HSYNC: false | BL: false | RL-CHG: false | FRM: 0
+```
+
 
 ### Manually writing a program into memory
 The test program `writebytes-example.zig` writes a small routine into the memory, which executes a simple loop. Since it writes to `$D400,X`, the emulator will detect SID register changes:
