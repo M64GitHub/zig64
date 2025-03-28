@@ -41,6 +41,10 @@ pub fn deinit(c64: *C64, allocator: std.mem.Allocator) void {
 }
 
 pub fn call(c64: *C64, address: u16) void {
+    c64.cpu.status = 0x00;
+    c64.cpu.psToFlags();
+    c64.cpu.sp = 0xFF;
+
     c64.cpu.ext_sid_reg_written = false;
     c64.cpu.pushW(0x0000);
     c64.cpu.pc = address;
@@ -368,11 +372,38 @@ pub const Cpu = struct {
         }
     }
 
+    fn bytesToHex(memory: []u8, pc: usize, size: usize) [8]u8 {
+        // Result is always 8 chars: "xx xx xx" or "xx xx   " or "xx      "
+        var result: [8]u8 = "        ".*; // Start with 8 spaces
+        const hex_chars = "0123456789ABCDEF";
+
+        const clamped_size = @min(size, 3);
+        const max_bytes = @min(clamped_size, memory.len - pc);
+
+        for (0..max_bytes) |i| {
+            const byte = memory[pc + i];
+            const pos = i * 3;
+            result[pos] = hex_chars[byte >> 4];
+            result[pos + 1] = hex_chars[byte & 0xF];
+        }
+
+        return result;
+    }
+
+    fn padTo16(input: []const u8, maxlen: usize, buffer: *[16]u8) []u8 {
+        buffer.* = "                ".*;
+        const limit = @min(maxlen, 16);
+        const len = @min(input.len, limit);
+        @memcpy(buffer[0..len], input[0..len]);
+        return buffer[0..limit]; // Safe because buffer lives outside
+    }
+
     pub fn printStatus(cpu: *Cpu) void {
-        var buf: [16]u8 = undefined;
+        var buf_opc: [16]u8 = undefined;
+        var buf_disasm_pad: [16]u8 = undefined;
 
         const disasm = disassembleOpcode(
-            &buf,
+            &buf_opc,
             cpu.pc,
             cpu.opcode_last,
             cpu.c64.mem.data[cpu.pc +% 1],
@@ -382,21 +413,32 @@ pub const Cpu = struct {
         const insn = opcode2Insn(cpu.opcode_last);
         const insn_size = getInsnSize(insn);
 
-        stdout.print("[cpu] PC: {X:0>4} | DIS: {s} (sz: {d}) | A: {X:0>2} | X: {X:0>2} | Y: {X:0>2} | SP: {X:0>2} | Opc: {X:0>2} | {X:0>2} {X:0>2} | Last Cycl: {d} | Cycl-TT: {d} | ", .{
+        stdout.print("[cpu] PC: {X:0>4} | {s} | {s} | A: {X:0>2} | X: {X:0>2} | Y: {X:0>2} | SP: {X:0>2} | Cycl: {d:0>2} | Cycl-TT: {d} | ", .{
             cpu.pc,
-            disasm,
-            insn_size,
+            bytesToHex(&cpu.c64.mem.data, cpu.pc, insn_size),
+            padTo16(disasm, 12, &buf_disasm_pad),
             cpu.a,
             cpu.x,
             cpu.y,
             cpu.sp,
-            cpu.opcode_last,
-            cpu.c64.mem.data[cpu.pc +% 1],
-            cpu.c64.mem.data[cpu.pc +% 2],
             cpu.cycles_last_step,
             cpu.cycles_executed,
         }) catch {};
         printFlags(cpu);
+        stdout.print("\n", .{}) catch {};
+    }
+
+    pub fn printTrace(cpu: *Cpu) void {
+        stdout.print("PC: {X:0>4} OP: {X:0>2} {X:0>2} {X:0>2} A:{X:0>2} X:{X:0>2} Y:{X:0>2} FL:{X:0>2}", .{
+            cpu.pc,
+            cpu.c64.mem.data[cpu.pc],
+            cpu.c64.mem.data[cpu.pc + 1],
+            cpu.c64.mem.data[cpu.pc + 2],
+            cpu.a,
+            cpu.x,
+            cpu.y,
+            cpu.status,
+        }) catch {};
         stdout.print("\n", .{}) catch {};
     }
 
@@ -580,6 +622,7 @@ pub const Cpu = struct {
         if (reg == 0) cpu.flags.z = 1;
         cpu.flags.n = 0;
         if ((reg & @intFromEnum(Cpu.FlagBit.negative)) != 0) cpu.flags.n = 1;
+        cpu.flagsToPS();
     }
 
     fn loadReg(cpu: *Cpu, addr: u16, reg: *u8) void {
@@ -634,22 +677,16 @@ pub const Cpu = struct {
             cpu.flags.v = @intFromBool(((cpu.a ^ op) & 0x80) == 0 and
                 ((cpu.a ^ sum) & 0x80) != 0);
         } else {
-            // Binary mode
-            const signs_equ: bool = (cpu.a ^ op) &
-                @intFromEnum(Cpu.FlagBit.negative) == 0;
-            const old_sign: bool = (cpu.a &
-                @as(u8, @intFromEnum(Cpu.FlagBit.negative))) != 0;
-            const sum: u16 = @as(u16, cpu.a) + @as(u16, op) +
-                @as(u16, cpu.flags.c);
-            cpu.a = @truncate(sum & 0xFF);
+            const old_a: u8 = cpu.a;
+            const m: u8 = op;
+            const sum: u16 = @as(u16, old_a) + @as(u16, m) + @as(u16, cpu.flags.c);
+            cpu.a = @truncate(sum);
             cpu.flags.c = @intFromBool(sum > 0xFF);
-            cpu.flags.z = @intFromBool(cpu.a == 0);
-            cpu.flags.n = @intFromBool((cpu.a &
-                @intFromEnum(Cpu.FlagBit.negative)) != 0);
-            const new_sign: bool = (cpu.a &
-                @as(u8, @intFromEnum(Cpu.FlagBit.negative))) != 0;
-            cpu.flags.v = @intFromBool(signs_equ and (old_sign != new_sign));
+            const signs_match = ((old_a ^ m) & 0x80) == 0;
+            const sign_flipped = ((old_a ^ cpu.a) & 0x80) != 0;
+            cpu.flags.v = @intFromBool(signs_match and sign_flipped and (sum <= 0xFF));
         }
+        cpu.updateFlags(cpu.a);
     }
 
     pub fn sbc(cpu: *Cpu, op: u8) void {
@@ -672,22 +709,15 @@ pub const Cpu = struct {
             cpu.flags.v = @intFromBool(((cpu.a ^ op) & 0x80) != 0 and
                 ((cpu.a ^ result) & 0x80) != 0);
         } else {
-            // Binary mode
-            const old_sign: bool = (cpu.a & @as(u8, @intFromEnum(
-                Cpu.FlagBit.negative,
-            ))) != 0;
-            const result: i16 = @as(i16, cpu.a) - @as(i16, op) - @as(
-                i16,
-                1 - cpu.flags.c,
-            );
-            if (cpu.a > op) cpu.flags.c = 1;
-            cpu.a = @as(u8, @truncate(@as(u16, @bitCast(result & 0xFF))));
-            const new_sign: bool = (cpu.a & @as(u8, @intFromEnum(
-                Cpu.FlagBit.negative,
-            ))) != 0;
-            cpu.flags.v = @intFromBool(old_sign != new_sign);
-            cpu.updateFlags(cpu.a);
+            const old_a: u8 = cpu.a;
+            const m: u8 = op;
+            const result: i16 = @as(i16, old_a) - @as(i16, m) - @as(i16, 1 - cpu.flags.c);
+            cpu.a = @intCast(result & 0xFF); // Fixed type error!
+            cpu.flags.c = @intFromBool(result >= 0);
+            cpu.flags.v = @intFromBool(((old_a ^ m) & (old_a ^ cpu.a) & 0x80) != 0);
         }
+
+        cpu.updateFlags(cpu.a);
     }
 
     pub fn asl(cpu: *Cpu, op: u8) u8 {
@@ -729,7 +759,7 @@ pub const Cpu = struct {
     }
 
     fn pushPs(cpu: *Cpu) void {
-        flagsToPS(cpu);
+        cpu.flagsToPS();
         const ps_stack: u8 = cpu.status |
             @intFromEnum(Cpu.FlagBit.brk) | @intFromEnum(Cpu.FlagBit.unused);
         cpu.pushB(@as(u8, @bitCast(ps_stack)));
@@ -841,6 +871,7 @@ pub const Cpu = struct {
             @intFromEnum(Cpu.FlagBit.negative)) != 0);
         cpu.flags.z = @intFromBool(reg_val == op);
         cpu.flags.c = @intFromBool(reg_val >= op);
+        cpu.flagsToPS();
     }
 
     pub fn runStep(cpu: *Cpu) u8 {
@@ -1112,15 +1143,7 @@ pub const Cpu = struct {
             },
 
             Cpu.Insn.rts.value => {
-                const ret_addr: u16 = popW(cpu);
-                cpu.pc = ret_addr + 1;
-                cpu.cycles_executed +%= 2;
-                if (cpu.c64.cpu_dbg_enabled) {
-                    stdout.print("[cpu] RTS to {X:0>4}\n", .{
-                        ret_addr + 1,
-                    }) catch {};
-                }
-                if (ret_addr == 0x0000) {
+                if (cpu.sp == 0xFF) {
                     if (cpu.c64.cpu_dbg_enabled) {
                         stdout.print("[cpu] RTS EXIT!\n", .{}) catch {};
                     }
@@ -1131,7 +1154,17 @@ pub const Cpu = struct {
 
                     return 0;
                 }
+
+                const ret_addr: u16 = popW(cpu);
+                cpu.pc = ret_addr + 1;
+                cpu.cycles_executed +%= 2;
+                if (cpu.c64.cpu_dbg_enabled) {
+                    stdout.print("[cpu] RTS to {X:0>4}\n", .{
+                        ret_addr + 1,
+                    }) catch {};
+                }
             },
+
             Cpu.Insn.jmp_abs.value => {
                 const addr: u16 = addrAbs(cpu);
                 cpu.pc = addr;
@@ -1303,30 +1336,37 @@ pub const Cpu = struct {
             Cpu.Insn.clc.value => {
                 cpu.flags.c = 0;
                 cpu.cycles_executed +%= 1;
+                cpu.flagsToPS();
             },
             Cpu.Insn.sec.value => {
                 cpu.flags.c = 1;
                 cpu.cycles_executed +%= 1;
+                cpu.flagsToPS();
             },
             Cpu.Insn.cld.value => {
                 cpu.flags.d = 0;
                 cpu.cycles_executed +%= 1;
+                cpu.flagsToPS();
             },
             Cpu.Insn.sed.value => {
                 cpu.flags.d = 1;
                 cpu.cycles_executed +%= 1;
+                cpu.flagsToPS();
             },
             Cpu.Insn.cli.value => {
                 cpu.flags.i = 0;
                 cpu.cycles_executed +%= 1;
+                cpu.flagsToPS();
             },
             Cpu.Insn.sei.value => {
                 cpu.flags.i = 1;
                 cpu.cycles_executed +%= 1;
+                cpu.flagsToPS();
             },
             Cpu.Insn.clv.value => {
                 cpu.flags.v = 0;
                 cpu.cycles_executed +%= 1;
+                cpu.flagsToPS();
             },
             Cpu.Insn.nop.value => {
                 cpu.cycles_executed +%= 1;
@@ -1656,7 +1696,7 @@ pub const Cpu = struct {
         return cpu.cycles_last_step;
     }
 
-    pub fn disassemble(cpu: *Cpu, pc_start: u16, count: usize) void {
+    pub fn disasmForward(cpu: *Cpu, pc_start: u16, count: usize) void {
         var pc = pc_start; // Current program counter
         var counter: usize = 0; // Instruction counter
 
@@ -1669,14 +1709,17 @@ pub const Cpu = struct {
             // Buffer for the disassembled string
             var buf: [16]u8 = undefined;
             const disasm = disassembleOpcode(&buf, pc, opcode, byte2, byte3) catch "???";
+            var buf_disasm_pad: [16]u8 = undefined;
 
-            // Print the address and disassembled instruction
-            stdout.print("${X:0>4}: {s}\n", .{ pc, disasm }) catch {};
-
-            // Get the instruction size and advance pc
             const insn = opcode2Insn(opcode);
-            const size = getInsnSize(insn);
-            pc = pc +% size; // Wrapping addition for 16-bit address space
+            const insn_size = getInsnSize(insn);
+
+            stdout.print("{X:0>4}:  {s}  {s}\n", .{
+                pc,
+                bytesToHex(&cpu.c64.mem.data, pc, insn_size),
+                padTo16(disasm, 12, &buf_disasm_pad),
+            }) catch {};
+            pc = pc +% insn_size; // Wrapping addition for 16-bit address space
         }
     }
 
