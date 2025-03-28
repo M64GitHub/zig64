@@ -23,6 +23,231 @@ It serves as the **computational core of a C64 system**, making it suitable for 
 - 💾 **Program Loading Support** – Seamlessly loads `.prg` files to run C64 programs like a real machine.  
 - 🛠 **CPU Debugging** – Robust tools to inspect CPU registers, flags, memory, VIC state, and SID registers in real-time.  
 - 🔍 **Disassembler / Instruction Metadata Decoder** – Decodes 6502/6510 opcodes into human-readable mnemonics, enriched with metadata like size, instruction group, addressing mode, operand, operand-type, operand-size, access type (read/write), and more for seamless code tracing.
+
+<br>
+
+## 🕹️ Examples
+Example code can be found in the folder `src/examples`.
+
+### Loading and Executing a demo program, disassembler
+The program `loadprg-example.zig` demonstrates how to load and run a `.prg`. 
+It also shows how to disassemble code.
+
+
+```zig
+// zig64 - loadPrg() example
+const std = @import("std");
+
+const C64 = @import("zig64");
+const flagz = @import("flagz");
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+    const stdout = std.io.getStdOut().writer();
+
+    const Args = struct {
+        prg: []const u8,
+    };
+
+    const args = try flagz.parse(Args, allocator);
+    defer flagz.deinit(args, allocator);
+
+    try stdout.print("[EXE] initializing emulator\n", .{});
+    var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0x0000);
+    defer c64.deinit(allocator);
+
+    // full debug output
+    c64.dbg_enabled = true;
+    c64.cpu_dbg_enabled = true;
+    c64.vic_dbg_enabled = true;
+    c64.sid_dbg_enabled = true;
+
+    // load a .prg file from disk
+    try stdout.print("[EXE] Loading '{s}'\n", .{args.prg});
+    const load_address = try c64.loadPrg(allocator, args.prg, true);
+    try stdout.print("[EXE] Load address: {X:0>4}\n\n", .{load_address});
+
+    // disassemble 31 instructions
+    try stdout.print("[EXE] Disassembling from: {X:0>4}\n", .{load_address});
+    c64.cpu.disassemble(load_address, 31);
+    try stdout.print("\n\n", .{});
+
+    try stdout.print("[EXE] RUN\n", .{});
+    c64.run();
+}
+```
+
+
+**Running the Example:**
+```sh
+zig build run-loadprg -- -prg c64asm/test.prg
+```
+
+**Example Output:**
+```
+[EXE] initializing emulator
+[EXE] Loading 'c64asm/test.prg'
+[c64] loading file: 'c64asm/test.prg'
+[c64] file load address: $C000
+[c64] writing mem: C000 offs: 0002 data: 78
+[c64] writing mem: C001 offs: 0003 data: A9
+[c64] writing mem: C002 offs: 0004 data: 00
+...
+...
+[EXE] Disassembling from: C000
+$C000: SEI
+$C001: LDA #$00
+$C003: STA $01
+$C005: LDX #$FF
+$C007: TXS
+$C008: LDY #$00
+$C00A: LDA #$41
+$C00C: STA $0400,Y
+$C00F: LDA #$01
+$C011: STA $D800,Y
+$C014: INY
+$C015: CPY #$FF
+$C017: BNE $C00A
+$C019: LDA #$05
+$C01B: LDX #$03
+$C01D: CLC
+$C01E: ADC #$02
+$C020: DEX
+$C021: BNE $C01D
+$C023: STA $D020
+$C026: LDA #$00
+$C028: CMP #$01
+$C02A: BEQ $C02E
+$C02C: BMI $C031
+$C02E: JMP $C036
+$C031: LDA #$FF
+$C033: STA $D021
+$C036: LDA #$37
+$C038: STA $01
+$C03A: CLI
+$C03B: RTS
+
+[EXE] RUN
+[cpu] PC: C000 | 78       | SEI          | A: 00 | X: 00 | Y: 00 | SP: FD | Cycl: 00 | Cycl-TT: 0 | FL: 00100100
+[cpu] PC: C001 | A9 00    | LDA #$00     | A: 00 | X: 00 | Y: 00 | SP: FD | Cycl: 02 | Cycl-TT: 2 | FL: 00100100
+[cpu] PC: C003 | 85 01    | STA $01      | A: 00 | X: 00 | Y: 00 | SP: FD | Cycl: 02 | Cycl-TT: 4 | FL: 00100110
+[cpu] PC: C005 | A2 FF    | LDX #$FF     | A: 00 | X: 00 | Y: 00 | SP: FD | Cycl: 03 | Cycl-TT: 7 | FL: 00100110
+[cpu] PC: C007 | 9A       | TXS          | A: 00 | X: FF | Y: 00 | SP: FD | Cycl: 02 | Cycl-TT: 9 | FL: 10100100
+[cpu] PC: C008 | A0 00    | LDY #$00     | A: 00 | X: FF | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 11 | FL: 10100100
+[cpu] PC: C00A | A9 41    | LDA #$41     | A: 00 | X: FF | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 13 | FL: 0010011
+...
+...
+[cpu] PC: C021 | D0 FA    | BNE $C01D    | A: 0B | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5285 | FL: 00100110
+[cpu] PC: C023 | 8D 20 D0 | STA $D020    | A: 0B | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5287 | FL: 00100110
+[cpu] PC: C026 | A9 00    | LDA #$00     | A: 0B | X: 00 | Y: FF | SP: FF | Cycl: 04 | Cycl-TT: 5291 | FL: 00100110
+[cpu] PC: C028 | C9 01    | CMP #$01     | A: 00 | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5293 | FL: 00100110
+[cpu] PC: C02A | F0 02    | BEQ $C02E    | A: 00 | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5295 | FL: 10100100
+[cpu] PC: C02C | 30 03    | BMI $C031    | A: 00 | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5297 | FL: 10100100
+[cpu] PC: C031 | A9 FF    | LDA #$FF     | A: 00 | X: 00 | Y: FF | SP: FF | Cycl: 03 | Cycl-TT: 5300 | FL: 10100100
+[cpu] PC: C033 | 8D 21 D0 | STA $D021    | A: FF | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5302 | FL: 10100100
+[cpu] PC: C036 | A9 37    | LDA #$37     | A: FF | X: 00 | Y: FF | SP: FF | Cycl: 04 | Cycl-TT: 5306 | FL: 10100100
+[cpu] PC: C038 | 85 01    | STA $01      | A: 37 | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5308 | FL: 00100100
+[cpu] PC: C03A | 58       | CLI          | A: 37 | X: 00 | Y: FF | SP: FF | Cycl: 03 | Cycl-TT: 5311 | FL: 00100100
+[cpu] PC: C03B | 60       | RTS          | A: 37 | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5313 | FL: 00100000
+[cpu] RTS EXIT!
+```
+
+### Manually writing a program into memory
+The test program `writebytes-example.zig` writes a small routine into the memory, which executes a simple loop. Since it writes to `$D400,X`, the emulator will detect SID register changes:
+
+
+```
+0800: A9 0A                       LDA #$0A        ; 2
+0802: AA                          TAX             ; 2
+0803: 69 1E                       ADC #$1E        ; 2  loop start
+0805: 9D 00 D4                    STA $D400,X     ; 5  write sid register X
+0808: E8                          INX             ; 2
+0809: E0 19                       CPX #$19        ; 2
+080B: D0 F6                       BNE $0804       ; 2/3 loop
+080D: 60                          RTS             ; 6
+```
+
+
+```zig
+c64.cpu.writeByte(0xa9, 0x0800); //  LDA,,
+c64.cpu.writeByte(0x0a, 0x0801); //      #0A     ; 10
+c64.cpu.writeByte(0xaa, 0x0802); //  TAX
+c64.cpu.writeByte(0x69, 0x0803); //  ADC
+c64.cpu.writeByte(0x1e, 0x0804); //      #$1E
+c64.cpu.writeByte(0x9d, 0x0805); //  STA $
+c64.cpu.writeByte(0x00, 0x0806); //         00
+c64.cpu.writeByte(0xd4, 0x0807); //       D4
+c64.cpu.writeByte(0xe8, 0x0808); //  INX
+c64.cpu.writeByte(0xe0, 0x0809); //  CPX
+c64.cpu.writeByte(0x19, 0x080A); //      #19
+c64.cpu.writeByte(0xd0, 0x080B); //  BNE
+c64.cpu.writeByte(0xf6, 0x080C); //      $0803 (-10)
+c64.cpu.writeByte(0x60, 0x080D); //  RTS
+```
+
+**Running the Example:**
+```sh
+zig build run-writebyte
+```
+
+**Example Output:**
+```
+[EXE] initializing emulator
+[EXE] cpu init address: 0800
+[EXE] c64 vic type: pal
+[EXE] c64 sid base address: D400
+[EXE] cpu status:
+[cpu] PC: 0800 | A: 00 | X: 00 | Y: 00 | Last Opc: 00 | Last Cycl: 0 | Cycl-TT: 0 | FL: 00100100
+[EXE] Writing program ...
+[cpu] PC: 0800 | A9       | BRK          | A: 00 | X: 00 | Y: 00 | SP: FD | Cycl: 00 | Cycl-TT: 14 | FL: 00100100
+[EXE] Executing program ...
+[cpu] PC: 0800 | A9 0A    | LDA #$0A     | A: 00 | X: 00 | Y: 00 | SP: FD | Cycl: 00 | Cycl-TT: 14 | FL: 00100100
+[cpu] PC: 0802 | AA       | TAX          | A: 0A | X: 00 | Y: 00 | SP: FD | Cycl: 02 | Cycl-TT: 16 | FL: 00100100
+[cpu] PC: 0803 | 69 1E    | ADC #$1E     | A: 0A | X: 0A | Y: 00 | SP: FD | Cycl: 02 | Cycl-TT: 18 | FL: 00100100
+[cpu] PC: 0805 | 9D 00 D4 | STA $D400,X  | A: 28 | X: 0A | Y: 00 | SP: FD | Cycl: 02 | Cycl-TT: 20 | FL: 00100100
+[EXE] sid register written!
+[sid] registers: 00 00 00 00 00 00 00 00 00 00 28 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+...
+...
+[sid] registers: 00 00 00 00 00 00 00 00 00 00 28 46 64 82 A0 BE DC FA 18 36 54 72 90 AE 00 
+[cpu] PC: 0808 | E8       | INX          | A: AE | X: 17 | Y: 00 | SP: FF | Cycl: 04 | Cycl-TT: 193 | FL: 10100100
+[cpu] PC: 0809 | E0 19    | CPX #$19     | A: AE | X: 18 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 195 | FL: 00100100
+[cpu] PC: 080B | D0 F6    | BNE $0803    | A: AE | X: 18 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 197 | FL: 10100100
+[cpu] PC: 0803 | 69 1E    | ADC #$1E     | A: AE | X: 18 | Y: 00 | SP: FF | Cycl: 03 | Cycl-TT: 200 | FL: 10100100
+[cpu] PC: 0805 | 9D 00 D4 | STA $D400,X  | A: CC | X: 18 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 202 | FL: 10100100
+[EXE] sid register written!
+[sid] registers: 00 00 00 00 00 00 00 00 00 00 28 46 64 82 A0 BE DC FA 18 36 54 72 90 AE CC 
+[EXE] sid volume changed: CC
+[cpu] PC: 0808 | E8       | INX          | A: CC | X: 18 | Y: 00 | SP: FF | Cycl: 44 | Cycl-TT: 246 | FL: 10100100
+[cpu] PC: 0809 | E0 19    | CPX #$19     | A: CC | X: 19 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 248 | FL: 00100100
+[cpu] PC: 080B | D0 F6    | BNE $0803    | A: CC | X: 19 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 250 | FL: 00100111
+[cpu] PC: 080D | 60       | RTS          | A: CC | X: 19 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 252 | FL: 00100111
+[cpu] RTS EXIT!
+...
+```
+In the main function it checks for the change of the SID volume register:
+```zig
+try stdout.print("[EXE] Executing program ...\n", .{});
+var sid_volume_old = c64.sid.getRegisters()[24];
+c64.cpu_dbg_enabled = true;
+while (c64.cpu.runStep() != 0) {
+    if (c64.cpu.sidRegWritten()) {
+        try stdout.print("[EXE] sid register written!\n", .{});
+        c64.sid.printRegisters();
+
+        const sid_registers = c64.sid.getRegisters();
+        if (sid_volume_old != sid_registers[24]) {
+            try stdout.print("[EXE] sid volume changed: {X:0>2}\n", .{
+                sid_registers[24],
+            });
+            sid_volume_old = sid_registers[24];
+        }
+    }
+}
+```
+
 <br>
 
 ## Building the Project
@@ -340,224 +565,6 @@ Cpu.printStatus()
 Cpu.printFlags()
 Sid.printRegisters()
 Vic.printStatus()
-```
-
-<br>
-
-## 🕹️ Examples
-Example code can be found in the folder `src/examples`.
-
-### Loading and Executing a demo program, disassembler
-The program `loadprg-example.zig` demonstrates how to load and run a `.prg`. 
-It also shows how to disassemble code.
-
-
-```zig
-// zig64 - loadPrg() example
-const std = @import("std");
-
-const C64 = @import("zig64");
-const flagz = @import("flagz");
-
-pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-    const stdout = std.io.getStdOut().writer();
-
-    const Args = struct {
-        prg: []const u8,
-    };
-
-    const args = try flagz.parse(Args, allocator);
-    defer flagz.deinit(args, allocator);
-
-    try stdout.print("[EXE] initializing emulator\n", .{});
-    var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0x0000);
-    defer c64.deinit(allocator);
-
-    // full debug output
-    c64.dbg_enabled = true;
-    c64.cpu_dbg_enabled = true;
-    c64.vic_dbg_enabled = true;
-    c64.sid_dbg_enabled = true;
-
-    // load a .prg file from disk
-    try stdout.print("[EXE] Loading '{s}'\n", .{args.prg});
-    const load_address = try c64.loadPrg(allocator, args.prg, true);
-    try stdout.print("[EXE] Load address: {X:0>4}\n\n", .{load_address});
-
-    // disassemble 31 instructions
-    try stdout.print("[EXE] Disassembling from: {X:0>4}\n", .{load_address});
-    c64.cpu.disassemble(load_address, 31);
-    try stdout.print("\n\n", .{});
-
-    try stdout.print("[EXE] RUN\n", .{});
-    c64.run();
-}
-```
-
-
-**Running the Example:**
-```sh
-zig build run-loadprg -- -f c64asm/test.prg
-```
-
-**Example Output:**
-```
-[EXE] initializing emulator
-[EXE] Loading 'c64asm/test.prg'
-[c64] loading file: 'c64asm/test.prg'
-[c64] file load address: $C000
-[c64] writing mem: C000 offs: 0002 data: 78
-[c64] writing mem: C001 offs: 0003 data: A9
-[c64] writing mem: C002 offs: 0004 data: 00
-...
-...
-[EXE] Disassembling from: C000
-$C000: SEI
-$C001: LDA #$00
-$C003: STA $01
-$C005: LDX #$FF
-$C007: TXS
-$C008: LDY #$00
-$C00A: LDA #$41
-$C00C: STA $0400,Y
-$C00F: LDA #$01
-$C011: STA $D800,Y
-$C014: INY
-$C015: CPY #$FF
-$C017: BNE $C00A
-$C019: LDA #$05
-$C01B: LDX #$03
-$C01D: CLC
-$C01E: ADC #$02
-$C020: DEX
-$C021: BNE $C01D
-$C023: STA $D020
-$C026: LDA #$00
-$C028: CMP #$01
-$C02A: BEQ $C02E
-$C02C: BMI $C031
-$C02E: JMP $C036
-$C031: LDA #$FF
-$C033: STA $D021
-$C036: LDA #$37
-$C038: STA $01
-$C03A: CLI
-$C03B: RTS
-
-[EXE] RUN
-[cpu] PC: C000 | 78       | SEI          | A: 00 | X: 00 | Y: 00 | SP: FD | Cycl: 00 | Cycl-TT: 0 | FL: 00100100
-[cpu] PC: C001 | A9 00    | LDA #$00     | A: 00 | X: 00 | Y: 00 | SP: FD | Cycl: 02 | Cycl-TT: 2 | FL: 00100100
-[cpu] PC: C003 | 85 01    | STA $01      | A: 00 | X: 00 | Y: 00 | SP: FD | Cycl: 02 | Cycl-TT: 4 | FL: 00100110
-[cpu] PC: C005 | A2 FF    | LDX #$FF     | A: 00 | X: 00 | Y: 00 | SP: FD | Cycl: 03 | Cycl-TT: 7 | FL: 00100110
-[cpu] PC: C007 | 9A       | TXS          | A: 00 | X: FF | Y: 00 | SP: FD | Cycl: 02 | Cycl-TT: 9 | FL: 10100100
-[cpu] PC: C008 | A0 00    | LDY #$00     | A: 00 | X: FF | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 11 | FL: 10100100
-[cpu] PC: C00A | A9 41    | LDA #$41     | A: 00 | X: FF | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 13 | FL: 0010011
-...
-...
-[cpu] PC: C021 | D0 FA    | BNE $C01D    | A: 0B | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5285 | FL: 00100110
-[cpu] PC: C023 | 8D 20 D0 | STA $D020    | A: 0B | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5287 | FL: 00100110
-[cpu] PC: C026 | A9 00    | LDA #$00     | A: 0B | X: 00 | Y: FF | SP: FF | Cycl: 04 | Cycl-TT: 5291 | FL: 00100110
-[cpu] PC: C028 | C9 01    | CMP #$01     | A: 00 | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5293 | FL: 00100110
-[cpu] PC: C02A | F0 02    | BEQ $C02E    | A: 00 | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5295 | FL: 10100100
-[cpu] PC: C02C | 30 03    | BMI $C031    | A: 00 | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5297 | FL: 10100100
-[cpu] PC: C031 | A9 FF    | LDA #$FF     | A: 00 | X: 00 | Y: FF | SP: FF | Cycl: 03 | Cycl-TT: 5300 | FL: 10100100
-[cpu] PC: C033 | 8D 21 D0 | STA $D021    | A: FF | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5302 | FL: 10100100
-[cpu] PC: C036 | A9 37    | LDA #$37     | A: FF | X: 00 | Y: FF | SP: FF | Cycl: 04 | Cycl-TT: 5306 | FL: 10100100
-[cpu] PC: C038 | 85 01    | STA $01      | A: 37 | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5308 | FL: 00100100
-[cpu] PC: C03A | 58       | CLI          | A: 37 | X: 00 | Y: FF | SP: FF | Cycl: 03 | Cycl-TT: 5311 | FL: 00100100
-[cpu] PC: C03B | 60       | RTS          | A: 37 | X: 00 | Y: FF | SP: FF | Cycl: 02 | Cycl-TT: 5313 | FL: 00100000
-[cpu] RTS EXIT!
-```
-
-
-### Manually writing a program into memory
-The test program `writebytes-example.zig` writes a small routine into the memory, which executes a simple loop. Since it writes to `$D400,X`, the emulator will detect SID register changes:
-
-
-```
-0800: A9 0A                       LDA #$0A        ; 2
-0802: AA                          TAX             ; 2
-0803: 69 1E                       ADC #$1E        ; 2  loop start
-0805: 9D 00 D4                    STA $D400,X     ; 5  write sid register X
-0808: E8                          INX             ; 2
-0809: E0 19                       CPX #$19        ; 2
-080B: D0 F6                       BNE $0804       ; 2/3 loop
-080D: 60                          RTS             ; 6
-```
-
-
-```zig
-c64.cpu.writeByte(0xa9, 0x0800); //  LDA,,
-c64.cpu.writeByte(0x0a, 0x0801); //      #0A     ; 10
-c64.cpu.writeByte(0xaa, 0x0802); //  TAX
-c64.cpu.writeByte(0x69, 0x0803); //  ADC
-c64.cpu.writeByte(0x1e, 0x0804); //      #$1E
-c64.cpu.writeByte(0x9d, 0x0805); //  STA $
-c64.cpu.writeByte(0x00, 0x0806); //         00
-c64.cpu.writeByte(0xd4, 0x0807); //       D4
-c64.cpu.writeByte(0xe8, 0x0808); //  INX
-c64.cpu.writeByte(0xe0, 0x0809); //  CPX
-c64.cpu.writeByte(0x19, 0x080A); //      #19
-c64.cpu.writeByte(0xd0, 0x080B); //  BNE
-c64.cpu.writeByte(0xf6, 0x080C); //      $0803 (-10)
-c64.cpu.writeByte(0x60, 0x080D); //  RTS
-```
-
-**Running the Example:**
-```sh
-zig build run-writebyte
-```
-
-**Example Output:**
-```
-[EXE] initializing emulator
-[EXE] cpu init address: 0800
-[EXE] c64 vic type: pal
-[EXE] c64 sid base address: D400
-[EXE] cpu status:
-[cpu] PC: 0800 | A: 00 | X: 00 | Y: 00 | Last Opc: 00 | Last Cycl: 0 | Cycl-TT: 0 | FL: 00100100
-[EXE] Writing program ...
-[cpu] PC: 0800 | DIS: BRK (sz: 1) | A: 00 | X: 00 | Y: 00 | SP: FD | Opc: 00 | 0A AA | Last Cycl: 0 | Cycl-TT: 14 | FL: 00100100
-[EXE] Executing program ...
-[cpu] PC: 0800 | DIS: LDA #$0A (sz: 2) | A: 00 | X: 00 | Y: 00 | SP: FD | Opc: A9 | 0A AA | Last Cycl: 0 | Cycl-TT: 14 | FL: 00100100
-[cpu] PC: 0802 | DIS: TAX (sz: 1) | A: 0A | X: 00 | Y: 00 | SP: FD | Opc: AA | 69 1E | Last Cycl: 2 | Cycl-TT: 16 | FL: 00100100
-[cpu] PC: 0803 | DIS: ADC #$1E (sz: 2) | A: 0A | X: 0A | Y: 00 | SP: FD | Opc: 69 | 1E 9D | Last Cycl: 2 | Cycl-TT: 18 | FL: 00100100
-[cpu] PC: 0805 | DIS: STA $D400,X (sz: 3) | A: 28 | X: 0A | Y: 00 | SP: FD | Opc: 9D | 00 D4 | Last Cycl: 2 | Cycl-TT: 20 | FL: 00100100
-[EXE] sid register written!
-...
-...
-[cpu] PC: 0808 | DIS: INX (sz: 1) | A: AE | X: 17 | Y: 00 | SP: FD | Opc: E8 | E0 19 | Last Cycl: 4 | Cycl-TT: 193 | FL: 10100100
-[cpu] PC: 0809 | DIS: CPX #$19 (sz: 2) | A: AE | X: 18 | Y: 00 | SP: FD | Opc: E0 | 19 D0 | Last Cycl: 2 | Cycl-TT: 195 | FL: 00100100
-[cpu] PC: 080B | DIS: BNE $0803 (sz: 2) | A: AE | X: 18 | Y: 00 | SP: FD | Opc: D0 | F6 60 | Last Cycl: 2 | Cycl-TT: 197 | FL: 10100100
-[cpu] PC: 0803 | DIS: ADC #$1E (sz: 2) | A: AE | X: 18 | Y: 00 | SP: FD | Opc: 69 | 1E 9D | Last Cycl: 3 | Cycl-TT: 200 | FL: 10100100
-[cpu] PC: 0805 | DIS: STA $D400,X (sz: 3) | A: CC | X: 18 | Y: 00 | SP: FD | Opc: 9D | 00 D4 | Last Cycl: 2 | Cycl-TT: 202 | FL: 10100100
-[EXE] sid register written!
-[sid] registers: 00 00 00 00 00 00 00 00 00 00 28 46 64 82 A0 BE DC FA 18 36 54 72 90 AE CC 
-[EXE] sid volume changed: CC
-...
-```
-In the main function it checks for the change of the SID volume register:
-```zig
-try stdout.print("[EXE] Executing program ...\n", .{});
-var sid_volume_old = c64.sid.getRegisters()[24];
-c64.cpu_dbg_enabled = true;
-while (c64.cpu.runStep() != 0) {
-    if (c64.cpu.sidRegWritten()) {
-        try stdout.print("[EXE] sid register written!\n", .{});
-        c64.sid.printRegisters();
-
-        const sid_registers = c64.sid.getRegisters();
-        if (sid_volume_old != sid_registers[24]) {
-            try stdout.print("[EXE] sid volume changed: {X:0>2}\n", .{
-                sid_registers[24],
-            });
-            sid_volume_old = sid_registers[24];
-        }
-    }
-}
 ```
 
 <br>
