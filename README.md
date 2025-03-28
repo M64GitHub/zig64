@@ -1,6 +1,7 @@
 # C64 Emulator Core in Zig  
 ![Tests](https://github.com/M64GitHub/flagZ/actions/workflows/test.yml/badge.svg)
 ![License](https://img.shields.io/badge/license-MIT-brightgreen?style=flat)
+![Version](https://img.shields.io/badge/version-0.2.0-8a2be2?style=flat)
 ![Zig](https://img.shields.io/badge/Zig-0.14.0-orange?style=flat)
 
 A **Commodore 64 MOS6510 emulator core** written in **Zig**, designed for accuracy, efficiency, and seamless integration into C64-based projects.  
