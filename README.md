@@ -519,19 +519,24 @@ zig build run-writebyte
 [EXE] cpu status:
 [cpu] PC: 0800 | A: 00 | X: 00 | Y: 00 | Last Opc: 00 | Last Cycl: 0 | Cycl-TT: 0 | FL: 00100100
 [EXE] Writing program ...
-[cpu] PC: 0800 | A: 00 | X: 00 | Y: 00 | Last Opc: 00 | Last Cycl: 0 | Cycl-TT: 14 | FL: 00100100
+[cpu] PC: 0800 | DIS: BRK (sz: 1) | A: 00 | X: 00 | Y: 00 | SP: FD | Opc: 00 | 0A AA | Last Cycl: 0 | Cycl-TT: 14 | FL: 00100100
 [EXE] Executing program ...
-[cpu] PC: 0802 | A: 0A | X: 00 | Y: 00 | Last Opc: A9 | Last Cycl: 2 | Cycl-TT: 16 | FL: 00100100
-[cpu] PC: 0803 | A: 0A | X: 0A | Y: 00 | Last Opc: AA | Last Cycl: 2 | Cycl-TT: 18 | FL: 00100100
-[cpu] PC: 0805 | A: 28 | X: 0A | Y: 00 | Last Opc: 69 | Last Cycl: 2 | Cycl-TT: 20 | FL: 00100100
-[cpu] PC: 0808 | A: 28 | X: 0A | Y: 00 | Last Opc: 9D | Last Cycl: 5 | Cycl-TT: 25 | FL: 00100100
+[cpu] PC: 0800 | DIS: LDA #$0A (sz: 2) | A: 00 | X: 00 | Y: 00 | SP: FD | Opc: A9 | 0A AA | Last Cycl: 0 | Cycl-TT: 14 | FL: 00100100
+[cpu] PC: 0802 | DIS: TAX (sz: 1) | A: 0A | X: 00 | Y: 00 | SP: FD | Opc: AA | 69 1E | Last Cycl: 2 | Cycl-TT: 16 | FL: 00100100
+[cpu] PC: 0803 | DIS: ADC #$1E (sz: 2) | A: 0A | X: 0A | Y: 00 | SP: FD | Opc: 69 | 1E 9D | Last Cycl: 2 | Cycl-TT: 18 | FL: 00100100
+[cpu] PC: 0805 | DIS: STA $D400,X (sz: 3) | A: 28 | X: 0A | Y: 00 | SP: FD | Opc: 9D | 00 D4 | Last Cycl: 2 | Cycl-TT: 20 | FL: 00100100
 [EXE] sid register written!
 ...
 ...
-[cpu] PC: 0808 | A: CC | X: 18 | Y: 00 | Last Opc: 9D | Last Cycl: 5 | Cycl-TT: 261 | FL: 10100100
+[cpu] PC: 0808 | DIS: INX (sz: 1) | A: AE | X: 17 | Y: 00 | SP: FD | Opc: E8 | E0 19 | Last Cycl: 4 | Cycl-TT: 193 | FL: 10100100
+[cpu] PC: 0809 | DIS: CPX #$19 (sz: 2) | A: AE | X: 18 | Y: 00 | SP: FD | Opc: E0 | 19 D0 | Last Cycl: 2 | Cycl-TT: 195 | FL: 00100100
+[cpu] PC: 080B | DIS: BNE $0803 (sz: 2) | A: AE | X: 18 | Y: 00 | SP: FD | Opc: D0 | F6 60 | Last Cycl: 2 | Cycl-TT: 197 | FL: 10100100
+[cpu] PC: 0803 | DIS: ADC #$1E (sz: 2) | A: AE | X: 18 | Y: 00 | SP: FD | Opc: 69 | 1E 9D | Last Cycl: 3 | Cycl-TT: 200 | FL: 10100100
+[cpu] PC: 0805 | DIS: STA $D400,X (sz: 3) | A: CC | X: 18 | Y: 00 | SP: FD | Opc: 9D | 00 D4 | Last Cycl: 2 | Cycl-TT: 202 | FL: 10100100
 [EXE] sid register written!
 [sid] registers: 00 00 00 00 00 00 00 00 00 00 28 46 64 82 A0 BE DC FA 18 36 54 72 90 AE CC 
 [EXE] sid volume changed: CC
+...
 ```
 In the main function it checks for the change of the SID volume register:
 ```zig
