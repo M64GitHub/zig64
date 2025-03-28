@@ -22,7 +22,7 @@ It serves as the **computational core of a C64 system**, making it suitable for 
 - 🎵 **SID Register Modification Detection** – Tracks every write to SID registers, ideal for debugging and analyzing SID interactions.  
 - 💾 **Program Loading Support** – Seamlessly loads `.prg` files to run C64 programs like a real machine.  
 - 🛠 **CPU Debugging** – Robust tools to inspect CPU registers, flags, memory, VIC state, and SID registers in real-time.  
-- 🔍 **Instruction Disassembler** – Decodes 6502/6510 opcodes into human-readable mnemonics, complete with metadata like size info, instruction group, addressing-mode, operand type, size, access-type, ... for effortless code tracing.
+- 🔍 **Disassembler / Instruction Metadata Decoder** – Decodes 6502/6510 opcodes into human-readable mnemonics, complete with metadata like size info, instruction group, addressing-mode, operand type, size, access-type, ... for effortless code tracing.
 <br>
 
 ## Building the Project
