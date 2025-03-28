@@ -17,12 +17,12 @@ It serves as the **computational core of a C64 system**, making it suitable for 
 <br>
 
 ## 🚀 Features  
-- 🎮 **Fully Functional 6510 CPU Emulator** – Implements all legal `MOS 6502/6510` instructions and addressing modes.  
-- 🎞 **Video Synchronization** – Execute CPU cycles in sync with PAL or NTSC, full `rasterbeam` emulation, exactly handling `bad lines`.  
-- 🎵 **SID Register Modification Detection** – Detects when SID registers are written to, perfect for tracking SID interaction.  
-- 💾 **Program Loading Support** – Load `.prg` files and execute C64 programs.  
-- 🛠 **CPU Debugging** – Functions for inspecting CPU registers, flags, memory, VIC state, and SID registers.
-
+- 🎮 **Fully Functional 6510 CPU Emulator** – Implements all legal `MOS 6502/6510` instructions and addressing modes with pinpoint accuracy.  
+- 🎞 **Video Synchronization** – Executes CPU cycles in perfect harmony with PAL or NTSC, featuring full `rasterbeam` emulation and precise `bad line` handling.  
+- 🎵 **SID Register Modification Detection** – Tracks every write to SID registers, ideal for debugging and analyzing SID interactions.  
+- 💾 **Program Loading Support** – Seamlessly loads `.prg` files to run C64 programs like a real machine.  
+- 🛠 **CPU Debugging** – Robust tools to inspect CPU registers, flags, memory, VIC state, and SID registers in real-time.  
+- 🔍 **Instruction Disassembler** – Decodes 6502/6510 opcodes into human-readable mnemonics, complete with metadata like size info, instruction group, addressing-mode, operand type, size, access-type, ... for effortless code tracing.
 <br>
 
 ## Building the Project
