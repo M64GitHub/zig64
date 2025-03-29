@@ -36,16 +36,16 @@ This project **began with a love for Commodore 64 SID music** and a desire to re
 
 This emulator is structured as a set of modular components, forming the foundation of the virtual C64 system. These building blocks include:
 
-- `C64`: The central emulator struct / component container, for loading and executing programs.
-- `Cpu`: Handles instruction execution.
-- `Ram64k`: Manages 64KB memory.
+- `C64`: The central emulator struct and component container, managing program loading and execution.
+- `Cpu`: Executes 6510 instructions.
+- `Ram64k`: Manages 64KB of memory.
 - `Vic`: Controls video timing.
-- `Sid`: Acts as a (for now) register placeholder.
-- `Asm`: Assembly metadata decoder, disassembler
+- `Sid`: Serves as a (for now) register placeholder.
+- `Asm`: Provides assembly metadata decoding and disassembly.
 
-Each component includes its own `dbg_enabled` flag—e.g., `c64.dbg_enabled` for emulator logs, `cpu.dbg_enabled` for execution details—allowing tailored debugging. The `Cpu` drives the system, executing code and monitoring SID register writes, while `Vic` keeps cycle-accurate timing.  
-A powerful disassembler and assembly metadata decoder (see struct `Asm`) enriches this core, decoding instructions with detailed metadata for advanced analysis.  
-The sections below detail their workings, API, and examples to help you use this emulator core effectively.
+Each component features its own `dbg_enabled` flag—e.g., `c64.dbg_enabled` for emulator logs, `cpu.dbg_enabled` for execution details—enabling targeted debugging. The `Cpu` powers the system, running code and tracking SID register writes, while `Vic` ensures cycle-accurate timing.  
+The `Asm` struct enhances this core with a powerful disassembler and metadata decoder, offering detailed instruction analysis.  
+The sections below outline their mechanics, API, and examples to guide you in using this emulator core effectively.
 
 
 ### C64
@@ -56,18 +56,50 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
   - `mem: Ram64k` - 64KB memory.
   - `vic: Vic` - Video timing component.
   - `sid: Sid` - SID register tracker.
-  - `dbg_enabled: bool` - Enables debug logging across components.
+  - `dbg_enabled: bool` - Enables debug logging for the emulator.
 
 - **Functions**:
-  - `pub fn init(allocator: std.mem.Allocator, vic_model: Vic.Model, init_addr: u16) C64` - Initializes a new C64 instance with default settings.
-  - `pub fn deinit(c64: *C64, allocator: std.mem.Allocator) void` - Cleanup the C64 instance.
-  - `loadPrg(c64: *C64,
-    allocator: std.mem.Allocator,
-    file_name: []const u8,
-    pc_to_loadaddr: bool,
-) !u16` - Loads a `.prg` file into memory returns the load address.
-  - `run() !void` - Executes the CPU until program end.
-  - `call(c64: *C64, address: u16) void` - calls an assembly subroutine, returns on RTS.
+  ```zig
+  pub fn init(
+      allocator: std.mem.Allocator,
+      vic_model: Vic.Model,
+      init_addr: u16
+  ) !*C64
+  ```
+  - Initializes a new heap-allocated C64 instance with default settings.
+
+  ```zig
+  pub fn deinit(
+      c64: *C64,
+      allocator: std.mem.Allocator
+  ) void
+  ```
+  - Cleans up the C64 instance, freeing allocated memory.
+
+  ```zig
+  pub fn loadPrg(
+      c64: *C64,
+      allocator: std.mem.Allocator,
+      file_name: []const u8,
+      pc_to_loadaddr: bool
+  ) !u16
+  ```
+  - Loads a `.prg` file into memory and returns the load address.
+
+  ```zig
+  pub fn run(
+      c64: *C64
+  ) !void
+  ```
+  - Executes the CPU until program termination.
+
+  ```zig
+  pub fn call(
+      c64: *C64,
+      address: u16
+  ) void
+  ```
+  - Calls an assembly subroutine, returning on RTS.
 
 ## Building the Project
 #### Requirements
