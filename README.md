@@ -99,7 +99,7 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
       address: u16
   ) void
   ```
-  - Calls a specific assembly subroutine, returning on RTS.
+  Calls a specific assembly subroutine, returning on RTS.
 
 ## Building the Project
 #### Requirements
