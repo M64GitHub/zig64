@@ -334,7 +334,62 @@ The video timing component synchronizing CPU cycles with C64 raster behavior.
   ```
   Prints the current VIC status, including raster line, sync flags, and frame count.
 
+### Asm
+The assembly metadata decoder and disassembler, providing detailed instruction analysis.
 
+- **Fields**: None — acts as a namespace for disassembly functions and types.
+
+- **Types**:
+  - `Group` - Enumerates instruction categories (e.g., `branch`, `load_store`).
+  - `AddrMode` - Defines addressing modes (e.g., `immediate`, `absolute_x`).
+  - `OperandType` - Specifies operand kinds (e.g., `register`, `memory`).
+  - `OperandSize` - Indicates operand sizes (e.g., `byte`, `word`).
+  - `AccessType` - Tracks access modes (e.g., `read`, `write`).
+  - `OperandId` - Identifies operands (e.g., `a` for accumulator, `memory`).
+  - `Operand` - Combines operand details (id, type, size, access, bytes).
+  - `Instruction` - Represents a decoded instruction with opcode, mnemonic, and operands.
+
+- **Functions**:
+  ```zig
+  pub fn getInstructionSize(
+      insn: Instruction
+  ) u8
+  ```
+  Returns the size of an instruction in bytes (1, 2, or 3) based on its addressing mode.
+
+  ```zig
+  pub fn disassembleForward(
+      mem: []u8,
+      pc_start: u16,
+      count: usize
+  ) !void
+  ```
+  Disassembles and prints `count` instructions from memory starting at `pc_start`.
+
+  ```zig
+  pub fn disassembleInsn(
+      buffer: []u8,
+      pc: u16,
+      insn: Instruction
+  ) ![]const u8
+  ```
+  Converts an instruction into a human-readable string (e.g., `"LDA #$10"`).
+
+  ```zig
+  pub fn disassembleCodeLine(
+      buffer: []u8,
+      pc: u16,
+      insn: Instruction
+  ) ![]const u8
+  ```
+  Formats a full disassembly line with address, bytes, and mnemonic (e.g., `"C00C: A9 10 LDA #$10"`).
+
+  ```zig
+  pub fn decodeInsn(
+      bytes: []u8
+  ) Instruction
+  ```
+  Decodes a byte slice into an `Instruction` struct with metadata.
 
 ## Building the Project
 #### Requirements
