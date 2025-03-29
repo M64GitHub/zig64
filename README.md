@@ -5,9 +5,14 @@
 ![Version](https://img.shields.io/badge/version-0.2.0-8a2be2?style=flat)
 ![Zig](https://img.shields.io/badge/Zig-0.14.0-orange?style=flat)
 
+
+# Commodore 64 MOS 6510 Emulator Core
+
 A **Commodore 64 MOS 6510 emulator core** implemented in **Zig**, designed for precision, flexibility, and seamless integration into C64-focused projects. This emulator delivers cycle-accurate execution, detailed raster beam emulation for PAL and NTSC video synchronization, and SID register tracking, making it a robust foundation for C64 software analysis, execution, and development.
 
 Built as the **computational backbone** of a virtual C64 system, it supports a variety of applications—from analyzing and debugging C64 programs to serving as the engine for SID music hacking projects like 🎧 [zigreSID](https://github.com/M64GitHub/zigreSID). Leveraging Zig’s modern features, it provides a clean and extensible platform for accurately emulating C64 behavior.
+
+This project lowers the barriers to C64 emulation by offering an accessible entry point for developers and enthusiasts alike. With its straightforward design and Zig’s intuitive tooling, tasks like debugging intricate C64 programs, tracing execution paths, or testing software behavior become approachable, empowering users to explore and experiment with minimal setup or complexity.
 
 <br>
 
