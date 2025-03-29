@@ -32,6 +32,31 @@ This project **began with a love for Commodore 64 SID music** and a desire to re
 - 🧪 **Testing C64 Programs with Zig**  
   Integrates seamlessly with Zig’s powerful testing infrastructure, enabling developers to write unit tests for C64 programs and verify emulator behavior with ease.
 
+## Overview
+
+This emulator is built around a modular design, with the `C64` struct orchestrating a virtual system composed of `Cpu`, `Ram64k`, `Vic`, and `Sid` components. Each part handles a specific aspect of C64 emulation—execution, memory, timing, and sound register tracking—united by a shared `dbg_enabled` flag for detailed logging. Below, explore how these pieces work together, their API, and practical examples to harness their power.
+
+### C64
+The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64 system.
+
+- **Fields**:
+  - `cpu: Cpu` - The 6510 CPU instance.
+  - `mem: Ram64k` - 64KB memory.
+  - `vic: Vic` - Video timing component.
+  - `sid: Sid` - SID register tracker.
+  - `dbg_enabled: bool` - Enables debug logging across components.
+
+- **Functions**:
+  - `pub fn init(allocator: std.mem.Allocator, vic_model: Vic.Model, init_addr: u16) C64` - Initializes a new C64 instance with default settings.
+  - `pub fn deinit(c64: *C64, allocator: std.mem.Allocator) void` - Cleanup the C64 instance.
+  - `loadPrg(c64: *C64,
+    allocator: std.mem.Allocator,
+    file_name: []const u8,
+    pc_to_loadaddr: bool,
+) !u16` - Loads a `.prg` file into memory returns the load address.
+  - `run() !void` - Executes the CPU until program end.
+  - `call(c64: *C64, address: u16) void` - calls an assembly subroutine, returns on RTS.
+
 ## Building the Project
 #### Requirements
 ![Zig](https://img.shields.io/badge/Zig-0.14.0-orange?style=flat)
