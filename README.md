@@ -109,6 +109,144 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
   ```
   Runs the CPU for a specified number of frames, returning the number executed; frame timing adapts to PAL or NTSC VIC settings.
 
+
+### Cpu
+The core component executing 6510 instructions, driving the virtual C64 system.
+
+- **Fields**:
+  - `pc: u16` - Program counter.
+  - `sp: u8` - Stack pointer.
+  - `a: u8` - Accumulator register.
+  - `x: u8` - X index register.
+  - `y: u8` - Y index register.
+  - `status: u8` - Status register (raw byte).
+  - `flags: CpuFlags` - Structured status flags (e.g., carry, zero).
+  - `opcode_last: u8` - Last executed opcode.
+  - `cycles_executed: u32` - Total cycles run.
+  - `cycles_since_vsync: u16` - Cycles since last vertical sync.
+  - `cycles_since_hsync: u8` - Cycles since last horizontal sync.
+  - `cycles_last_step: u8` - Cycles from the last step.
+  - `sid_reg_changed: bool` - Indicates SID register changes detected.
+  - `sid_reg_written: bool` - Flags SID register writes.
+  - `ext_sid_reg_written: bool` - Flags extended SID register writes.
+  - `ext_sid_reg_changed: bool` - Indicates extended SID register changes.
+  - `mem: *Ram64k` - Pointer to the system’s 64KB memory.
+  - `sid: *Sid` - Pointer to the SID register placeholder.
+  - `vic: *Vic` - Pointer to the VIC timing component.
+  - `dbg_enabled: bool` - Enables debug logging for CPU execution.
+
+- **Functions**:
+  ```zig
+  pub fn init(
+      mem: *Ram64k,
+      sid: *Sid,
+      vic: *Vic,
+      pc_start: u16
+  ) Cpu
+  ```
+  Initializes a new CPU instance with the given memory, SID, VIC, and starting program counter.
+
+  ```zig
+  pub fn reset(
+      cpu: *Cpu
+  ) void
+  ```
+  Resets the CPU state (registers, flags) without altering memory.
+
+  ```zig
+  pub fn hardReset(
+      cpu: *Cpu
+  ) void
+  ```
+  Performs a full reset, clearing both CPU state and memory.
+
+  ```zig
+  pub fn writeMem(
+      cpu: *Cpu,
+      data: []const u8,
+      addr: u16
+  ) void
+  ```
+  Writes a byte slice to memory starting at the specified address.
+
+  ```zig
+  pub fn printStatus(
+      cpu: *Cpu
+  ) void
+  ```
+  Prints the current CPU status (instruction, opcodes, registers and flags).
+
+  ```zig
+  pub fn printTrace(
+      cpu: *Cpu
+  ) void
+  ```
+  Outputs a trace of the last executed instruction / simpler, more compact format than printStatus()
+
+  ```zig
+  pub fn printFlags(
+      cpu: *Cpu
+  ) void
+  ```
+  Prints the CPU’s status flags.
+
+  ```zig
+  pub fn readByte(
+      cpu: *Cpu,
+      addr: u16
+  ) u8
+  ```
+  Reads a byte from memory at the given address.
+
+  ```zig
+  pub fn readWord(
+      cpu: *Cpu,
+      addr: u16
+  ) u16
+  ```
+  Reads a 16-bit word from memory at the given address.
+
+  ```zig
+  pub fn readWordZP(
+      cpu: *Cpu,
+      addr: u8
+  ) u16
+  ```
+  Reads a 16-bit word from zero-page memory at the given address.
+
+  ```zig
+  pub fn writeByte(
+      cpu: *Cpu,
+      val: u8,
+      addr: u16
+  ) void
+  ```
+  Writes a byte to memory at the specified address.
+
+  ```zig
+  pub fn writeWord(
+      cpu: *Cpu,
+      val: u16,
+      addr: u16
+  ) void
+  ```
+  Writes a 16-bit word to memory at the specified address (little endian).
+
+  ```zig
+  pub fn sidRegWritten(
+      cpu: *Cpu
+  ) bool
+  ```
+  Returns true if a SID register was written in the last instruction (runStep()).
+
+  ```zig
+  pub fn runStep(
+      cpu: *Cpu
+  ) u8
+  ```
+  Executes one CPU instruction, returning the number of cycles taken. The main execution function.
+
+
 ## Building the Project
 #### Requirements
 ![Zig](https://img.shields.io/badge/Zig-0.14.0-orange?style=flat)
