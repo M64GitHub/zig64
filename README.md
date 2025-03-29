@@ -189,6 +189,35 @@ The core component executing 6510 instructions, driving the virtual C64 system.
   - `vic: *Vic` - Pointer to the VIC timing component.
   - `dbg_enabled: bool` - Enables debug logging for CPU execution.
 
+- **Types**:
+  ```zig
+  CpuFlags = struct {
+      c: u1,      // Carry flag
+      z: u1,      // Zero flag
+      i: u1,      // Interrupt disable flag
+      d: u1,      // Decimal mode flag
+      b: u1,      // Break flag
+      unused: u1, // Unused flag (always 1 in 6502)
+      v: u1,      // Overflow flag
+      n: u1,      // Negative flag
+  }
+  ```
+  Represents the CPU status flags as individual bits.
+
+  ```zig
+  FlagBit = enum(u8) {
+      negative   = 0b10000000, // Negative flag bit
+      overflow   = 0b01000000, // Overflow flag bit
+      unused     = 0b00100000, // Unused flag bit
+      brk        = 0b00010000, // Break flag bit
+      decimal    = 0b00001000, // Decimal mode flag bit
+      intDisable = 0b00000100, // Interrupt disable flag bit
+      zero       = 0b00000010, // Zero flag bit
+      carry      = 0b00000001, // Carry flag bit
+  }
+  ```
+  Enumerates bit masks for CPU status flags.
+
 - **Functions**:
   ```zig
   pub fn init(
