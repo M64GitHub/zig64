@@ -66,7 +66,7 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
       init_addr: u16
   ) !*C64
   ```
-  - Initializes a new heap-allocated C64 instance with default settings.
+  Initializes a new heap-allocated C64 instance with default settings.
 
   ```zig
   pub fn deinit(
@@ -74,7 +74,7 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
       allocator: std.mem.Allocator
   ) void
   ```
-  - Cleans up the C64 instance, freeing allocated memory.
+  Cleans up the C64 instance, freeing allocated memory.
 
   ```zig
   pub fn loadPrg(
@@ -84,14 +84,14 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
       pc_to_loadaddr: bool
   ) !u16
   ```
-  - Loads a `.prg` file into memory and returns the load address.
+  Loads a `.prg` file into memory and returns the load address.
 
   ```zig
   pub fn run(
       c64: *C64
   ) !void
   ```
-  - Executes the CPU until program termination.
+  Executes the CPU until program termination (RTS).
 
   ```zig
   pub fn call(
@@ -99,7 +99,7 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
       address: u16
   ) void
   ```
-  - Calls an assembly subroutine, returning on RTS.
+  - Calls a specific assembly subroutine, returning on RTS.
 
 ## Building the Project
 #### Requirements
