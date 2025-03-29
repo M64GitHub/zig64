@@ -34,7 +34,11 @@ This project **began with a love for Commodore 64 SID music** and a desire to re
 
 ## Overview
 
-The `C64` struct ties together the virtual C64 system, integrating `Cpu` for instruction execution, `Ram64k` for memory, `Vic` for video timing, and `Sid` as a (for now) register placeholder. Each component includes its own `dbg_enabled` flag—e.g., `c64.dbg_enabled` for emulator logs, `cpu.dbg_enabled` for execution details—allowing tailored debugging. The `Cpu` drives the system, executing code and monitoring SID register writes, while `Vic` keeps cycle-accurate timing.  
+The `C64` struct orchestrates a modular virtual C64 system, integrating `Cpu` for instruction execution, `Ram64k` for memory, `Vic` for video timing, and `Sid` as a (for now) register placeholder. Each component includes its own `dbg_enabled` flag—e.g., `c64.dbg_enabled` for emulator logs, `cpu.dbg_enabled` for execution details—allowing tailored debugging. The `Cpu` drives the system, executing code and monitoring SID register writes, while `Vic` keeps cycle-accurate timing.  
+A powerful disassembler struct `Insn`, enriches this core, decoding instructions with detailed metadata for advanced analysis. The sections below detail their workings, API, and examples to help you use this emulator core effectively.
+
+
+
 
 ### C64
 The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64 system.
