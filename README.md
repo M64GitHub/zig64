@@ -32,6 +32,40 @@ This project **began with a love for Commodore 64 SID music** and a desire to re
 - 🧪 **Testing C64 Programs with Zig**  
   Integrates seamlessly with Zig’s powerful testing infrastructure, enabling developers to write unit tests for C64 programs and verify emulator behavior with ease.
 
+## Quick Start Demo
+
+Example loading, running, and disassembling a `.prg` file:
+
+```zig
+const std = @import("std");
+const C64 = @import("zig64");
+const Asm = C64.Asm;
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+    const stdout = std.io.getStdOut().writer();
+
+    var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0x0000);
+    defer c64.deinit(allocator);
+
+    // Enable debug output
+    c64.dbg_enabled = true;
+    c64.cpu.dbg_enabled = true;
+
+    // Load and disassemble a .prg file
+    const load_address = try c64.loadPrg(allocator, "example.prg", true);
+    try stdout.print("Loaded 'example.prg' at ${X:0>4}\n\n", .{load_address});
+    try Asm.disassembleForward(&c64.mem.data, load_address, 10);
+
+    // Run the program
+    try stdout.print("\nRunning...\n", .{});
+    try c64.run();
+}
+```
+
+
 ## Overview
 
 This emulator is structured as a set of modular components, forming the foundation of the virtual C64 system. These building blocks include:
@@ -47,6 +81,7 @@ Each component features its own `dbg_enabled` flag—e.g., `c64.dbg_enabled` for
 The `Asm` struct enhances this core with a powerful disassembler and metadata decoder, offering detailed instruction analysis.  
 The sections below outline their mechanics, API, and examples to guide you in using this emulator core effectively.
 
+### Example 
 
 ### C64
 The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64 system.
@@ -89,7 +124,7 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
   ```zig
   pub fn run(
       c64: *C64
-  ) !void
+  ) void
   ```
   Executes the CPU until program termination (RTS).
 
@@ -390,6 +425,27 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
   ) Instruction
   ```
   Decodes a byte slice into an `Instruction` struct with metadata.
+
+## Inner Workings
+
+### C64: System Coordinator
+The `C64` struct initializes and links the emulator’s components, loading `.prg` files into `Ram64k` and directing `Cpu` execution via `call`, `run` or `runFrames`. It acts as the entry point, managing memory and timing interactions.
+
+### Cpu: Execution Engine
+The `Cpu` fetches and executes 6510 instructions from `Ram64k`, updating registers and tracking SID register writes through `sidRegWritten`. It syncs with `Vic` for cycle accuracy, stepping through code with `runStep`.
+
+### Ram64k: Memory Backbone
+`Ram64k` provides a 64KB memory array, serving as the shared storage for `Cpu` instructions, `Vic` registers, and `Sid` data. It supports direct writes from `C64.loadPrg` and `Cpu.writeByte`.
+
+### Vic: Timing Keeper
+`Vic` emulates raster timing, advancing lines with `emulateD012` and signaling sync events like vsync or bad lines to `Cpu`. It uses `model` (PAL/NTSC) to adjust cycle counts, ensuring accurate interrupt timing.
+
+### Sid: Register Holder
+The `Sid` struct stores register values at a configurable `base_address`, updated by `Cpu` writes. It offers `getRegisters` for inspection, with future potential for sound logic.
+
+### Asm: Instruction Decoder
+`Asm` decodes raw bytes into `Instruction` structs via `decodeInsn`, providing metadata like addressing modes and operands. Functions like `disassembleCodeLine` format this data into readable output, aiding analysis.
+
 
 ## Building the Project
 #### Requirements
