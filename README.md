@@ -178,20 +178,20 @@ The test program `writebytes-example.zig` writes a small routine into the memory
 
 
 ```zig
-c64.cpu.writeByte(0xa9, 0x0800); //  LDA,,
-c64.cpu.writeByte(0x0a, 0x0801); //      #0A     ; 10
-c64.cpu.writeByte(0xaa, 0x0802); //  TAX
-c64.cpu.writeByte(0x69, 0x0803); //  ADC
-c64.cpu.writeByte(0x1e, 0x0804); //      #$1E
-c64.cpu.writeByte(0x9d, 0x0805); //  STA $
-c64.cpu.writeByte(0x00, 0x0806); //         00
-c64.cpu.writeByte(0xd4, 0x0807); //       D4
-c64.cpu.writeByte(0xe8, 0x0808); //  INX
-c64.cpu.writeByte(0xe0, 0x0809); //  CPX
-c64.cpu.writeByte(0x19, 0x080A); //      #19
-c64.cpu.writeByte(0xd0, 0x080B); //  BNE
-c64.cpu.writeByte(0xf6, 0x080C); //      $0803 (-10)
-c64.cpu.writeByte(0x60, 0x080D); //  RTS
+c64.cpu.writeByte(C64.Cpu.Insn.lda_imm.value, 0x0800); //  LDA
+c64.cpu.writeByte(0x0a, 0x0801); //                            #0A     ; 10
+c64.cpu.writeByte(C64.Cpu.Insn.tax.value, 0x0802); //      TAX
+c64.cpu.writeByte(C64.Cpu.Insn.adc_imm.value, 0x0803); //  ADC
+c64.cpu.writeByte(0x1e, 0x0804); //                            #$1E
+c64.cpu.writeByte(C64.Cpu.Insn.sta_absx.value, 0x0805); // STA $
+c64.cpu.writeByte(0x00, 0x0806); //                               00
+c64.cpu.writeByte(0xd4, 0x0807); //                             D4
+c64.cpu.writeByte(C64.Cpu.Insn.inx.value, 0x0808); //      INX
+c64.cpu.writeByte(C64.Cpu.Insn.cpx_imm.value, 0x0809); //  CPX
+c64.cpu.writeByte(0x19, 0x080A); //                            #19
+c64.cpu.writeByte(C64.Cpu.Insn.bne.value, 0x080B); //      BNE
+c64.cpu.writeByte(0xf6, 0x080C); //                            $0803 (-10)
+c64.cpu.writeByte(C64.Cpu.Insn.rts.value, 0x080D); //      RTS
 ```
 
 **Running the Example:**
