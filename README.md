@@ -101,6 +101,14 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
   ```
   Calls a specific assembly subroutine, returning on RTS.
 
+  ```zig
+  pub fn runFrames(
+      c64: *C64,
+      frame_count: u32
+  ) u32
+  ```
+  Runs the CPU for a specified number of frames, returning the number executed; frame timing adapts to PAL or NTSC VIC settings.
+
 ## Building the Project
 #### Requirements
 ![Zig](https://img.shields.io/badge/Zig-0.14.0-orange?style=flat)
