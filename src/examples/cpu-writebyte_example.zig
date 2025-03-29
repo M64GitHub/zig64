@@ -59,7 +59,7 @@ pub fn main() !void {
 
     try stdout.print("[EXE] Executing program ...\n", .{});
     var sid_volume_old = c64.sid.getRegisters()[24];
-    c64.cpu_dbg_enabled = true;
+    c64.cpu.dbg_enabled = true;
     while (c64.cpu.runStep() != 0) {
         if (c64.cpu.sidRegWritten()) {
             try stdout.print("[EXE] sid register written!\n", .{});
