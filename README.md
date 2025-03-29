@@ -126,12 +126,12 @@ The core component executing 6510 instructions, driving the virtual C64 system.
   - `cycles_since_vsync: u16` - Cycles since last vertical sync.
   - `cycles_since_hsync: u8` - Cycles since last horizontal sync.
   - `cycles_last_step: u8` - Cycles from the last step.
-  - `sid_reg_changed: bool` - Indicates SID register changes detected.
-  - `sid_reg_written: bool` - Flags SID register writes.
-  - `ext_sid_reg_written: bool` - Flags extended SID register writes.
-  - `ext_sid_reg_changed: bool` - Indicates extended SID register changes.
+  - `sid_reg_changed: bool` - Indicates SID register changes detected in current instructon.
+  - `sid_reg_written: bool` - Flags SID register writes in current instruction.
+  - `ext_sid_reg_written: bool` - Flags SID register writes. To be manually cleared. Used for C64.call().
+  - `ext_sid_reg_changed: bool` - Indicates SID register changes. Manually clear.
   - `mem: *Ram64k` - Pointer to the system’s 64KB memory.
-  - `sid: *Sid` - Pointer to the SID register placeholder.
+  - `sid: *Sid` - Pointer to the SID / registers.
   - `vic: *Vic` - Pointer to the VIC timing component.
   - `dbg_enabled: bool` - Enables debug logging for CPU execution.
 
