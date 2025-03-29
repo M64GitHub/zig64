@@ -32,6 +32,70 @@ This project **began with a love for Commodore 64 SID music** and a desire to re
 - 🧪 **Testing C64 Programs with Zig**  
   Integrates seamlessly with Zig’s powerful testing infrastructure, enabling developers to write unit tests for C64 programs and verify emulator behavior with ease.
 
+## Quick Start Demo
+
+Example loading, running, and disassembling a `.prg` file:
+
+```zig
+const std = @import("std");
+const C64 = @import("zig64");
+const Asm = C64.Asm;
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+    const stdout = std.io.getStdOut().writer();
+
+    var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0x0000);
+    defer c64.deinit(allocator);
+
+    // Enable debug output
+    c64.dbg_enabled = true;
+    c64.cpu.dbg_enabled = true;
+
+    // Load and disassemble a .prg file
+    const load_address = try c64.loadPrg(allocator, "example.prg", true);
+    try stdout.print("Loaded 'example.prg' at ${X:0>4}\n\n", .{load_address});
+    try Asm.disassembleForward(&c64.mem.data, load_address, 10);
+
+    // Run the program
+    try stdout.print("\nRunning...\n", .{});
+    try c64.run();
+}
+```
+Output
+```
+[EXE] initializing emulator
+[EXE] Loading 'example.prg'
+[c64] loading file: 'example.prg'
+[c64] file load address: $C000
+[c64] writing mem: C000 offs: 0002 data: 78
+...
+[EXE] Disassembling from: C000
+C000:  78        SEI
+C001:  A9 00     LDA #$00
+C003:  85 01     STA $01
+C005:  A2 FF     LDX #$FF
+C007:  9A        TXS
+C008:  A0 00     LDY #$00
+C00A:  A9 41     LDA #$41
+C00C:  99 00 04  STA $0400,Y
+C00F:  A9 01     LDA #$01
+C011:  99 00 D8  STA $D800,Y
+...
+[EXE] RUN
+[cpu] PC: C000 | 78       | SEI          | A: 00 | X: 00 | Y: 00 | SP: FF | Cycl: 00 | Cycl-TT: 0 | FL: 00100100
+[cpu] PC: C001 | A9 00    | LDA #$00     | A: 00 | X: 00 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 2 | FL: 00100100
+[cpu] PC: C003 | 85 01    | STA $01      | A: 00 | X: 00 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 4 | FL: 00100110
+[cpu] PC: C005 | A2 FF    | LDX #$FF     | A: 00 | X: 00 | Y: 00 | SP: FF | Cycl: 03 | Cycl-TT: 7 | FL: 00100110
+[cpu] PC: C007 | 9A       | TXS          | A: 00 | X: FF | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 9 | FL: 10100100
+[cpu] PC: C008 | A0 00    | LDY #$00     | A: 00 | X: FF | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 11 | FL: 10100100
+[cpu] PC: C00A | A9 41    | LDA #$41     | A: 00 | X: FF | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 13 | FL: 00100110
+[cpu] PC: C00C | 99 00 04 | STA $0400,Y  | A: 41 | X: FF | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 15 | FL: 00100100
+[cpu] PC: C00F | A9 01    | LDA #$01     | A: 41 | X: FF | Y: 00 | SP: FF | Cycl: 04 | Cycl-TT: 19 | FL: 00100100
+```
+
 ## Overview
 
 This emulator is structured as a set of modular components, forming the foundation of the virtual C64 system. These building blocks include:
@@ -47,7 +111,27 @@ Each component features its own `dbg_enabled` flag—e.g., `c64.dbg_enabled` for
 The `Asm` struct enhances this core with a powerful disassembler and metadata decoder, offering detailed instruction analysis.  
 The sections below outline their mechanics, API, and examples to guide you in using this emulator core effectively.
 
+### System Breakdown
 
+#### C64: System Coordinator
+The `C64` struct initializes and links the emulator’s components, loading `.prg` files into `Ram64k` and directing `Cpu` execution via `call`, `run` or `runFrames`. It acts as the entry point, managing memory and timing interactions.
+
+#### Cpu: Execution Engine
+The `Cpu` fetches and executes 6510 instructions from `Ram64k`, updating registers and tracking SID register writes through `sidRegWritten`. It syncs with `Vic` for cycle accuracy, stepping through code with `runStep`.
+
+#### Ram64k: Memory Backbone
+`Ram64k` provides a 64KB memory array, serving as the shared storage for `Cpu` instructions, `Vic` registers, and `Sid` data. It supports direct writes from `C64.loadPrg` and `Cpu.writeByte`.
+
+#### Vic: Timing Keeper
+`Vic` emulates raster timing, advancing lines with `emulateD012` and signaling sync events like vsync or bad lines to `Cpu`. It uses `model` (PAL/NTSC) to adjust cycle counts, ensuring accurate interrupt timing.
+
+#### Sid: Register Holder
+The `Sid` struct stores register values at a configurable `base_address`, updated by `Cpu` writes. It offers `getRegisters` for inspection, with future potential for sound logic.
+
+#### Asm: Instruction Decoder
+`Asm` decodes raw bytes into `Instruction` structs via `decodeInsn`, providing metadata like addressing modes and operands. Functions like `disassembleCodeLine` format this data into readable output, aiding analysis.
+
+## API Reference
 ### C64
 The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64 system.
 
@@ -89,7 +173,7 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
   ```zig
   pub fn run(
       c64: *C64
-  ) !void
+  ) void
   ```
   Executes the CPU until program termination (RTS).
 
@@ -108,6 +192,525 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
   ) u32
   ```
   Runs the CPU for a specified number of frames, returning the number executed; frame timing adapts to PAL or NTSC VIC settings.
+
+
+### Cpu
+The core component executing 6510 instructions, driving the virtual C64 system.
+
+- **Fields**:
+  - `pc: u16` - Program counter.
+  - `sp: u8` - Stack pointer.
+  - `a: u8` - Accumulator register.
+  - `x: u8` - X index register.
+  - `y: u8` - Y index register.
+  - `status: u8` - Status register (raw byte).
+  - `flags: CpuFlags` - Structured status flags (e.g., carry, zero).
+  - `opcode_last: u8` - Last executed opcode.
+  - `cycles_executed: u32` - Total cycles run.
+  - `cycles_since_vsync: u16` - Cycles since last vertical sync.
+  - `cycles_since_hsync: u8` - Cycles since last horizontal sync.
+  - `cycles_last_step: u8` - Cycles from the last step.
+  - `sid_reg_changed: bool` - Indicates SID register changes detected in current instructon.
+  - `sid_reg_written: bool` - Flags SID register writes in current instruction.
+  - `ext_sid_reg_written: bool` - Flags SID register writes. To be manually cleared. Used for C64.call().
+  - `ext_sid_reg_changed: bool` - Indicates SID register changes. Manually clear.
+  - `mem: *Ram64k` - Pointer to the system’s 64KB memory.
+  - `sid: *Sid` - Pointer to the SID / registers.
+  - `vic: *Vic` - Pointer to the VIC timing component.
+  - `dbg_enabled: bool` - Enables debug logging for CPU execution.
+
+- **Types**:
+  ```zig
+  CpuFlags = struct {
+      c: u1,      // Carry flag
+      z: u1,      // Zero flag
+      i: u1,      // Interrupt disable flag
+      d: u1,      // Decimal mode flag
+      b: u1,      // Break flag
+      unused: u1, // Unused flag (always 1 in 6502)
+      v: u1,      // Overflow flag
+      n: u1,      // Negative flag
+  }
+  ```
+  Represents the CPU status flags as individual bits.
+
+  ```zig
+  FlagBit = enum(u8) {
+      negative   = 0b10000000, // Negative flag bit
+      overflow   = 0b01000000, // Overflow flag bit
+      unused     = 0b00100000, // Unused flag bit
+      brk        = 0b00010000, // Break flag bit
+      decimal    = 0b00001000, // Decimal mode flag bit
+      intDisable = 0b00000100, // Interrupt disable flag bit
+      zero       = 0b00000010, // Zero flag bit
+      carry      = 0b00000001, // Carry flag bit
+  }
+  ```
+  Enumerates bit masks for CPU status flags.
+
+- **Functions**:
+  ```zig
+  pub fn init(
+      mem: *Ram64k,
+      sid: *Sid,
+      vic: *Vic,
+      pc_start: u16
+  ) Cpu
+  ```
+  Initializes a new CPU instance with the given memory, SID, VIC, and starting program counter.
+
+  ```zig
+  pub fn reset(
+      cpu: *Cpu
+  ) void
+  ```
+  Resets the CPU state (registers, flags) without altering memory.
+
+  ```zig
+  pub fn hardReset(
+      cpu: *Cpu
+  ) void
+  ```
+  Performs a full reset, clearing both CPU state and memory.
+
+  ```zig
+  pub fn writeMem(
+      cpu: *Cpu,
+      data: []const u8,
+      addr: u16
+  ) void
+  ```
+  Writes a byte slice to memory starting at the specified address.
+
+  ```zig
+  pub fn printStatus(
+      cpu: *Cpu
+  ) void
+  ```
+  Prints the current CPU status (instruction, opcodes, registers and flags).
+
+  ```zig
+  pub fn printTrace(
+      cpu: *Cpu
+  ) void
+  ```
+  Outputs a trace of the last executed instruction / simpler, more compact format than printStatus()
+
+  ```zig
+  pub fn printFlags(
+      cpu: *Cpu
+  ) void
+  ```
+  Prints the CPU’s status flags.
+
+  ```zig
+  pub fn readByte(
+      cpu: *Cpu,
+      addr: u16
+  ) u8
+  ```
+  Reads a byte from memory at the given address.
+
+  ```zig
+  pub fn readWord(
+      cpu: *Cpu,
+      addr: u16
+  ) u16
+  ```
+  Reads a 16-bit word from memory at the given address.
+
+  ```zig
+  pub fn readWordZP(
+      cpu: *Cpu,
+      addr: u8
+  ) u16
+  ```
+  Reads a 16-bit word from zero-page memory at the given address.
+
+  ```zig
+  pub fn writeByte(
+      cpu: *Cpu,
+      val: u8,
+      addr: u16
+  ) void
+  ```
+  Writes a byte to memory at the specified address.
+
+  ```zig
+  pub fn writeWord(
+      cpu: *Cpu,
+      val: u16,
+      addr: u16
+  ) void
+  ```
+  Writes a 16-bit word to memory at the specified address (little endian).
+
+  ```zig
+  pub fn sidRegWritten(
+      cpu: *Cpu
+  ) bool
+  ```
+  Returns true if a SID register was written in the last instruction (runStep()).
+
+  ```zig
+  pub fn runStep(
+      cpu: *Cpu
+  ) u8
+  ```
+  Executes one CPU instruction, returning the number of cycles taken. The main execution function.
+
+### Ram64k
+The memory component managing the C64’s 64KB address space.
+
+- **Fields**:
+  - `data: [0x10000]u8` - Array holding 64KB of memory.
+
+- **Functions**:
+  ```zig
+  pub fn init() Ram64k
+  ```
+  Initializes a new 64KB memory instance, zero-filled.
+
+  ```zig
+  pub fn clear(
+      self: *Ram64k
+  ) void
+  ```
+  Resets all memory to zero.
+
+### Sid
+The placeholder component for SID register storage.
+
+- **Fields**:
+  - `base_address: u16` - Base memory address for SID registers (typically `0xD400`).
+  - `registers: [25]u8` - Array of 25 SID registers.
+  - `dbg_enabled: bool` - Enables debug logging for SID register values.
+
+- **Functions**:
+  ```zig
+  pub fn init(
+      base_address: u16
+  ) Sid
+  ```
+  Initializes a new SID instance with the specified base address, zeroing all registers.
+
+  ```zig
+  pub fn getRegisters(
+      sid: *Sid
+  ) [25]u8
+  ```
+  Returns a copy of the current SID register values.
+
+  ```zig
+  pub fn printRegisters(
+      sid: *Sid
+  ) void
+  ```
+  Prints the current SID register values in hexadecimal format.
+
+### Vic
+The video timing component synchronizing CPU cycles with C64 raster behavior.
+
+- **Fields**:
+  - `model: Model` - VIC model (PAL or NTSC).
+  - `vsync_happened: bool` - Flags vertical sync occurrence.
+  - `hsync_happened: bool` - Flags horizontal sync occurrence.
+  - `badline_happened: bool` - Indicates a bad line event.
+  - `rasterline_changed: bool` - Marks raster line updates.
+  - `rasterline: u16` - Current raster line number.
+  - `frame_ctr: usize` - Frame counter.
+  - `mem: *Ram64k` - Pointer to the system’s 64KB memory.
+  - `cpu: *Cpu` - Pointer to the CPU instance (to update cycle counters).
+  - `dbg_enabled: bool` - Enables debug logging for VIC timing.
+
+- **Types**:
+  ```zig
+  Model = enum {
+      pal,    // PAL video timing
+      ntsc,   // NTSC video timing
+  }
+  ```
+  Specifies the VIC video timing model.
+
+  ```zig
+  Timing = struct {
+      pub const cyclesVsyncPal = 19656,       // 63 cycles x 312 rasterlines
+      pub const cyclesVsyncNtsc = 17030,      // NTSC vsync cycle count
+      pub const cyclesRasterlinePal = 63,     // PAL rasterline cycles
+      pub const cyclesRasterlineNtsc = 65,    // NTSC rasterline cycles
+      pub const cyclesBadlineStealing = 40,   // Cycles VIC steals from CPU on badline
+  }
+  ```
+  Defines VIC timing constants for PAL and NTSC models.
+
+- **Functions**:
+  ```zig
+  pub fn init(
+      cpu: *Cpu,
+      mem: *Ram64k,
+      vic_model: Model
+  ) Vic
+  ```
+  Initializes a new VIC instance with the specified CPU, memory, and model (PAL/NTSC).
+
+  ```zig
+  pub fn emulateD012(
+      vic: *Vic
+  ) void
+  ```
+  Advances the raster line, updates VIC registers (e.g., `0xD011`, `0xD012`), and handles bad line timing.
+
+  ```zig
+  pub fn printStatus(
+      vic: *Vic
+  ) void
+  ```
+  Prints the current VIC status, including raster line, sync flags, and frame count.
+
+### Asm
+The assembly metadata decoder and disassembler, providing detailed instruction analysis.
+
+- **Fields**: None — acts as a namespace for disassembly functions and types.
+
+- **Types**:
+  - `Group` - Enumerates instruction categories (e.g., `branch`, `load_store`).
+  - `AddrMode` - Defines addressing modes (e.g., `immediate`, `absolute_x`).
+  - `OperandType` - Specifies operand kinds (e.g., `register`, `memory`).
+  - `OperandSize` - Indicates operand sizes (e.g., `byte`, `word`).
+  - `AccessType` - Tracks access modes (e.g., `read`, `write`).
+  - `OperandId` - Identifies operands (e.g., `a` for accumulator, `memory`).
+  - `Operand` - Combines operand details (id, type, size, access, bytes).
+  - `Instruction` - Represents a decoded instruction with opcode, mnemonic, and operands.
+
+- **Types**:
+  ```zig
+  Group = enum {
+      branch,       // Jumps and branches (e.g., JSR, BEQ)
+      load_store,   // Load/store ops (e.g., LDA, STA)
+      control,      // CPU control (e.g., NOP, CLI)
+      math,         // Arithmetic (e.g., ADC, SBC)
+      logic,        // Bitwise (e.g., AND, ORA)
+      compare,      // Comparisons (e.g., CMP, CPX)
+      shift,        // Bit shifts (e.g., ASL, ROR)
+      stack,        // Stack ops (e.g., PHA, PHP)
+      transfer,     // Register transfers (e.g., TAX, TSX)
+  }
+  ```
+  Enumerates instruction categories.
+
+  ```zig
+  AddrMode = enum {
+      implied,              // No explicit operand (e.g., NOP)
+      immediate,            // Literal value (e.g., LDA #$10)
+      zero_page,            // Zero-page address (e.g., LDA $50)
+      zero_page_x,          // Zero-page with X offset (e.g., LDA $50,X)
+      zero_page_y,          // Zero-page with Y offset (e.g., LDX $50,Y)
+      absolute,             // Full 16-bit address (e.g., LDA $1234)
+      absolute_x,           // Absolute with X offset (e.g., STA $1234,X)
+      absolute_y,           // Absolute with Y offset (e.g., LDA $1234,Y)
+      indirect,             // Indirect addressing (e.g., JMP ($1234))
+      indexed_indirect_x,   // Indexed indirect with X (e.g., LDA ($50,X))
+      indirect_indexed_y,   // Indirect indexed with Y (e.g., LDA ($50),Y)
+  }
+  ```
+  Defines addressing modes for instructions.
+
+  ```zig
+  OperandType = enum {
+      none,       // No operand source/target (e.g., NOP)
+      register,   // Direct register ops (e.g., TAX)
+      memory,     // Memory access (e.g., STA)
+      immediate,  // Literal value (e.g., LDA #$xx)
+  }
+  ```
+  Specifies the type of an instruction’s operand.
+
+  ```zig
+  OperandSize = enum {
+      none,   // No operand bytes
+      byte,   // 8-bit operand (e.g., LDA #$10)
+      word,   // 16-bit operand (e.g., LDA $1234)
+  }
+  ```
+  Indicates the size of an operand.
+
+  ```zig
+  AccessType = struct {
+      pub const none: u2 = 0x00,        // No access
+      pub const read: u2 = 0x01,        // Read-only (e.g., LDA)
+      pub const write: u2 = 0x02,       // Write-only (e.g., STA)
+      pub const read_write: u2 = 0x03,  // Read and write (e.g., INC)
+  }
+  ```
+  Defines operand access modes as 2-bit flags.
+
+  ```zig
+  OperandId = struct {
+      pub const none: u8 = 0x00,      // No operand
+      pub const a: u8 = 0x01,         // Accumulator
+      pub const x: u8 = 0x02,         // X register
+      pub const y: u8 = 0x04,         // Y register
+      pub const sp: u8 = 0x08,        // Stack pointer
+      pub const memory: u8 = 0x10,    // Memory location
+      pub const constant: u8 = 0x20,  // Immediate value (e.g., #$10)
+  }
+  ```
+  Identifies specific operands with bit flags (combinable, e.g., `memory | x`).
+
+  ```zig
+  Operand = struct {
+      id: u8,             // Operand identifier (e.g., OperandId.a)
+      type: OperandType,  // Operand kind (e.g., register)
+      size: OperandSize,  // Operand size (e.g., byte)
+      access: u2,         // Access mode (e.g., AccessType.read)
+      bytes: [2]u8 = [_]u8{0, 0},  // Up to 2 bytes of operand data
+      len: u8 = 0,        // Number of valid bytes in `bytes`
+  }
+  ```
+  Describes an instruction operand.
+
+  ```zig
+  Instruction = struct {
+      opcode: u8,             // Instruction opcode (e.g., 0xA9 for LDA immediate)
+      mnemonic: []const u8,   // Instruction name (e.g., "LDA")
+      addr_mode: AddrMode,    // Addressing mode (e.g., .immediate)
+      group: Group,           // Instruction category (e.g., .load_store)
+      operand1: Operand,      // Primary operand (e.g., accumulator for LDA)
+      operand2: ?Operand = null,  // Optional secondary operand (e.g., X for TAX)
+  }
+  ```
+  Represents a fully decoded 6510 instruction.
+      
+- **Functions**:
+  ```zig
+  pub fn getInstructionSize(
+      insn: Instruction
+  ) u8
+  ```
+  Returns the size of an instruction in bytes (1, 2, or 3) based on its addressing mode.
+
+  ```zig
+  pub fn disassembleForward(
+      mem: []u8,
+      pc_start: u16,
+      count: usize
+  ) !void
+  ```
+  Disassembles and prints `count` instructions from memory starting at `pc_start`.
+
+  ```zig
+  pub fn disassembleInsn(
+      buffer: []u8,
+      pc: u16,
+      insn: Instruction
+  ) ![]const u8
+  ```
+  Converts an instruction into a human-readable string (e.g., `"LDA #$10"`).
+
+  ```zig
+  pub fn disassembleCodeLine(
+      buffer: []u8,
+      pc: u16,
+      insn: Instruction
+  ) ![]const u8
+  ```
+  Formats a full disassembly line with address, bytes, and mnemonic (e.g., `"C00C: A9 10 LDA #$10"`).
+
+  ```zig
+  pub fn decodeInsn(
+      bytes: []u8
+  ) Instruction
+  ```
+  Decodes a byte slice into an `Instruction` struct with metadata.
+
+## Example Code
+
+Below are practical examples to demonstrate using the zig64 emulator core. Starting with short snippets for specific tasks, followed by a complete example of manually programming and stepping through a routine.
+
+### Single-Step CPU Execution
+```zig
+var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0xC000);
+defer c64.deinit(allocator);
+
+const cycles = c64.cpu.runStep();
+std.debug.print("Executed one step, took {} cycles\n", .{cycles});
+```
+Runs a single CPU instruction and prints the cycle count.
+
+### Reading SID Registers
+```zig
+var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0x0000);
+defer c64.deinit(allocator);
+
+const regs = c64.sid.getRegisters();
+std.debug.print("SID register 0: {X:0>2}\n", .{regs[0]});
+```
+Retrieves and prints the first SID register value.
+
+### Disassembling a Memory Range
+```zig
+var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0xC000);
+defer c64.deinit(allocator);
+
+try C64.Asm.disassembleForward(&c64.mem.data, 0xC000, 5);
+```
+Disassembles five instructions starting at address `$C000`.
+
+### Full Example: Programming and Stepping a SID Routine
+```zig
+const std = @import("std");
+const C64 = @import("zig64");
+const Asm = C64.Asm;
+
+pub fn main() !void {
+    const allocator = std.heap.page_allocator;
+    const stdout = std.io.getStdOut().writer();
+
+    // Initialize the C64 emulator
+    var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0x0800);
+    defer c64.deinit(allocator);
+
+    // Print initial emulator state
+    try stdout.print("CPU init address: ${X:0>4}\n", .{c64.cpu.pc});
+    try stdout.print("VIC type: {s}\n", .{@tagName(c64.vic.model)});
+    try stdout.print("SID base address: ${X:0>4}\n", .{c64.sid.base_address});
+
+    // Write a small program to memory (SID register sweep)
+    try stdout.print("\nWriting program to $0800...\n", .{});
+    c64.cpu.writeByte(Asm.lda_imm.opcode, 0x0800);    // LDA #$0A
+    c64.cpu.writeByte(0x0A, 0x0801);
+    c64.cpu.writeByte(Asm.tax.opcode, 0x0802);        // TAX
+    c64.cpu.writeByte(Asm.adc_imm.opcode, 0x0803);    // ADC #$1E
+    c64.cpu.writeByte(0x1E, 0x0804);
+    c64.cpu.writeByte(Asm.sta_absx.opcode, 0x0805);   // STA $D400,X
+    c64.cpu.writeByte(0x00, 0x0806);
+    c64.cpu.writeByte(0xD4, 0x0807);
+    c64.cpu.writeByte(Asm.inx.opcode, 0x0808);        // INX
+    c64.cpu.writeByte(Asm.cpx_imm.opcode, 0x0809);    // CPX #$19
+    c64.cpu.writeByte(0x19, 0x080A);
+    c64.cpu.writeByte(Asm.bne.opcode, 0x080B);        // BNE $0803
+    c64.cpu.writeByte(0xF6, 0x080C);
+    c64.cpu.writeByte(Asm.rts.opcode, 0x080D);        // RTS
+
+    // Step through the program, monitoring SID changes
+    try stdout.print("\nExecuting program step-by-step...\n", .{});
+    c64.cpu.dbg_enabled = true;
+    var sid_volume_old = c64.sid.getRegisters()[24];
+    while (c64.cpu.runStep() != 0) {
+        if (c64.cpu.sidRegWritten()) {
+            try stdout.print("SID register written!\n", .{});
+            c64.sid.printRegisters();
+            const sid_volume = c64.sid.getRegisters()[24];
+            if (sid_volume_old != sid_volume) {
+                try stdout.print("SID volume changed: ${X:0>2}\n", .{sid_volume});
+                sid_volume_old = sid_volume;
+            }
+        }
+    }
+}
+```
+Manually writes a program to sweep SID registers, executes it step-by-step, and monitors volume changes.
+
 
 ## Building the Project
 #### Requirements
