@@ -12,8 +12,6 @@ Leveraging Zig’s modern features, it provides a clean and extensible platform 
 
 A goal of this project is to lower the barriers to C64 emulation, providing an accessible entry point for developers and enthusiasts alike. With its straightforward design and Zig’s intuitive tooling, tasks like debugging intricate C64 programs, tracing execution paths, or testing software behavior are made approachable, empowering users to explore and experiment with minimal setup or complexity.
 
-<br>
-
 ## 🚀 Key Features
 - 🎮 **Cycle-Accurate 6510 CPU Emulation**  
   Implements all documented MOS 6502/6510 instructions and addressing modes with exact timing and behavior, ensuring faithful program execution.
@@ -29,8 +27,6 @@ A goal of this project is to lower the barriers to C64 emulation, providing an a
   Decodes 6502/6510 opcodes into human-readable mnemonics, enriched with metadata (instruction size, group, addressing mode, operand details: type, size, access), ideal for code tracing and analysis.
 - 🧪 **Testing C64 Programs with Zig**  
   Integrates seamlessly with Zig’s powerful testing infrastructure, enabling developers to write unit tests for C64 programs and verify emulator behavior with ease.
-
-<br>
 
 ## Building the Project
 #### Requirements
@@ -88,22 +84,14 @@ pub fn build(b: *std.Build) void {
 }
 ```
 
-<br>
-
 ## 🔓 License
 This emulator is released under the **MIT License**, allowing free modification and distribution.
-
-<br>
 
 ## 🌐 Related Projects  
 - 🎧 **[zigreSID](https://github.com/M64GitHub/zigreSID)** – A SID sound emulation library for Zig, integrating with this emulator for `.sid` file playback.
 
-<br>
-
 
 Developed with ❤️ by M64  
-
-<br>
 
 ## 🚀 Get Started Now!
 Clone the repository and start experimenting:
