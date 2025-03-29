@@ -34,6 +34,63 @@ This project lowers the barriers to C64 emulation by offering an accessible entr
 
 <br>
 
+## Building the Project
+#### Requirements
+![Zig](https://img.shields.io/badge/Zig-0.14.0-orange?style=flat)
+
+#### Build
+```sh
+zig build
+```
+
+
+#### Run CPU Tests:
+```sh
+zig build test
+```
+
+<br>
+
+## Using zig64 In Your Project
+To add `zig64` as a dependency, use:
+```sh
+zig fetch --save https://github.com/M64GitHub/zig64/archive/refs/tags/v0.2.0-alpha.tar.gz
+```
+This will add the dependency to your `build.zig.zon`:
+```zig
+.dependencies = .{
+    .zig64 = .{
+        .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.2.0-alpha.tar.gz",
+        .hash = "zig64-0.2.0-v6FneuiXAwDZ6n7QNBVykEJsMxkbIyfHTNqdjy_ZZ_3l",
+    },
+},
+```
+
+In your `build.zig`, add the module as follows:
+```zig
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = std.builtin.OptimizeMode.ReleaseFast;
+
+    const dep_zig64 = b.dependency("zig64", .{}); // define the dependeny
+    const mod_zig64 = dep_zig64.module("zig64");  // define the module
+
+    // ...
+
+    // add to an example executable:
+    const exe = b.addExecutable(.{
+        .name = "loadPrg-example",
+        .root_source_file = b.path("src/examples/loadprg_example.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    exe.root_module.addImport("zig64", mod_zig64); // add the module
+
+    // ...
+}
+```
+
+<br>
 
 ## 🔓 License
 This emulator is released under the **MIT License**, allowing free modification and distribution.
