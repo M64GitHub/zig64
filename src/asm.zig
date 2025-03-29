@@ -1,6 +1,7 @@
 const std = @import("std");
+const stdout = std.io.getStdOut().writer();
 
-pub const Insn = @This();
+pub const Asm = @This();
 
 pub const Group = enum {
     branch, // Jumps and branches (e.g., JSR, BEQ)
@@ -88,6 +89,24 @@ pub fn getInstructionSize(insn: Instruction) u8 {
         => 2,
         .absolute, .absolute_x, .absolute_y, .indirect => 3,
     };
+}
+
+pub fn disassembleForward(mem: []u8, pc_start: u16, count: usize) !void {
+    var pc = pc_start;
+    var counter: usize = 0;
+
+    while (counter < count) : (counter += 1) {
+        // Grab up to 3 bytes, pad with 0s if out of bounds
+        var bytes: [3]u8 = .{ 0, 0, 0 };
+        const end = @min(pc +% 3, mem.len);
+        @memcpy(bytes[0..(end - pc)], mem[pc..end]);
+
+        const insn = Asm.decodeInsn(&bytes);
+        var obuf: [32]u8 = undefined;
+        const str = try Asm.disassembleCodeLine(&obuf, pc, insn);
+        stdout.print("{s}\n", .{str}) catch {};
+        pc = pc +% Asm.getInstructionSize(insn);
+    }
 }
 
 pub fn disassembleInsn(buffer: []u8, pc: u16, insn: Instruction) ![]const u8 {

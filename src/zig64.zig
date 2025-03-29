@@ -7,7 +7,7 @@ pub const Cpu = @import("cpu.zig");
 pub const Ram64k = @import("mem.zig");
 pub const Sid = @import("sid.zig");
 pub const Vic = @import("vic.zig");
-pub const Insn = @import("insn.zig");
+pub const Asm = @import("asm.zig");
 
 pub const C64 = @This();
 

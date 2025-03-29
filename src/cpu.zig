@@ -4,7 +4,7 @@ const stdout = std.io.getStdOut().writer();
 const Ram64k = @import("mem.zig");
 const Sid = @import("sid.zig");
 const Vic = @import("vic.zig");
-const Insn = @import("insn.zig");
+const Asm = @import("asm.zig");
 
 pub const Cpu = @This();
 
@@ -157,11 +157,11 @@ pub fn printStatus(cpu: *Cpu) void {
     var bytes: [3]u8 = .{ 0, 0, 0 };
     const end = @min(cpu.pc +% 3, cpu.mem.data.len);
     @memcpy(bytes[0..(end - cpu.pc)], cpu.mem.data[cpu.pc..end]);
-    const insn = Insn.decodeInsn(&bytes);
-    const disasm = Insn.disassembleInsn(&buf_disasm, cpu.pc, insn) catch
+    const insn = Asm.decodeInsn(&bytes);
+    const disasm = Asm.disassembleInsn(&buf_disasm, cpu.pc, insn) catch
         "???";
 
-    const insn_size = Insn.getInstructionSize(insn);
+    const insn_size = Asm.getInstructionSize(insn);
 
     stdout.print("[cpu] PC: {X:0>4} | {s} | {s} | A: {X:0>2} | X: {X:0>2} | Y: {X:0>2} | SP: {X:0>2} | Cycl: {d:0>2} | Cycl-TT: {d} | ", .{
         cpu.pc,
@@ -643,242 +643,242 @@ pub fn runStep(cpu: *Cpu) u8 {
     cpu.opcode_last = opcode;
 
     switch (opcode) {
-        Insn.and_imm.opcode => {
+        Asm.and_imm.opcode => {
             cpu.a &= fetchUByte(cpu);
             cpu.updateFlags(cpu.a);
         },
-        Insn.ora_imm.opcode => {
+        Asm.ora_imm.opcode => {
             cpu.a |= fetchUByte(cpu);
             cpu.updateFlags(cpu.a);
         },
-        Insn.xor_imm.opcode => {
+        Asm.xor_imm.opcode => {
             cpu.a ^= fetchUByte(cpu);
             cpu.updateFlags(cpu.a);
         },
-        Insn.and_zp.opcode => {
+        Asm.and_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             cpu.bitAnd(addr);
         },
-        Insn.ora_zp.opcode => {
+        Asm.ora_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             cpu.bitOra(addr);
         },
-        Insn.xor_zp.opcode => {
+        Asm.xor_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             cpu.bitXor(addr);
         },
-        Insn.and_zpx.opcode => {
+        Asm.and_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             cpu.bitAnd(addr);
         },
-        Insn.ora_zpx.opcode => {
+        Asm.ora_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             cpu.bitOra(addr);
         },
-        Insn.xor_zpx.opcode => {
+        Asm.xor_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             cpu.bitXor(addr);
         },
-        Insn.and_abs.opcode => {
+        Asm.and_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             cpu.bitAnd(addr);
         },
-        Insn.ora_abs.opcode => {
+        Asm.ora_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             cpu.bitOra(addr);
         },
-        Insn.xor_abs.opcode => {
+        Asm.xor_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             cpu.bitXor(addr);
         },
-        Insn.and_absx.opcode => {
+        Asm.and_absx.opcode => {
             const addr: u16 = addrAbsX(cpu);
             cpu.bitAnd(addr);
         },
-        Insn.ora_absx.opcode => {
+        Asm.ora_absx.opcode => {
             const addr: u16 = addrAbsX(cpu);
             cpu.bitOra(addr);
         },
-        Insn.xor_absx.opcode => {
+        Asm.xor_absx.opcode => {
             const addr: u16 = addrAbsX(cpu);
             cpu.bitXor(addr);
         },
-        Insn.and_absy.opcode => {
+        Asm.and_absy.opcode => {
             const addr: u16 = addrAbsY(cpu);
             cpu.bitAnd(addr);
         },
-        Insn.ora_absy.opcode => {
+        Asm.ora_absy.opcode => {
             const addr: u16 = addrAbsY(cpu);
             cpu.bitOra(addr);
         },
-        Insn.xor_absy.opcode => {
+        Asm.xor_absy.opcode => {
             const addr: u16 = addrAbsY(cpu);
             cpu.bitXor(addr);
         },
-        Insn.and_indx.opcode => {
+        Asm.and_indx.opcode => {
             const addr: u16 = addrIndX(cpu);
             cpu.bitAnd(addr);
         },
-        Insn.ora_indx.opcode => {
+        Asm.ora_indx.opcode => {
             const addr: u16 = addrIndX(cpu);
             cpu.bitOra(addr);
         },
-        Insn.xor_indx.opcode => {
+        Asm.xor_indx.opcode => {
             const addr: u16 = addrIndX(cpu);
             cpu.bitXor(addr);
         },
-        Insn.and_indy.opcode => {
+        Asm.and_indy.opcode => {
             const addr: u16 = addrIndY(cpu);
             cpu.bitAnd(addr);
         },
-        Insn.ora_indy.opcode => {
+        Asm.ora_indy.opcode => {
             const addr: u16 = addrIndY(cpu);
             cpu.bitOra(addr);
         },
-        Insn.xor_indy.opcode => {
+        Asm.xor_indy.opcode => {
             const addr: u16 = addrIndY(cpu);
             cpu.bitXor(addr);
         },
-        Insn.bit_zp.opcode => {
+        Asm.bit_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             const val: u8 = cpu.readByte(addr);
             cpu.flags.z = @intFromBool(!((cpu.a & val) != 0));
             cpu.flags.n = @intFromBool((val & 128) != 0);
             cpu.flags.v = @intFromBool((val & 64) != 0);
         },
-        Insn.bit_abs.opcode => {
+        Asm.bit_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             const val: u8 = cpu.readByte(addr);
             cpu.flags.z = @intFromBool(!((cpu.a & val) != 0));
             cpu.flags.n = @intFromBool((val & 128) != 0);
             cpu.flags.v = @intFromBool((val & 64) != 0);
         },
-        Insn.lda_imm.opcode => {
+        Asm.lda_imm.opcode => {
             cpu.a = fetchUByte(cpu);
             cpu.updateFlags(cpu.a);
         },
-        Insn.ldx_imm.opcode => {
+        Asm.ldx_imm.opcode => {
             cpu.x = fetchUByte(cpu);
             cpu.updateFlags(cpu.x);
         },
-        Insn.ldy_imm.opcode => {
+        Asm.ldy_imm.opcode => {
             cpu.y = fetchUByte(cpu);
             cpu.updateFlags(cpu.y);
         },
-        Insn.lda_zp.opcode => {
+        Asm.lda_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             cpu.loadReg(addr, &cpu.a);
         },
-        Insn.ldx_zp.opcode => {
+        Asm.ldx_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             cpu.loadReg(addr, &cpu.x);
         },
-        Insn.ldx_zpy.opcode => {
+        Asm.ldx_zpy.opcode => {
             const addr: u16 = addrZpY(cpu);
             cpu.loadReg(addr, &cpu.x);
         },
-        Insn.ldy_zp.opcode => {
+        Asm.ldy_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             cpu.loadReg(addr, &cpu.y);
         },
-        Insn.lda_zpx.opcode => {
+        Asm.lda_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             cpu.loadReg(addr, &cpu.a);
         },
-        Insn.ldy_zpx.opcode => {
+        Asm.ldy_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             cpu.loadReg(addr, &cpu.y);
         },
-        Insn.lda_abs.opcode => {
+        Asm.lda_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             cpu.loadReg(addr, &cpu.a);
         },
-        Insn.ldx_abs.opcode => {
+        Asm.ldx_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             cpu.loadReg(addr, &cpu.x);
         },
-        Insn.ldy_abs.opcode => {
+        Asm.ldy_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             cpu.loadReg(addr, &cpu.y);
         },
-        Insn.lda_absx.opcode => {
+        Asm.lda_absx.opcode => {
             const addr: u16 = addrAbsX(cpu);
             cpu.loadReg(addr, &cpu.a);
         },
-        Insn.ldy_absx.opcode => {
+        Asm.ldy_absx.opcode => {
             const addr: u16 = addrAbsX(cpu);
             cpu.loadReg(addr, &cpu.y);
         },
-        Insn.lda_absy.opcode => {
+        Asm.lda_absy.opcode => {
             const addr: u16 = addrAbsY(cpu);
             cpu.loadReg(addr, &cpu.a);
         },
-        Insn.ldx_absy.opcode => {
+        Asm.ldx_absy.opcode => {
             const addr: u16 = addrAbsY(cpu);
             cpu.loadReg(addr, &cpu.x);
         },
-        Insn.lda_indx.opcode => {
+        Asm.lda_indx.opcode => {
             const addr: u16 = addrIndX(cpu);
             cpu.loadReg(addr, &cpu.a);
         },
-        Insn.sta_indx.opcode => {
+        Asm.sta_indx.opcode => {
             const addr: u16 = addrIndX(cpu);
             cpu.writeByte(cpu.a, addr);
         },
-        Insn.lda_indy.opcode => {
+        Asm.lda_indy.opcode => {
             const addr: u16 = addrIndY(cpu);
             cpu.loadReg(addr, &cpu.a);
         },
-        Insn.sta_indy.opcode => {
+        Asm.sta_indy.opcode => {
             const addr: u16 = addrIndY6(cpu);
             cpu.writeByte(cpu.a, addr);
         },
-        Insn.sta_zp.opcode => {
+        Asm.sta_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             cpu.writeByte(cpu.a, addr);
         },
-        Insn.stx_zp.opcode => {
+        Asm.stx_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             cpu.writeByte(cpu.x, addr);
         },
-        Insn.stx_zpy.opcode => {
+        Asm.stx_zpy.opcode => {
             const addr: u16 = addrZpY(cpu);
             cpu.writeByte(cpu.x, addr);
         },
-        Insn.sty_zp.opcode => {
+        Asm.sty_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             cpu.writeByte(cpu.y, addr);
         },
-        Insn.sta_abs.opcode => {
+        Asm.sta_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             cpu.writeByte(cpu.a, addr);
         },
-        Insn.stx_abs.opcode => {
+        Asm.stx_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             cpu.writeByte(cpu.x, addr);
         },
-        Insn.sty_abs.opcode => {
+        Asm.sty_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             cpu.writeByte(cpu.y, addr);
         },
-        Insn.sta_zpx.opcode => {
+        Asm.sta_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             cpu.writeByte(cpu.a, addr);
         },
-        Insn.sty_zpx.opcode => {
+        Asm.sty_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             cpu.writeByte(cpu.y, addr);
         },
-        Insn.sta_absx.opcode => {
+        Asm.sta_absx.opcode => {
             const addr: u16 = addrAbsX5(cpu);
             cpu.writeByte(cpu.a, addr);
         },
-        Insn.sta_absy.opcode => {
+        Asm.sta_absy.opcode => {
             const addr: u16 = addrAbsY5(cpu);
             cpu.writeByte(cpu.a, addr);
         },
 
-        Insn.jsr.opcode => {
+        Asm.jsr.opcode => {
             const jsr_addr: u16 = fetchWord(cpu);
             const ret_addr = cpu.pc - 1;
             cpu.pushW(ret_addr);
@@ -892,7 +892,7 @@ pub fn runStep(cpu: *Cpu) u8 {
             }
         },
 
-        Insn.rts.opcode => {
+        Asm.rts.opcode => {
             if (cpu.sp == 0xFF) {
                 if (cpu.dbg_enabled) {
                     stdout.print("[cpu] RTS EXIT!\n", .{}) catch {};
@@ -915,7 +915,7 @@ pub fn runStep(cpu: *Cpu) u8 {
             }
         },
 
-        Insn.jmp_abs.opcode => {
+        Asm.jmp_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             cpu.pc = addr;
             if (cpu.dbg_enabled) {
@@ -923,7 +923,7 @@ pub fn runStep(cpu: *Cpu) u8 {
             }
         },
 
-        Insn.jmp_ind.opcode => {
+        Asm.jmp_ind.opcode => {
             const addr: u16 = addrAbs(cpu);
             const lo: u8 = cpu.readByte(addr);
             const hi_addr: u16 = (addr & 0xFF00) | ((addr + 1) & 0x00FF); // Wrap to $xx00
@@ -931,71 +931,71 @@ pub fn runStep(cpu: *Cpu) u8 {
             cpu.pc = @as(u16, lo) | (@as(u16, hi) << 8);
         },
 
-        Insn.tsx.opcode => {
+        Asm.tsx.opcode => {
             cpu.x = cpu.sp;
             cpu.cycles_executed +%= 1;
             cpu.updateFlags(cpu.x);
         },
-        Insn.txs.opcode => {
+        Asm.txs.opcode => {
             cpu.sp = cpu.x;
             cpu.cycles_executed +%= 1;
         },
-        Insn.pha.opcode => {
+        Asm.pha.opcode => {
             cpu.pushB(cpu.a);
         },
-        Insn.pla.opcode => {
+        Asm.pla.opcode => {
             cpu.a = popB(cpu);
             cpu.updateFlags(cpu.a);
             cpu.cycles_executed +%= 1;
         },
-        Insn.php.opcode => {
+        Asm.php.opcode => {
             pushPs(cpu);
         },
-        Insn.plp.opcode => {
+        Asm.plp.opcode => {
             popPs(cpu);
             cpu.cycles_executed +%= 1;
         },
-        Insn.tax.opcode => {
+        Asm.tax.opcode => {
             cpu.x = cpu.a;
             cpu.cycles_executed +%= 1;
             cpu.updateFlags(cpu.x);
         },
-        Insn.tay.opcode => {
+        Asm.tay.opcode => {
             cpu.y = cpu.a;
             cpu.cycles_executed +%= 1;
             cpu.updateFlags(cpu.y);
         },
-        Insn.txa.opcode => {
+        Asm.txa.opcode => {
             cpu.a = cpu.x;
             cpu.cycles_executed +%= 1;
             cpu.updateFlags(cpu.a);
         },
-        Insn.tya.opcode => {
+        Asm.tya.opcode => {
             cpu.a = cpu.y;
             cpu.cycles_executed +%= 1;
             cpu.updateFlags(cpu.a);
         },
-        Insn.inx.opcode => {
+        Asm.inx.opcode => {
             cpu.x +%= 1;
             cpu.cycles_executed +%= 1;
             cpu.updateFlags(cpu.x);
         },
-        Insn.iny.opcode => {
+        Asm.iny.opcode => {
             cpu.y +%= 1;
             cpu.cycles_executed +%= 1;
             cpu.updateFlags(cpu.y);
         },
-        Insn.dex.opcode => {
+        Asm.dex.opcode => {
             cpu.x -%= 1;
             cpu.cycles_executed +%= 1;
             cpu.updateFlags(cpu.x);
         },
-        Insn.dey.opcode => {
+        Asm.dey.opcode => {
             cpu.y -%= 1;
             cpu.cycles_executed +%= 1;
             cpu.updateFlags(cpu.y);
         },
-        Insn.dec_zp.opcode => {
+        Asm.dec_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             var val: u8 = cpu.readByte(addr);
             val -%= 1;
@@ -1003,7 +1003,7 @@ pub fn runStep(cpu: *Cpu) u8 {
             cpu.writeByte(val, addr);
             cpu.updateFlags(val);
         },
-        Insn.dec_zpx.opcode => {
+        Asm.dec_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             var val: u8 = cpu.readByte(addr);
             val -%= 1;
@@ -1011,7 +1011,7 @@ pub fn runStep(cpu: *Cpu) u8 {
             cpu.writeByte(val, addr);
             cpu.updateFlags(val);
         },
-        Insn.dec_abs.opcode => {
+        Asm.dec_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             var val: u8 = cpu.readByte(addr);
             val -%= 1;
@@ -1019,7 +1019,7 @@ pub fn runStep(cpu: *Cpu) u8 {
             cpu.writeByte(val, addr);
             cpu.updateFlags(val);
         },
-        Insn.dec_absx.opcode => {
+        Asm.dec_absx.opcode => {
             const addr: u16 = addrAbsX5(cpu);
             var val: u8 = cpu.readByte(addr);
             val -%= 1;
@@ -1027,7 +1027,7 @@ pub fn runStep(cpu: *Cpu) u8 {
             cpu.writeByte(val, addr);
             cpu.updateFlags(val);
         },
-        Insn.inc_zp.opcode => {
+        Asm.inc_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             var val: u8 = cpu.readByte(addr);
             val +%= 1;
@@ -1035,7 +1035,7 @@ pub fn runStep(cpu: *Cpu) u8 {
             cpu.writeByte(val, addr);
             cpu.updateFlags(val);
         },
-        Insn.inc_zpx.opcode => {
+        Asm.inc_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             var val: u8 = cpu.readByte(addr);
             val +%= 1;
@@ -1043,7 +1043,7 @@ pub fn runStep(cpu: *Cpu) u8 {
             cpu.writeByte(val, addr);
             cpu.updateFlags(val);
         },
-        Insn.inc_abs.opcode => {
+        Asm.inc_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             var val: u8 = cpu.readByte(addr);
             val +%= 1;
@@ -1051,7 +1051,7 @@ pub fn runStep(cpu: *Cpu) u8 {
             cpu.writeByte(val, addr);
             cpu.updateFlags(val);
         },
-        Insn.inc_absx.opcode => {
+        Asm.inc_absx.opcode => {
             const addr: u16 = addrAbsX5(cpu);
             var val: u8 = cpu.readByte(addr);
             val +%= 1;
@@ -1059,322 +1059,322 @@ pub fn runStep(cpu: *Cpu) u8 {
             cpu.writeByte(val, addr);
             cpu.updateFlags(val);
         },
-        Insn.beq.opcode => {
+        Asm.beq.opcode => {
             cpu.branch(@as(u8, cpu.flags.z), 1);
         },
-        Insn.bne.opcode => {
+        Asm.bne.opcode => {
             cpu.branch(@as(u8, cpu.flags.z), 0);
         },
-        Insn.bcs.opcode => {
+        Asm.bcs.opcode => {
             cpu.branch(@as(u8, cpu.flags.c), 1);
         },
-        Insn.bcc.opcode => {
+        Asm.bcc.opcode => {
             cpu.branch(@as(u8, cpu.flags.c), 0);
         },
-        Insn.bmi.opcode => {
+        Asm.bmi.opcode => {
             cpu.branch(@as(u8, cpu.flags.n), 1);
         },
-        Insn.bpl.opcode => {
+        Asm.bpl.opcode => {
             cpu.branch(@as(u8, cpu.flags.n), 0);
         },
-        Insn.bvc.opcode => {
+        Asm.bvc.opcode => {
             cpu.branch(@as(u8, cpu.flags.v), 0);
         },
-        Insn.bvs.opcode => {
+        Asm.bvs.opcode => {
             cpu.branch(@as(u8, cpu.flags.v), 1);
         },
-        Insn.clc.opcode => {
+        Asm.clc.opcode => {
             cpu.flags.c = 0;
             cpu.cycles_executed +%= 1;
             cpu.flagsToPS();
         },
-        Insn.sec.opcode => {
+        Asm.sec.opcode => {
             cpu.flags.c = 1;
             cpu.cycles_executed +%= 1;
             cpu.flagsToPS();
         },
-        Insn.cld.opcode => {
+        Asm.cld.opcode => {
             cpu.flags.d = 0;
             cpu.cycles_executed +%= 1;
             cpu.flagsToPS();
         },
-        Insn.sed.opcode => {
+        Asm.sed.opcode => {
             cpu.flags.d = 1;
             cpu.cycles_executed +%= 1;
             cpu.flagsToPS();
         },
-        Insn.cli.opcode => {
+        Asm.cli.opcode => {
             cpu.flags.i = 0;
             cpu.cycles_executed +%= 1;
             cpu.flagsToPS();
         },
-        Insn.sei.opcode => {
+        Asm.sei.opcode => {
             cpu.flags.i = 1;
             cpu.cycles_executed +%= 1;
             cpu.flagsToPS();
         },
-        Insn.clv.opcode => {
+        Asm.clv.opcode => {
             cpu.flags.v = 0;
             cpu.cycles_executed +%= 1;
             cpu.flagsToPS();
         },
-        Insn.nop.opcode => {
+        Asm.nop.opcode => {
             cpu.cycles_executed +%= 1;
         },
-        Insn.adc_abs.opcode => {
+        Asm.adc_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.adc(op);
         },
-        Insn.adc_absx.opcode => {
+        Asm.adc_absx.opcode => {
             const addr: u16 = addrAbsX(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.adc(op);
         },
-        Insn.adc_absy.opcode => {
+        Asm.adc_absy.opcode => {
             const addr: u16 = addrAbsY(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.adc(op);
         },
-        Insn.adc_zp.opcode => {
+        Asm.adc_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.adc(op);
         },
-        Insn.adc_zpx.opcode => {
+        Asm.adc_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.adc(op);
         },
-        Insn.adc_indx.opcode => {
+        Asm.adc_indx.opcode => {
             const addr: u16 = addrIndX(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.adc(op);
         },
-        Insn.adc_indy.opcode => {
+        Asm.adc_indy.opcode => {
             const addr: u16 = addrIndY(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.adc(op);
         },
-        Insn.adc_imm.opcode => {
+        Asm.adc_imm.opcode => {
             const op: u8 = fetchUByte(cpu);
             cpu.adc(op);
         },
-        Insn.sbc_imm.opcode => {
+        Asm.sbc_imm.opcode => {
             const op: u8 = fetchUByte(cpu);
             cpu.sbc(op);
         },
-        Insn.sbc_abs.opcode => {
+        Asm.sbc_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.sbc(op);
         },
-        Insn.sbc_zp.opcode => {
+        Asm.sbc_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.sbc(op);
         },
-        Insn.sbc_zpx.opcode => {
+        Asm.sbc_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.sbc(op);
         },
-        Insn.sbc_absx.opcode => {
+        Asm.sbc_absx.opcode => {
             const addr: u16 = addrAbsX(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.sbc(op);
         },
-        Insn.sbc_absy.opcode => {
+        Asm.sbc_absy.opcode => {
             const addr: u16 = addrAbsY(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.sbc(op);
         },
-        Insn.sbc_indx.opcode => {
+        Asm.sbc_indx.opcode => {
             const addr: u16 = addrIndX(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.sbc(op);
         },
-        Insn.sbc_indy.opcode => {
+        Asm.sbc_indy.opcode => {
             const addr: u16 = addrIndY(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.sbc(op);
         },
-        Insn.cpx_imm.opcode => {
+        Asm.cpx_imm.opcode => {
             const op: u8 = fetchUByte(cpu);
             cpu.cmpReg(op, cpu.x);
         },
-        Insn.cpy_imm.opcode => {
+        Asm.cpy_imm.opcode => {
             const op: u8 = fetchUByte(cpu);
             cpu.cmpReg(op, cpu.y);
         },
-        Insn.cpx_zp.opcode => {
+        Asm.cpx_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.cmpReg(op, cpu.x);
         },
-        Insn.cpy_zp.opcode => {
+        Asm.cpy_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.cmpReg(op, cpu.y);
         },
-        Insn.cpx_abs.opcode => {
+        Asm.cpx_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.cmpReg(op, cpu.x);
         },
-        Insn.cpy_abs.opcode => {
+        Asm.cpy_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.cmpReg(op, cpu.y);
         },
-        Insn.cmp_imm.opcode => {
+        Asm.cmp_imm.opcode => {
             const op: u8 = fetchUByte(cpu);
             cpu.cmpReg(op, cpu.a);
         },
-        Insn.cmp_zp.opcode => {
+        Asm.cmp_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.cmpReg(op, cpu.a);
         },
-        Insn.cmp_zpx.opcode => {
+        Asm.cmp_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.cmpReg(op, cpu.a);
         },
-        Insn.cmp_abs.opcode => {
+        Asm.cmp_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.cmpReg(op, cpu.a);
         },
-        Insn.cmp_absx.opcode => {
+        Asm.cmp_absx.opcode => {
             const addr: u16 = addrAbsX(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.cmpReg(op, cpu.a);
         },
-        Insn.cmp_absy.opcode => {
+        Asm.cmp_absy.opcode => {
             const addr: u16 = addrAbsY(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.cmpReg(op, cpu.a);
         },
-        Insn.cmp_indx.opcode => {
+        Asm.cmp_indx.opcode => {
             const addr: u16 = addrIndX(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.cmpReg(op, cpu.a);
         },
-        Insn.cmp_indy.opcode => {
+        Asm.cmp_indy.opcode => {
             const addr: u16 = addrIndY(cpu);
             const op: u8 = cpu.readByte(addr);
             cpu.cmpReg(op, cpu.a);
         },
-        Insn.asl_a.opcode => {
+        Asm.asl_a.opcode => {
             cpu.a = cpu.asl(cpu.a);
         },
-        Insn.asl_zp.opcode => {
+        Asm.asl_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.asl(op);
             cpu.writeByte(res, addr);
         },
-        Insn.asl_zpx.opcode => {
+        Asm.asl_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.asl(op);
             cpu.writeByte(res, addr);
         },
-        Insn.asl_abs.opcode => {
+        Asm.asl_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.asl(op);
             cpu.writeByte(res, addr);
         },
-        Insn.asl_absx.opcode => {
+        Asm.asl_absx.opcode => {
             const addr: u16 = addrAbsX5(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.asl(op);
             cpu.writeByte(res, addr);
         },
-        Insn.lsr_a.opcode => {
+        Asm.lsr_a.opcode => {
             cpu.a = cpu.lsr(cpu.a);
         },
-        Insn.lsr_zp.opcode => {
+        Asm.lsr_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.lsr(op);
             cpu.writeByte(res, addr);
         },
-        Insn.lsr_zpx.opcode => {
+        Asm.lsr_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.lsr(op);
             cpu.writeByte(res, addr);
         },
-        Insn.lsr_abs.opcode => {
+        Asm.lsr_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.lsr(op);
             cpu.writeByte(res, addr);
         },
-        Insn.lsr_absx.opcode => {
+        Asm.lsr_absx.opcode => {
             const addr: u16 = addrAbsX5(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.lsr(op);
             cpu.writeByte(res, addr);
         },
-        Insn.rol_a.opcode => {
+        Asm.rol_a.opcode => {
             cpu.a = cpu.rol(cpu.a);
         },
-        Insn.rol_zp.opcode => {
+        Asm.rol_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.rol(op);
             cpu.writeByte(res, addr);
         },
-        Insn.rol_zpx.opcode => {
+        Asm.rol_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.rol(op);
             cpu.writeByte(res, addr);
         },
-        Insn.rol_abs.opcode => {
+        Asm.rol_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.rol(op);
             cpu.writeByte(res, addr);
         },
-        Insn.rol_absx.opcode => {
+        Asm.rol_absx.opcode => {
             const addr: u16 = addrAbsX5(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.rol(op);
             cpu.writeByte(res, addr);
         },
-        Insn.ror_a.opcode => {
+        Asm.ror_a.opcode => {
             cpu.a = cpu.ror(cpu.a);
         },
-        Insn.ror_zp.opcode => {
+        Asm.ror_zp.opcode => {
             const addr: u16 = addrZp(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.ror(op);
             cpu.writeByte(res, addr);
         },
-        Insn.ror_zpx.opcode => {
+        Asm.ror_zpx.opcode => {
             const addr: u16 = addrZpX(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.ror(op);
             cpu.writeByte(res, addr);
         },
-        Insn.ror_abs.opcode => {
+        Asm.ror_abs.opcode => {
             const addr: u16 = addrAbs(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.ror(op);
             cpu.writeByte(res, addr);
         },
-        Insn.ror_absx.opcode => {
+        Asm.ror_absx.opcode => {
             const addr: u16 = addrAbsX5(cpu);
             const op: u8 = cpu.readByte(addr);
             const res: u8 = cpu.ror(op);
             cpu.writeByte(res, addr);
         },
-        Insn.brk.opcode => {
+        Asm.brk.opcode => {
             cpu.pushW(cpu.pc + 1);
             pushPs(cpu);
             cpu.pc = cpu.readWord(65534);
@@ -1382,7 +1382,7 @@ pub fn runStep(cpu: *Cpu) u8 {
             cpu.flags.i = 1;
             return 0;
         },
-        Insn.rti.opcode => {
+        Asm.rti.opcode => {
             popPs(cpu);
             cpu.pc = popW(cpu);
         },
@@ -1444,22 +1444,4 @@ pub fn runStep(cpu: *Cpu) u8 {
     }
 
     return cpu.cycles_last_step;
-}
-
-pub fn disasmForward(cpu: *Cpu, pc_start: u16, count: usize) !void {
-    var pc = pc_start;
-    var counter: usize = 0;
-
-    while (counter < count) : (counter += 1) {
-        // Grab up to 3 bytes, pad with 0s if out of bounds
-        var bytes: [3]u8 = .{ 0, 0, 0 };
-        const end = @min(pc +% 3, cpu.mem.data.len);
-        @memcpy(bytes[0..(end - pc)], cpu.mem.data[pc..end]);
-
-        const insn = Insn.decodeInsn(&bytes);
-        var obuf: [32]u8 = undefined;
-        const str = try Insn.disassembleCodeLine(&obuf, pc, insn);
-        stdout.print("{s}\n", .{str}) catch {};
-        pc = pc +% Insn.getInstructionSize(insn);
-    }
 }

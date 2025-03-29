@@ -1,6 +1,7 @@
 // zig64 - loadPrg example
 const std = @import("std");
 const C64 = @import("zig64");
+const Asm = C64.Asm;
 
 pub fn main() !void {
     const gpa = std.heap.page_allocator;
@@ -38,20 +39,20 @@ pub fn main() !void {
     // 080B: D0 F6                       BNE $0803       ; 2/3 loop
     // 080D: 60                          RTS             ; 6
 
-    c64.cpu.writeByte(C64.Insn.lda_imm.opcode, 0x0800); //  LDA
+    c64.cpu.writeByte(Asm.lda_imm.opcode, 0x0800); //  LDA
     c64.cpu.writeByte(0x0a, 0x0801); //                            #0A     ; 10
-    c64.cpu.writeByte(C64.Insn.tax.opcode, 0x0802); //      TAX
-    c64.cpu.writeByte(C64.Insn.adc_imm.opcode, 0x0803); //  ADC
+    c64.cpu.writeByte(Asm.tax.opcode, 0x0802); //      TAX
+    c64.cpu.writeByte(Asm.adc_imm.opcode, 0x0803); //  ADC
     c64.cpu.writeByte(0x1e, 0x0804); //                            #$1E
-    c64.cpu.writeByte(C64.Insn.sta_absx.opcode, 0x0805); // STA $
+    c64.cpu.writeByte(Asm.sta_absx.opcode, 0x0805); // STA $
     c64.cpu.writeByte(0x00, 0x0806); //                               00
     c64.cpu.writeByte(0xd4, 0x0807); //                             D4
-    c64.cpu.writeByte(C64.Insn.inx.opcode, 0x0808); //      INX
-    c64.cpu.writeByte(C64.Insn.cpx_imm.opcode, 0x0809); //  CPX
+    c64.cpu.writeByte(Asm.inx.opcode, 0x0808); //      INX
+    c64.cpu.writeByte(Asm.cpx_imm.opcode, 0x0809); //  CPX
     c64.cpu.writeByte(0x19, 0x080A); //                            #19
-    c64.cpu.writeByte(C64.Insn.bne.opcode, 0x080B); //      BNE
+    c64.cpu.writeByte(Asm.bne.opcode, 0x080B); //      BNE
     c64.cpu.writeByte(0xf6, 0x080C); //                            $0803 (-10)
-    c64.cpu.writeByte(C64.Insn.rts.opcode, 0x080D); //      RTS
+    c64.cpu.writeByte(Asm.rts.opcode, 0x080D); //      RTS
     c64.cpu.printStatus();
 
     // manually execute single steps, print cpu status
