@@ -423,6 +423,26 @@ The video timing component synchronizing CPU cycles with C64 raster behavior.
   - `cpu: *Cpu` - Pointer to the CPU instance (to update cycle counters).
   - `dbg_enabled: bool` - Enables debug logging for VIC timing.
 
+- **Types**:
+  ```zig
+  Model = enum {
+      pal,    // PAL video timing
+      ntsc,   // NTSC video timing
+  }
+  ```
+  Specifies the VIC video timing model.
+
+  ```zig
+  Timing = struct {
+      pub const cyclesVsyncPal = 19656,       // 63 cycles x 312 rasterlines
+      pub const cyclesVsyncNtsc = 17030,      // NTSC vsync cycle count
+      pub const cyclesRasterlinePal = 63,     // PAL rasterline cycles
+      pub const cyclesRasterlineNtsc = 65,    // NTSC rasterline cycles
+      pub const cyclesBadlineStealing = 40,   // Cycles VIC steals from CPU on badline
+  }
+  ```
+  Defines VIC timing constants for PAL and NTSC models.
+
 - **Functions**:
   ```zig
   pub fn init(
