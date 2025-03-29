@@ -623,7 +623,93 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
   ```
   Decodes a byte slice into an `Instruction` struct with metadata.
 
+## Example Code
 
+Below are practical examples to demonstrate using the zig64 emulator core effectively. Start with short snippets for specific tasks, followed by a complete example of manually programming and stepping through a routine.
+
+### Single-Step CPU Execution
+```zig
+var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0xC000);
+defer c64.deinit(allocator);
+
+const cycles = c64.cpu.runStep();
+std.debug.print("Executed one step, took {} cycles\n", .{cycles});
+```
+Runs a single CPU instruction and prints the cycle count.
+
+### Reading SID Registers
+```zig
+var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0x0000);
+defer c64.deinit(allocator);
+
+const regs = c64.sid.getRegisters();
+std.debug.print("SID register 0: {X:0>2}\n", .{regs[0]});
+```
+Retrieves and prints the first SID register value.
+
+### Disassembling a Memory Range
+```zig
+var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0xC000);
+defer c64.deinit(allocator);
+
+try C64.Asm.disassembleForward(&c64.mem.data, 0xC000, 5);
+```
+Disassembles five instructions starting at address `$C000`.
+
+### Full Example: Programming and Stepping a SID Routine
+```zig
+const std = @import("std");
+const C64 = @import("zig64");
+const Asm = C64.Asm;
+
+pub fn main() !void {
+    const allocator = std.heap.page_allocator;
+    const stdout = std.io.getStdOut().writer();
+
+    // Initialize the C64 emulator
+    var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0x0800);
+    defer c64.deinit(allocator);
+
+    // Print initial emulator state
+    try stdout.print("CPU init address: ${X:0>4}\n", .{c64.cpu.pc});
+    try stdout.print("VIC type: {s}\n", .{@tagName(c64.vic.model)});
+    try stdout.print("SID base address: ${X:0>4}\n", .{c64.sid.base_address});
+
+    // Write a small program to memory (SID register sweep)
+    try stdout.print("\nWriting program to $0800...\n", .{});
+    c64.cpu.writeByte(Asm.lda_imm.opcode, 0x0800);    // LDA #$0A
+    c64.cpu.writeByte(0x0A, 0x0801);
+    c64.cpu.writeByte(Asm.tax.opcode, 0x0802);        // TAX
+    c64.cpu.writeByte(Asm.adc_imm.opcode, 0x0803);    // ADC #$1E
+    c64.cpu.writeByte(0x1E, 0x0804);
+    c64.cpu.writeByte(Asm.sta_absx.opcode, 0x0805);   // STA $D400,X
+    c64.cpu.writeByte(0x00, 0x0806);
+    c64.cpu.writeByte(0xD4, 0x0807);
+    c64.cpu.writeByte(Asm.inx.opcode, 0x0808);        // INX
+    c64.cpu.writeByte(Asm.cpx_imm.opcode, 0x0809);    // CPX #$19
+    c64.cpu.writeByte(0x19, 0x080A);
+    c64.cpu.writeByte(Asm.bne.opcode, 0x080B);        // BNE $0803
+    c64.cpu.writeByte(0xF6, 0x080C);
+    c64.cpu.writeByte(Asm.rts.opcode, 0x080D);        // RTS
+
+    // Step through the program, monitoring SID changes
+    try stdout.print("\nExecuting program step-by-step...\n", .{});
+    c64.cpu.dbg_enabled = true;
+    var sid_volume_old = c64.sid.getRegisters()[24];
+    while (c64.cpu.runStep() != 0) {
+        if (c64.cpu.sidRegWritten()) {
+            try stdout.print("SID register written!\n", .{});
+            c64.sid.printRegisters();
+            const sid_volume = c64.sid.getRegisters()[24];
+            if (sid_volume_old != sid_volume) {
+                try stdout.print("SID volume changed: ${X:0>2}\n", .{sid_volume});
+                sid_volume_old = sid_volume;
+            }
+        }
+    }
+}
+```
+Manually writes a program to sweep SID registers, executes it step-by-step, and monitors volume changes.
 
 
 ## Building the Project
