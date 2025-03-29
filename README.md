@@ -625,7 +625,7 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
 
 ## Example Code
 
-Below are practical examples to demonstrate using the zig64 emulator core effectively. Start with short snippets for specific tasks, followed by a complete example of manually programming and stepping through a routine.
+Below are practical examples to demonstrate using the zig64 emulator core. Starting with short snippets for specific tasks, followed by a complete example of manually programming and stepping through a routine.
 
 ### Single-Step CPU Execution
 ```zig
