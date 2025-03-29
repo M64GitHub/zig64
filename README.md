@@ -285,7 +285,7 @@ This will add the dependency to your `build.zig.zon`:
 .dependencies = .{
     .zig64 = .{
         .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.2.0-alpha.tar.gz",
-        .hash = "zig64-0.2.0-v6FnenGTAwDaoHtbiQl5nw2ym9S_fgTm1k7e-4ouFD4f",
+        .hash = "zig64-0.2.0-v6FneuiXAwDZ6n7QNBVykEJsMxkbIyfHTNqdjy_ZZ_3l",
     },
 },
 ```
