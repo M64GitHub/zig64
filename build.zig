@@ -60,7 +60,7 @@ pub fn build(b: *std.Build) void {
     run_cmd_loadprg.step.dependOn(b.getInstallStep());
     run_cmd_writebyte.step.dependOn(b.getInstallStep());
 
-    // -- Test (C64.Cpu)
+    // -- Test (Cpu)
     const test_exe = b.addTest(.{
         .root_source_file = b.path(
             "src/test/test-cpu.zig",

@@ -3,10 +3,11 @@ pub const version = "0.3.0";
 const std = @import("std");
 const stdout = std.io.getStdOut().writer();
 
-pub const Cpu = @import("cpu.zig").Cpu;
-pub const Ram64k = @import("mem.zig").Ram64k;
-pub const Sid = @import("sid.zig").Sid;
-pub const Vic = @import("vic.zig").Vic;
+pub const Cpu = @import("cpu.zig");
+pub const Ram64k = @import("mem.zig");
+pub const Sid = @import("sid.zig");
+pub const Vic = @import("vic.zig");
+pub const Insn = @import("insn.zig");
 
 pub const C64 = @This();
 
