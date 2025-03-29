@@ -129,7 +129,7 @@ The `Cpu` fetches and executes 6510 instructions from `Ram64k`, updating registe
 The `Sid` struct stores register values at a configurable `base_address`, updated by `Cpu` writes. It offers `getRegisters` for inspection, with future potential for sound logic.
 
 #### Asm: Instruction Decoder
-`Asm` decodes raw bytes into `Instruction` structs via `decodeInsn`, providing metadata like addressing modes and operands. Functions like `disassembleCodeLine` format this data into readable output, aiding analysis.
+`Asm` decodes raw bytes into `Instruction` structs via `decodeInstruction`, providing metadata like addressing modes and operands. Functions like `disassembleCodeLine` format this data into readable output, aiding analysis.
 
 ## API Reference
 ### C64
@@ -617,7 +617,7 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
   Formats a full disassembly line with address, bytes, and mnemonic (e.g., `"C00C: A9 10 LDA #$10"`).
 
   ```zig
-  pub fn decodeInsn(
+  pub fn decodeInstruction(
       bytes: []u8
   ) Instruction
   ```

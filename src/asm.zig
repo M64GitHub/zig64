@@ -101,7 +101,7 @@ pub fn disassembleForward(mem: []u8, pc_start: u16, count: usize) !void {
         const end = @min(pc +% 3, mem.len);
         @memcpy(bytes[0..(end - pc)], mem[pc..end]);
 
-        const insn = Asm.decodeInsn(&bytes);
+        const insn = Asm.decodeInstruction(&bytes);
         var obuf: [32]u8 = undefined;
         const str = try Asm.disassembleCodeLine(&obuf, pc, insn);
         stdout.print("{s}\n", .{str}) catch {};
@@ -287,7 +287,7 @@ pub fn disassembleCodeLine(buffer: []u8, pc: u16, insn: Instruction) ![]const u8
     };
 }
 
-pub fn decodeInsn(bytes: []u8) Instruction {
+pub fn decodeInstruction(bytes: []u8) Instruction {
     const dummy = Instruction{
         .opcode = if (bytes.len > 0) bytes[0] else 0x00,
         .mnemonic = "???",
@@ -306,79 +306,73 @@ pub fn decodeInsn(bytes: []u8) Instruction {
 
     return switch (opcode) {
         // Branch Instructions
-        0x00 => { // BRK
-            return brk;
-        },
-        0x20 => { // JSR
+        brk.opcode => brk,
+        jsr.opcode => {
             var insn = jsr;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
             insn.operand1.len = 2;
             return insn;
         },
-        0x40 => { // RTI
-            return rti;
-        },
-        0x60 => { // RTS
-            return rts;
-        },
-        0x4C => { // JMP absolute
+        rti.opcode => rti,
+        rts.opcode => rts,
+        jmp_abs.opcode => {
             var insn = jmp_abs;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
             insn.operand1.len = 2;
             return insn;
         },
-        0x6C => { // JMP indirect
+        jmp_ind.opcode => {
             var insn = jmp_ind;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
             insn.operand1.len = 2;
             return insn;
         },
-        0x10 => { // BPL
+        bpl.opcode => {
             var insn = bpl;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0x30 => { // BMI
+        bmi.opcode => {
             var insn = bmi;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0x50 => { // BVC
+        bvc.opcode => {
             var insn = bvc;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0x70 => { // BVS
+        bvs.opcode => {
             var insn = bvs;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0x90 => { // BCC
+        bcc.opcode => {
             var insn = bcc;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0xB0 => { // BCS
+        bcs.opcode => {
             var insn = bcs;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0xD0 => { // BNE
+        bne.opcode => {
             var insn = bne;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0xF0 => { // BEQ
+        beq.opcode => {
             var insn = beq;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
@@ -386,250 +380,250 @@ pub fn decodeInsn(bytes: []u8) Instruction {
         },
 
         // Load/Store Instructions
-        0xA9 => { // LDA immediate
+        lda_imm.opcode => {
             var insn = lda_imm;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xA5 => { // LDA zero page
+        lda_zp.opcode => {
             var insn = lda_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xB5 => { // LDA zero page X
+        lda_zpx.opcode => {
             var insn = lda_zpx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xAD => { // LDA absolute
+        lda_abs.opcode => {
             var insn = lda_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0xBD => { // LDA absolute X
+        lda_absx.opcode => {
             var insn = lda_absx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0xB9 => { // LDA absolute Y
+        lda_absy.opcode => {
             var insn = lda_absy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0xA1 => { // LDA (indirect,X)
+        lda_indx.opcode => {
             var insn = lda_indx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xB1 => { // LDA (indirect),Y
+        lda_indy.opcode => {
             var insn = lda_indy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xA2 => { // LDX immediate
+        ldx_imm.opcode => {
             var insn = ldx_imm;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xA6 => { // LDX zero page
+        ldx_zp.opcode => {
             var insn = ldx_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xB6 => { // LDX zero page Y
+        ldx_zpy.opcode => {
             var insn = ldx_zpy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xAE => { // LDX absolute
+        ldx_abs.opcode => {
             var insn = ldx_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0xBE => { // LDX absolute Y
+        ldx_absy.opcode => {
             var insn = ldx_absy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0xA0 => { // LDY immediate
+        ldy_imm.opcode => {
             var insn = ldy_imm;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xA4 => { // LDY zero page
+        ldy_zp.opcode => {
             var insn = ldy_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xB4 => { // LDY zero page X
+        ldy_zpx.opcode => {
             var insn = ldy_zpx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xAC => { // LDY absolute
+        ldy_abs.opcode => {
             var insn = ldy_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0xBC => { // LDY absolute X
+        ldy_absx.opcode => {
             var insn = ldy_absx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x85 => { // STA zero page
+        sta_zp.opcode => {
             var insn = sta_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x95 => { // STA zero page X
+        sta_zpx.opcode => {
             var insn = sta_zpx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x8D => { // STA absolute
+        sta_abs.opcode => {
             var insn = sta_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x9D => { // STA absolute X
+        sta_absx.opcode => {
             var insn = sta_absx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x99 => { // STA absolute Y
+        sta_absy.opcode => {
             var insn = sta_absy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x81 => { // STA (indirect,X)
+        sta_indx.opcode => {
             var insn = sta_indx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x91 => { // STA (indirect),Y
+        sta_indy.opcode => {
             var insn = sta_indy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x86 => { // STX zero page
+        stx_zp.opcode => {
             var insn = stx_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x96 => { // STX zero page Y
+        stx_zpy.opcode => {
             var insn = stx_zpy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x8E => { // STX absolute
+        stx_abs.opcode => {
             var insn = stx_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x84 => { // STY zero page
+        sty_zp.opcode => {
             var insn = sty_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x94 => { // STY zero page X
+        sty_zpx.opcode => {
             var insn = sty_zpx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x8C => { // STY absolute
+        sty_abs.opcode => {
             var insn = sty_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0xC6 => { // DEC zero page
+        dec_zp.opcode => {
             var insn = dec_zp;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0xD6 => { // DEC zero page X
+        dec_zpx.opcode => {
             var insn = dec_zpx;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0xCE => { // DEC absolute
+        dec_abs.opcode => {
             var insn = dec_abs;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
             insn.operand1.len = 2;
             return insn;
         },
-        0xDE => { // DEC absolute X
+        dec_absx.opcode => {
             var insn = dec_absx;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
             insn.operand1.len = 2;
             return insn;
         },
-        0xE6 => { // INC zero page
+        inc_zp.opcode => {
             var insn = inc_zp;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0xF6 => { // INC zero page X
+        inc_zpx.opcode => {
             var insn = inc_zpx;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0xEE => { // INC absolute
+        inc_abs.opcode => {
             var insn = inc_abs;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
             insn.operand1.len = 2;
             return insn;
         },
-        0xFE => { // INC absolute X
+        inc_absx.opcode => {
             var insn = inc_absx;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
@@ -638,129 +632,113 @@ pub fn decodeInsn(bytes: []u8) Instruction {
         },
 
         // Control Instructions
-        0x18 => { // CLC
-            return clc;
-        },
-        0x38 => { // SEC
-            return sec;
-        },
-        0x58 => { // CLI
-            return cli;
-        },
-        0x78 => { // SEI
-            return sei;
-        },
-        0xB8 => { // CLV
-            return clv;
-        },
-        0xD8 => { // CLD
-            return cld;
-        },
-        0xF8 => { // SED
-            return sed;
-        },
-        0xEA => { // NOP
-            return nop;
-        },
+        clc.opcode => clc,
+        sec.opcode => sec,
+        cli.opcode => cli,
+        sei.opcode => sei,
+        clv.opcode => clv,
+        cld.opcode => cld,
+        sed.opcode => sed,
+        nop.opcode => nop,
 
         // Math Instructions
-        0x69 => { // ADC immediate
+        adc_imm.opcode => {
             var insn = adc_imm;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x65 => { // ADC zero page
+        adc_zp.opcode => {
             var insn = adc_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x75 => { // ADC zero page X
+        adc_zpx.opcode => {
             var insn = adc_zpx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x6D => { // ADC absolute
+        adc_abs.opcode => {
             var insn = adc_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x7D => { // ADC absolute X
+        adc_absx.opcode => {
             var insn = adc_absx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x79 => { // ADC absolute Y
+        adc_absy.opcode => {
             var insn = adc_absy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x61 => { // ADC (indirect,X)
+        adc_indx.opcode => {
             var insn = adc_indx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x71 => { // ADC (indirect),Y
+        adc_indy.opcode => {
             var insn = adc_indy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xE9 => { // SBC immediate
+        sbc_imm.opcode => {
             var insn = sbc_imm;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xE5 => { // SBC zero page
+        sbc_zp.opcode => {
             var insn = sbc_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xF5 => { // SBC zero page X
+        sbc_zpx.opcode => {
             var insn = sbc_zpx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xED => { // SBC absolute
+        sbc_abs.opcode => {
             var insn = sbc_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0xFD => { // SBC absolute X
+        sbc_absx.opcode => {
             var insn = sbc_absx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0xF9 => { // SBC absolute Y
+        sbc_absy.opcode => {
             var insn = sbc_absy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0xE1 => { // SBC (indirect,X)
+        sbc_indx.opcode => {
             var insn = sbc_indx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xF1 => { // SBC (indirect),Y
+        sbc_indy.opcode => {
             var insn = sbc_indy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
@@ -768,166 +746,166 @@ pub fn decodeInsn(bytes: []u8) Instruction {
         },
 
         // Logic Instructions
-        0x29 => { // AND immediate
+        and_imm.opcode => {
             var insn = and_imm;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x25 => { // AND zero page
+        and_zp.opcode => {
             var insn = and_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x35 => { // AND zero page X
+        and_zpx.opcode => {
             var insn = and_zpx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x2D => { // AND absolute
+        and_abs.opcode => {
             var insn = and_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x3D => { // AND absolute X
+        and_absx.opcode => {
             var insn = and_absx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x39 => { // AND absolute Y
+        and_absy.opcode => {
             var insn = and_absy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x21 => { // AND (indirect,X)
+        and_indx.opcode => {
             var insn = and_indx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x31 => { // AND (indirect),Y
+        and_indy.opcode => {
             var insn = and_indy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x09 => { // ORA immediate
+        ora_imm.opcode => {
             var insn = ora_imm;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x05 => { // ORA zero page
+        ora_zp.opcode => {
             var insn = ora_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x15 => { // ORA zero page X
+        ora_zpx.opcode => {
             var insn = ora_zpx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x0D => { // ORA absolute
+        ora_abs.opcode => {
             var insn = ora_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x1D => { // ORA absolute X
+        ora_absx.opcode => {
             var insn = ora_absx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x19 => { // ORA absolute Y
+        ora_absy.opcode => {
             var insn = ora_absy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x01 => { // ORA (indirect,X)
+        ora_indx.opcode => {
             var insn = ora_indx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x11 => { // ORA (indirect),Y
+        ora_indy.opcode => {
             var insn = ora_indy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x49 => { // XOR immediate
+        xor_imm.opcode => {
             var insn = xor_imm;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x45 => { // XOR zero page
+        xor_zp.opcode => {
             var insn = xor_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x55 => { // XOR zero page X
+        xor_zpx.opcode => {
             var insn = xor_zpx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x4D => { // XOR absolute
+        xor_abs.opcode => {
             var insn = xor_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x5D => { // XOR absolute X
+        xor_absx.opcode => {
             var insn = xor_absx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x59 => { // XOR absolute Y
+        xor_absy.opcode => {
             var insn = xor_absy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0x41 => { // XOR (indirect,X)
+        xor_indx.opcode => {
             var insn = xor_indx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x51 => { // XOR (indirect),Y
+        xor_indy.opcode => {
             var insn = xor_indy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x24 => { // BIT zero page
+        bit_zp.opcode => {
             var insn = bit_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0x2C => { // BIT absolute
+        bit_abs.opcode => {
             var insn = bit_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
@@ -936,89 +914,89 @@ pub fn decodeInsn(bytes: []u8) Instruction {
         },
 
         // Compare Instructions
-        0xC9 => { // CMP immediate
+        cmp_imm.opcode => {
             var insn = cmp_imm;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xC5 => { // CMP zero page
+        cmp_zp.opcode => {
             var insn = cmp_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xD5 => { // CMP zero page X
+        cmp_zpx.opcode => {
             var insn = cmp_zpx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xCD => { // CMP absolute
+        cmp_abs.opcode => {
             var insn = cmp_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0xDD => { // CMP absolute X
+        cmp_absx.opcode => {
             var insn = cmp_absx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0xD9 => { // CMP absolute Y
+        cmp_absy.opcode => {
             var insn = cmp_absy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0xC1 => { // CMP (indirect,X)
+        cmp_indx.opcode => {
             var insn = cmp_indx;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xD1 => { // CMP (indirect),Y
+        cmp_indy.opcode => {
             var insn = cmp_indy;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xE0 => { // CPX immediate
+        cpx_imm.opcode => {
             var insn = cpx_imm;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xE4 => { // CPX zero page
+        cpx_zp.opcode => {
             var insn = cpx_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xEC => { // CPX absolute
+        cpx_abs.opcode => {
             var insn = cpx_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
             insn.operand2.?.len = 2;
             return insn;
         },
-        0xC0 => { // CPY immediate
+        cpy_imm.opcode => {
             var insn = cpy_imm;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xC4 => { // CPY zero page
+        cpy_zp.opcode => {
             var insn = cpy_zp;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.len = 1;
             return insn;
         },
-        0xCC => { // CPY absolute
+        cpy_abs.opcode => {
             var insn = cpy_abs;
             insn.operand2.?.bytes[0] = bytes[1];
             insn.operand2.?.bytes[1] = bytes[2];
@@ -1027,116 +1005,108 @@ pub fn decodeInsn(bytes: []u8) Instruction {
         },
 
         // Shift Instructions
-        0x0A => { // ASL accumulator
-            return asl_a;
-        },
-        0x06 => { // ASL zero page
+        asl_a.opcode => asl_a,
+        asl_zp.opcode => {
             var insn = asl_zp;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0x16 => { // ASL zero page X
+        asl_zpx.opcode => {
             var insn = asl_zpx;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0x0E => { // ASL absolute
+        asl_abs.opcode => {
             var insn = asl_abs;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
             insn.operand1.len = 2;
             return insn;
         },
-        0x1E => { // ASL absolute X
+        asl_absx.opcode => {
             var insn = asl_absx;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
             insn.operand1.len = 2;
             return insn;
         },
-        0x2A => { // ROL accumulator
-            return rol_a;
-        },
-        0x26 => { // ROL zero page
+        rol_a.opcode => rol_a,
+        rol_zp.opcode => {
             var insn = rol_zp;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0x36 => { // ROL zero page X
+        rol_zpx.opcode => {
             var insn = rol_zpx;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0x2E => { // ROL absolute
+        rol_abs.opcode => {
             var insn = rol_abs;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
             insn.operand1.len = 2;
             return insn;
         },
-        0x3E => { // ROL absolute X
+        rol_absx.opcode => {
             var insn = rol_absx;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
             insn.operand1.len = 2;
             return insn;
         },
-        0x4A => { // LSR accumulator
-            return lsr_a;
-        },
-        0x46 => { // LSR zero page
+        lsr_a.opcode => lsr_a,
+        lsr_zp.opcode => {
             var insn = lsr_zp;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0x56 => { // LSR zero page X
+        lsr_zpx.opcode => {
             var insn = lsr_zpx;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0x4E => { // LSR absolute
+        lsr_abs.opcode => {
             var insn = lsr_abs;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
             insn.operand1.len = 2;
             return insn;
         },
-        0x5E => { // LSR absolute X
+        lsr_absx.opcode => {
             var insn = lsr_absx;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
             insn.operand1.len = 2;
             return insn;
         },
-        0x6A => { // ROR accumulator
-            return ror_a;
-        },
-        0x66 => { // ROR zero page
+        ror_a.opcode => ror_a,
+        ror_zp.opcode => {
             var insn = ror_zp;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0x76 => { // ROR zero page X
+        ror_zpx.opcode => {
             var insn = ror_zpx;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.len = 1;
             return insn;
         },
-        0x6E => { // ROR absolute
+        ror_abs.opcode => {
             var insn = ror_abs;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
             insn.operand1.len = 2;
             return insn;
         },
-        0x7E => { // ROR absolute X
+        ror_absx.opcode => {
             var insn = ror_absx;
             insn.operand1.bytes[0] = bytes[1];
             insn.operand1.bytes[1] = bytes[2];
@@ -1145,50 +1115,22 @@ pub fn decodeInsn(bytes: []u8) Instruction {
         },
 
         // Stack Instructions
-        0x48 => { // PHA
-            return pha;
-        },
-        0x68 => { // PLA
-            return pla;
-        },
-        0x08 => { // PHP
-            return php;
-        },
-        0x28 => { // PLP
-            return plp;
-        },
+        pha.opcode => pha,
+        pla.opcode => pla,
+        php.opcode => php,
+        plp.opcode => plp,
 
         // Transfer Instructions
-        0xAA => { // TAX
-            return tax;
-        },
-        0xA8 => { // TAY
-            return tay;
-        },
-        0x8A => { // TXA
-            return txa;
-        },
-        0x98 => { // TYA
-            return tya;
-        },
-        0xBA => { // TSX
-            return tsx;
-        },
-        0x9A => { // TXS
-            return txs;
-        },
-        0xCA => { // DEX
-            return dex;
-        },
-        0x88 => { // DEY
-            return dey;
-        },
-        0xE8 => { // INX
-            return inx;
-        },
-        0xC8 => { // INY
-            return iny;
-        },
+        tax.opcode => tax,
+        tay.opcode => tay,
+        txa.opcode => txa,
+        tya.opcode => tya,
+        tsx.opcode => tsx,
+        txs.opcode => txs,
+        dex.opcode => dex,
+        dey.opcode => dey,
+        inx.opcode => inx,
+        iny.opcode => iny,
 
         // Unknown opcode
         else => dummy,
