@@ -1,7 +1,10 @@
-// virtual sid
-const Sid = struct {
+const std = @import("std");
+const stdout = std.io.getStdOut().writer();
+
+pub const Sid = struct {
     base_address: u16,
     registers: [25]u8,
+    dbg_enabled: bool,
 
     pub const std_base = 0xD400;
 
@@ -9,6 +12,7 @@ const Sid = struct {
         return Sid{
             .base_address = base_address,
             .registers = [_]u8{0} ** 25,
+            .dbg_enabled = false,
         };
     }
 

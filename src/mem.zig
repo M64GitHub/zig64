@@ -1,4 +1,6 @@
-// virtual mem
+const std = @import("std");
+const stdout = std.io.getStdOut().writer();
+
 pub const Ram64k = struct {
     data: [0x10000]u8,
 

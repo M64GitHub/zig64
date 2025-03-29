@@ -1,4 +1,10 @@
-// virtual cpu
+const std = @import("std");
+const stdout = std.io.getStdOut().writer();
+
+const Ram64k = @import("mem.zig").Ram64k;
+const Sid = @import("sid.zig").Sid;
+const Vic = @import("vic.zig").Vic;
+
 pub const Cpu = struct {
     pc: u16,
     sp: u8,
@@ -16,6 +22,10 @@ pub const Cpu = struct {
     sid_reg_written: bool,
     ext_sid_reg_written: bool,
     ext_sid_reg_changed: bool,
+    mem: *Ram64k,
+    sid: *Sid,
+    vic: *Vic,
+    dbg_enabled: bool,
 
     pub const CpuFlags = struct {
         c: u1,
@@ -39,7 +49,7 @@ pub const Cpu = struct {
         carry = 0b000000001,
     };
 
-    pub fn init(c64: *C64, pc_start: u16) Cpu {
+    pub fn init(mem: *Ram64k, sid: *Sid, vic: *Vic, pc_start: u16) Cpu {
         return Cpu{
             .pc = pc_start,
             .sp = 0xFF,
@@ -66,7 +76,10 @@ pub const Cpu = struct {
             .ext_sid_reg_changed = false,
             .cycles_since_vsync = 0,
             .cycles_since_hsync = 0,
-            .c64 = c64,
+            .mem = mem,
+            .sid = sid,
+            .vic = vic,
+            .dbg_enabled = false,
         };
     }
 
@@ -97,14 +110,14 @@ pub const Cpu = struct {
     // Reset Cpu and clear memory
     pub fn hardReset(cpu: *Cpu) void {
         cpu.reset();
-        cpu.c64.mem.clear();
+        cpu.mem.clear();
     }
 
     pub fn writeMem(cpu: *Cpu, data: []const u8, addr: u16) void {
         var offs: u32 = 0;
         var i: u16 = addr;
         while (offs < data.len) : (i +%= 1) {
-            cpu.c64.mem.data[i] = data[offs];
+            cpu.mem.data[i] = data[offs];
             offs += 1;
         }
     }
@@ -143,8 +156,8 @@ pub const Cpu = struct {
             &buf_opc,
             cpu.pc,
             cpu.opcode_last,
-            cpu.c64.mem.data[cpu.pc +% 1],
-            cpu.c64.mem.data[cpu.pc +% 2],
+            cpu.mem.data[cpu.pc +% 1],
+            cpu.mem.data[cpu.pc +% 2],
         ) catch "???";
 
         const insn = opcode2Insn(cpu.opcode_last);
@@ -152,7 +165,7 @@ pub const Cpu = struct {
 
         stdout.print("[cpu] PC: {X:0>4} | {s} | {s} | A: {X:0>2} | X: {X:0>2} | Y: {X:0>2} | SP: {X:0>2} | Cycl: {d:0>2} | Cycl-TT: {d} | ", .{
             cpu.pc,
-            bytesToHex(&cpu.c64.mem.data, cpu.pc, insn_size),
+            bytesToHex(&cpu.mem.data, cpu.pc, insn_size),
             padTo16(disasm, 12, &buf_disasm_pad),
             cpu.a,
             cpu.x,
@@ -168,9 +181,9 @@ pub const Cpu = struct {
     pub fn printTrace(cpu: *Cpu) void {
         stdout.print("PC: {X:0>4} OP: {X:0>2} {X:0>2} {X:0>2} A:{X:0>2} X:{X:0>2} Y:{X:0>2} FL:{X:0>2}", .{
             cpu.pc,
-            cpu.c64.mem.data[cpu.pc],
-            cpu.c64.mem.data[cpu.pc + 1],
-            cpu.c64.mem.data[cpu.pc + 2],
+            cpu.mem.data[cpu.pc],
+            cpu.mem.data[cpu.pc + 1],
+            cpu.mem.data[cpu.pc + 2],
             cpu.a,
             cpu.x,
             cpu.y,
@@ -185,10 +198,10 @@ pub const Cpu = struct {
     }
 
     pub fn readByte(cpu: *Cpu, addr: u16) u8 {
-        const sid_base = cpu.c64.sid.base_address;
+        const sid_base = cpu.sid.base_address;
         if ((addr >= sid_base) and (addr <= (sid_base + 25))) {
-            const val = cpu.c64.sid.registers[addr - 0xD400];
-            if (cpu.c64.sid_dbg_enabled) {
+            const val = cpu.sid.registers[addr - 0xD400];
+            if (cpu.sid.dbg_enabled) {
                 std.debug.print(
                     "[sid] Read ${X:04} = {X:02}, PC={X:04}\n",
                     .{ addr, val, cpu.pc },
@@ -196,7 +209,7 @@ pub const Cpu = struct {
             }
             return val;
         }
-        return cpu.c64.mem.data[addr];
+        return cpu.mem.data[addr];
     }
 
     pub fn readWord(cpu: *Cpu, addr: u16) u16 {
@@ -212,29 +225,29 @@ pub const Cpu = struct {
     }
 
     pub fn writeByte(cpu: *Cpu, val: u8, addr: u16) void {
-        const sid_base = cpu.c64.sid.base_address;
+        const sid_base = cpu.sid.base_address;
         if ((addr >= sid_base) and (addr <= (sid_base + 25))) {
             cpu.sid_reg_written = true;
             cpu.ext_sid_reg_written = true;
-            cpu.c64.sid.registers[addr - sid_base] = val;
-            if (cpu.c64.sid_dbg_enabled) {
+            cpu.sid.registers[addr - sid_base] = val;
+            if (cpu.sid.dbg_enabled) {
                 std.debug.print(
                     "[DEBUG] Write ${X:04} = {X:02}, PC={X:04}\n",
                     .{ addr, val, cpu.pc },
                 );
             }
-            if (cpu.c64.mem.data[addr] != val) {
+            if (cpu.mem.data[addr] != val) {
                 cpu.sid_reg_changed = true;
                 cpu.ext_sid_reg_changed = true;
             }
         }
-        cpu.c64.mem.data[addr] = val;
+        cpu.mem.data[addr] = val;
         cpu.cycles_executed +%= 1;
     }
 
     pub fn writeWord(cpu: *Cpu, val: u16, addr: u16) void {
-        cpu.c64.mem.data[addr] = @truncate(val & 0xFF);
-        cpu.c64.mem.data[addr + 1] = @truncate(val >> 8);
+        cpu.mem.data[addr] = @truncate(val & 0xFF);
+        cpu.mem.data[addr + 1] = @truncate(val >> 8);
         cpu.cycles_executed +%= 2;
     }
 
@@ -303,16 +316,16 @@ pub const Cpu = struct {
     }
 
     fn fetchUByte(cpu: *Cpu) u8 {
-        const data: u8 = cpu.c64.mem.data[cpu.pc];
+        const data: u8 = cpu.mem.data[cpu.pc];
         cpu.pc +%= 1;
         cpu.cycles_executed +%= 1;
         return data;
     }
 
     fn fetchWord(cpu: *Cpu) u16 {
-        var data: u16 = cpu.c64.mem.data[cpu.pc];
+        var data: u16 = cpu.mem.data[cpu.pc];
         cpu.pc +%= 1;
-        data |= @as(u16, cpu.c64.mem.data[cpu.pc]) << 8;
+        data |= @as(u16, cpu.mem.data[cpu.pc]) << 8;
         cpu.pc +%= 1;
         cpu.cycles_executed +%= 2;
         return data;
@@ -324,7 +337,7 @@ pub const Cpu = struct {
 
     fn pushB(cpu: *Cpu, val: u8) void {
         const sp_word: u16 = spToAddr(cpu);
-        cpu.c64.mem.data[sp_word] = val;
+        cpu.mem.data[sp_word] = val;
         cpu.cycles_executed +%= 1;
         cpu.sp -%= 1;
         cpu.cycles_executed +%= 1;
@@ -334,7 +347,7 @@ pub const Cpu = struct {
         cpu.sp +%= 1;
         cpu.cycles_executed +%= 1;
         const sp_word: u16 = spToAddr(cpu);
-        const val: u8 = cpu.c64.mem.data[sp_word];
+        const val: u8 = cpu.mem.data[sp_word];
         cpu.cycles_executed +%= 1;
         return val;
     }
@@ -614,14 +627,14 @@ pub const Cpu = struct {
     pub fn runStep(cpu: *Cpu) u8 {
         cpu.sid_reg_written = false;
         cpu.sid_reg_changed = false;
-        cpu.c64.vic.vsync_happened = false;
-        cpu.c64.vic.hsync_happened = false;
-        cpu.c64.vic.badline_happened = false;
-        cpu.c64.vic.rasterline_changed = false;
+        cpu.vic.vsync_happened = false;
+        cpu.vic.hsync_happened = false;
+        cpu.vic.badline_happened = false;
+        cpu.vic.rasterline_changed = false;
 
         // dbg output
-        if (cpu.c64.cpu_dbg_enabled) {
-            cpu.opcode_last = cpu.c64.mem.data[cpu.pc];
+        if (cpu.dbg_enabled) {
+            cpu.opcode_last = cpu.mem.data[cpu.pc];
             cpu.printStatus();
         }
 
@@ -871,7 +884,7 @@ pub const Cpu = struct {
                 cpu.pushW(ret_addr);
                 cpu.pc = jsr_addr;
                 cpu.cycles_executed +%= 1; // Matches 6 cycles with fetch and push
-                if (cpu.c64.cpu_dbg_enabled) {
+                if (cpu.dbg_enabled) {
                     stdout.print("[cpu] JSR {X:0>4}, return to {X:0>4}\n", .{
                         jsr_addr,
                         ret_addr,
@@ -881,7 +894,7 @@ pub const Cpu = struct {
 
             Cpu.Insn.rts.value => {
                 if (cpu.sp == 0xFF) {
-                    if (cpu.c64.cpu_dbg_enabled) {
+                    if (cpu.dbg_enabled) {
                         stdout.print("[cpu] RTS EXIT!\n", .{}) catch {};
                     }
                     cpu.cycles_last_step =
@@ -895,7 +908,7 @@ pub const Cpu = struct {
                 const ret_addr: u16 = popW(cpu);
                 cpu.pc = ret_addr + 1;
                 cpu.cycles_executed +%= 2;
-                if (cpu.c64.cpu_dbg_enabled) {
+                if (cpu.dbg_enabled) {
                     stdout.print("[cpu] RTS to {X:0>4}\n", .{
                         ret_addr + 1,
                     }) catch {};
@@ -905,7 +918,7 @@ pub const Cpu = struct {
             Cpu.Insn.jmp_abs.value => {
                 const addr: u16 = addrAbs(cpu);
                 cpu.pc = addr;
-                if (cpu.c64.cpu_dbg_enabled) {
+                if (cpu.dbg_enabled) {
                     stdout.print("[cpu] JMP {X:0>4}\n", .{addr}) catch {};
                 }
             },
@@ -1382,47 +1395,47 @@ pub const Cpu = struct {
         cpu.cycles_since_hsync += cpu.cycles_last_step;
 
         // VIC vertical sync
-        if (cpu.c64.vic.model == Vic.Model.pal and
+        if (cpu.vic.model == Vic.Model.pal and
             cpu.cycles_since_vsync >= Vic.Timing.cyclesVsyncPal)
         {
-            cpu.c64.vic.frame_ctr += 1;
+            cpu.vic.frame_ctr += 1;
             cpu.cycles_since_vsync = 0;
         }
 
-        if (cpu.c64.vic.model == Vic.Model.ntsc and
+        if (cpu.vic.model == Vic.Model.ntsc and
             cpu.cycles_since_vsync >= Vic.Timing.cyclesVsyncNtsc)
         {
-            cpu.c64.vic.frame_ctr += 1;
+            cpu.vic.frame_ctr += 1;
             cpu.cycles_since_vsync = 0;
         }
 
         // VIC horizontal sync
-        if (cpu.c64.vic.model == Vic.Model.pal and
+        if (cpu.vic.model == Vic.Model.pal and
             cpu.cycles_since_hsync >= Vic.Timing.cyclesRasterlinePal)
         {
-            cpu.c64.vic.emulateD012();
+            cpu.vic.emulateD012();
             cpu.cycles_since_hsync = 0;
         }
 
-        if (cpu.c64.vic.model == Vic.Model.ntsc and
+        if (cpu.vic.model == Vic.Model.ntsc and
             cpu.cycles_since_hsync >= Vic.Timing.cyclesRasterlineNtsc)
         {
-            cpu.c64.vic.emulateD012();
+            cpu.vic.emulateD012();
             cpu.cycles_since_hsync = 0;
         }
 
         // dbg output vic, sid
 
-        if (cpu.c64.vic_dbg_enabled) {
-            cpu.c64.vic.printStatus();
+        if (cpu.vic.dbg_enabled) {
+            cpu.vic.printStatus();
         }
 
-        if (cpu.c64.sid_dbg_enabled and cpu.sid_reg_written) {
-            cpu.c64.sid.printRegisters();
+        if (cpu.sid.dbg_enabled and cpu.sid_reg_written) {
+            cpu.sid.printRegisters();
         }
 
         // return from interrupt vector
-        if ((cpu.c64.mem.data[0x01] & 0x07) != 0x5 and
+        if ((cpu.mem.data[0x01] & 0x07) != 0x5 and
             ((cpu.pc == 0xea31) or (cpu.pc == 0xea81)))
         {
             stdout.print("[cpu] RTI\n", .{}) catch {};
@@ -1439,9 +1452,9 @@ pub const Cpu = struct {
 
         while (counter < count) : (counter += 1) {
             // Get the opcode and operands from memory
-            const opcode = cpu.c64.mem.data[pc];
-            const byte2 = if (pc + 1 < 0x10000) cpu.c64.mem.data[pc +% 1] else 0; // Avoid overflow
-            const byte3 = if (pc + 2 < 0x10000) cpu.c64.mem.data[pc +% 2] else 0; // Avoid overflow
+            const opcode = cpu.mem.data[pc];
+            const byte2 = if (pc + 1 < 0x10000) cpu.mem.data[pc +% 1] else 0; // Avoid overflow
+            const byte3 = if (pc + 2 < 0x10000) cpu.mem.data[pc +% 2] else 0; // Avoid overflow
 
             // Buffer for the disassembled string
             var buf: [16]u8 = undefined;
@@ -1453,7 +1466,7 @@ pub const Cpu = struct {
 
             stdout.print("{X:0>4}:  {s}  {s}\n", .{
                 pc,
-                bytesToHex(&cpu.c64.mem.data, pc, insn_size),
+                bytesToHex(&cpu.mem.data, pc, insn_size),
                 padTo16(disasm, 12, &buf_disasm_pad),
             }) catch {};
             pc = pc +% insn_size; // Wrapping addition for 16-bit address space

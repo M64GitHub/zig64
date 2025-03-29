@@ -23,9 +23,9 @@ pub fn main() !void {
 
     // full debug output
     c64.dbg_enabled = true;
-    c64.cpu_dbg_enabled = true;
-    // c64.vic_dbg_enabled = true;
-    // c64.sid_dbg_enabled = true;
+    c64.cpu.dbg_enabled = true;
+    // c64.vic.dbg_enabled = true;
+    // c64.sid.dbg_enabled = true;
 
     // load a .prg file from disk
     try stdout.print("[EXE] Loading '{s}'\n", .{args.prg});
