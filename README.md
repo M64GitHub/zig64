@@ -403,6 +403,81 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
   - `Operand` - Combines operand details (id, type, size, access, bytes).
   - `Instruction` - Represents a decoded instruction with opcode, mnemonic, and operands.
 
+- **Types**:
+  - **`Group`**  
+    Enumerates instruction categories.  
+    - `branch` - Jumps and branches (e.g., JSR, BEQ).
+    - `load_store` - Load/store operations (e.g., LDA, STA).
+    - `control` - CPU control (e.g., NOP, CLI).
+    - `math` - Arithmetic (e.g., ADC, SBC).
+    - `logic` - Bitwise operations (e.g., AND, ORA).
+    - `compare` - Comparisons (e.g., CMP, CPX).
+    - `shift` - Bit shifts (e.g., ASL, ROR).
+    - `stack` - Stack operations (e.g., PHA, PHP).
+    - `transfer` - Register transfers (e.g., TAX, TSX).
+
+  - **`AddrMode`**  
+    Defines addressing modes for instructions.  
+    - `implied` - No explicit operand (e.g., NOP).
+    - `immediate` - Literal value (e.g., LDA #$10).
+    - `zero_page` - Zero-page address (e.g., LDA $50).
+    - `zero_page_x` - Zero-page with X offset (e.g., LDA $50,X).
+    - `zero_page_y` - Zero-page with Y offset (e.g., LDX $50,Y).
+    - `absolute` - Full 16-bit address (e.g., LDA $1234).
+    - `absolute_x` - Absolute with X offset (e.g., STA $1234,X).
+    - `absolute_y` - Absolute with Y offset (e.g., LDA $1234,Y).
+    - `indirect` - Indirect addressing (e.g., JMP ($1234)).
+    - `indexed_indirect_x` - Indexed indirect with X (e.g., LDA ($50,X)).
+    - `indirect_indexed_y` - Indirect indexed with Y (e.g., LDA ($50),Y).
+
+  - **`OperandType`**  
+    Specifies the type of an instruction’s operand.  
+    - `none` - No operand (e.g., NOP).
+    - `register` - CPU register (e.g., TAX).
+    - `memory` - Memory location (e.g., STA $1234).
+    - `immediate` - Immediate value (e.g., LDA #$10).
+
+  - **`OperandSize`**  
+    Indicates the size of an operand.  
+    - `none` - No operand bytes.
+    - `byte` - 8-bit operand (e.g., LDA #$10).
+    - `word` - 16-bit operand (e.g., LDA $1234).
+
+  - **`AccessType`**  
+    Defines operand access modes as 2-bit flags.  
+    - `none: u2 = 0x00` - No access.
+    - `read: u2 = 0x01` - Read-only (e.g., LDA).
+    - `write: u2 = 0x02` - Write-only (e.g., STA).
+    - `read_write: u2 = 0x03` - Read and write (e.g., INC).
+
+  - **`OperandId`**  
+    Identifies specific operands with bit flags (combinable, e.g., `memory | x`).  
+    - `none: u8 = 0x00` - No operand.
+    - `a: u8 = 0x01` - Accumulator.
+    - `x: u8 = 0x02` - X register.
+    - `y: u8 = 0x04` - Y register.
+    - `sp: u8 = 0x08` - Stack pointer.
+    - `memory: u8 = 0x10` - Memory location.
+    - `constant: u8 = 0x20` - Immediate value.
+
+  - **`Operand`**  
+    Describes an instruction operand.  
+    - `id: u8` - Operand identifier (e.g., `OperandId.a`).
+    - `type: OperandType` - Operand kind (e.g., `register`).
+    - `size: OperandSize` - Operand size (e.g., `byte`).
+    - `access: u2` - Access mode (e.g., `AccessType.read`).
+    - `bytes: [2]u8 = [_]u8{0, 0}` - Up to 2 bytes of operand data.
+    - `len: u8 = 0` - Number of valid bytes in `bytes`.
+
+  - **`Instruction`**  
+    Represents a fully decoded 6510 instruction.  
+    - `opcode: u8` - Instruction opcode (e.g., `0xA9` for LDA immediate).
+    - `mnemonic: []const u8` - Instruction name (e.g., `"LDA"`).
+    - `addr_mode: AddrMode` - Addressing mode (e.g., `.immediate`).
+    - `group: Group` - Instruction category (e.g., `.load_store`).
+    - `operand1: Operand` - Primary operand (e.g., accumulator for LDA).
+    - `operand2: ?Operand = null` - Optional secondary operand (e.g., X for TAX).
+      
 - **Functions**:
   ```zig
   pub fn getInstructionSize(
