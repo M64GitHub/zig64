@@ -81,6 +81,27 @@ Each component features its own `dbg_enabled` flag—e.g., `c64.dbg_enabled` for
 The `Asm` struct enhances this core with a powerful disassembler and metadata decoder, offering detailed instruction analysis.  
 The sections below outline their mechanics, API, and examples to guide you in using this emulator core effectively.
 
+### Inner Workings
+
+#### C64: System Coordinator
+The `C64` struct initializes and links the emulator’s components, loading `.prg` files into `Ram64k` and directing `Cpu` execution via `call`, `run` or `runFrames`. It acts as the entry point, managing memory and timing interactions.
+
+#### Cpu: Execution Engine
+The `Cpu` fetches and executes 6510 instructions from `Ram64k`, updating registers and tracking SID register writes through `sidRegWritten`. It syncs with `Vic` for cycle accuracy, stepping through code with `runStep`.
+
+#### Ram64k: Memory Backbone
+`Ram64k` provides a 64KB memory array, serving as the shared storage for `Cpu` instructions, `Vic` registers, and `Sid` data. It supports direct writes from `C64.loadPrg` and `Cpu.writeByte`.
+
+#### Vic: Timing Keeper
+`Vic` emulates raster timing, advancing lines with `emulateD012` and signaling sync events like vsync or bad lines to `Cpu`. It uses `model` (PAL/NTSC) to adjust cycle counts, ensuring accurate interrupt timing.
+
+#### Sid: Register Holder
+The `Sid` struct stores register values at a configurable `base_address`, updated by `Cpu` writes. It offers `getRegisters` for inspection, with future potential for sound logic.
+
+#### Asm: Instruction Decoder
+`Asm` decodes raw bytes into `Instruction` structs via `decodeInsn`, providing metadata like addressing modes and operands. Functions like `disassembleCodeLine` format this data into readable output, aiding analysis.
+
+## API Reference
 ### C64
 The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64 system.
 
@@ -424,25 +445,7 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
   ```
   Decodes a byte slice into an `Instruction` struct with metadata.
 
-## Inner Workings
 
-### C64: System Coordinator
-The `C64` struct initializes and links the emulator’s components, loading `.prg` files into `Ram64k` and directing `Cpu` execution via `call`, `run` or `runFrames`. It acts as the entry point, managing memory and timing interactions.
-
-### Cpu: Execution Engine
-The `Cpu` fetches and executes 6510 instructions from `Ram64k`, updating registers and tracking SID register writes through `sidRegWritten`. It syncs with `Vic` for cycle accuracy, stepping through code with `runStep`.
-
-### Ram64k: Memory Backbone
-`Ram64k` provides a 64KB memory array, serving as the shared storage for `Cpu` instructions, `Vic` registers, and `Sid` data. It supports direct writes from `C64.loadPrg` and `Cpu.writeByte`.
-
-### Vic: Timing Keeper
-`Vic` emulates raster timing, advancing lines with `emulateD012` and signaling sync events like vsync or bad lines to `Cpu`. It uses `model` (PAL/NTSC) to adjust cycle counts, ensuring accurate interrupt timing.
-
-### Sid: Register Holder
-The `Sid` struct stores register values at a configurable `base_address`, updated by `Cpu` writes. It offers `getRegisters` for inspection, with future potential for sound logic.
-
-### Asm: Instruction Decoder
-`Asm` decodes raw bytes into `Instruction` structs via `decodeInsn`, providing metadata like addressing modes and operands. Functions like `disassembleCodeLine` format this data into readable output, aiding analysis.
 
 
 ## Building the Project
