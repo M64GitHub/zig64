@@ -246,6 +246,95 @@ The core component executing 6510 instructions, driving the virtual C64 system.
   ```
   Executes one CPU instruction, returning the number of cycles taken. The main execution function.
 
+### Ram64k
+The memory component managing the C64’s 64KB address space.
+
+- **Fields**:
+  - `data: [0x10000]u8` - Array holding 64KB of memory.
+
+- **Functions**:
+  ```zig
+  pub fn init() Ram64k
+  ```
+  Initializes a new 64KB memory instance, zero-filled.
+
+  ```zig
+  pub fn clear(
+      self: *Ram64k
+  ) void
+  ```
+  Resets all memory to zero.
+
+### Sid
+The placeholder component for SID register storage.
+
+- **Fields**:
+  - `base_address: u16` - Base memory address for SID registers (typically `0xD400`).
+  - `registers: [25]u8` - Array of 25 SID registers.
+  - `dbg_enabled: bool` - Enables debug logging for SID register values.
+
+- **Functions**:
+  ```zig
+  pub fn init(
+      base_address: u16
+  ) Sid
+  ```
+  Initializes a new SID instance with the specified base address, zeroing all registers.
+
+  ```zig
+  pub fn getRegisters(
+      sid: *Sid
+  ) [25]u8
+  ```
+  Returns a copy of the current SID register values.
+
+  ```zig
+  pub fn printRegisters(
+      sid: *Sid
+  ) void
+  ```
+  Prints the current SID register values in hexadecimal format.
+
+### Vic
+The video timing component synchronizing CPU cycles with C64 raster behavior.
+
+- **Fields**:
+  - `model: Model` - VIC model (PAL or NTSC).
+  - `vsync_happened: bool` - Flags vertical sync occurrence.
+  - `hsync_happened: bool` - Flags horizontal sync occurrence.
+  - `badline_happened: bool` - Indicates a bad line event.
+  - `rasterline_changed: bool` - Marks raster line updates.
+  - `rasterline: u16` - Current raster line number.
+  - `frame_ctr: usize` - Frame counter.
+  - `mem: *Ram64k` - Pointer to the system’s 64KB memory.
+  - `cpu: *Cpu` - Pointer to the CPU instance (to update cycle counters).
+  - `dbg_enabled: bool` - Enables debug logging for VIC timing.
+
+- **Functions**:
+  ```zig
+  pub fn init(
+      cpu: *Cpu,
+      mem: *Ram64k,
+      vic_model: Model
+  ) Vic
+  ```
+  Initializes a new VIC instance with the specified CPU, memory, and model (PAL/NTSC).
+
+  ```zig
+  pub fn emulateD012(
+      vic: *Vic
+  ) void
+  ```
+  Advances the raster line, updates VIC registers (e.g., `0xD011`, `0xD012`), and handles bad line timing.
+
+  ```zig
+  pub fn printStatus(
+      vic: *Vic
+  ) void
+  ```
+  Prints the current VIC status, including raster line, sync flags, and frame count.
+
+
 
 ## Building the Project
 #### Requirements
