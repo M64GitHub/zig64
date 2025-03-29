@@ -23,7 +23,7 @@ const resetCpu = struct {
         };
         cpu.sp = 0xFD;
         cpu.cycles_executed = 0;
-        cpu.c64.mem.clear(); // Clear RAM
+        cpu.mem.clear(); // Clear RAM
     }
 }.reset;
 
@@ -727,7 +727,7 @@ test "SID register write" {
     c64.mem.data[0x1001] = 0x00;
     c64.mem.data[0x1002] = 0xD4;
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0x42, c64.cpu.c64.sid.registers[0]);
+    try std.testing.expectEqual(0x42, c64.cpu.sid.registers[0]);
     try std.testing.expectEqual(true, c64.cpu.sid_reg_written);
 }
 
@@ -741,7 +741,7 @@ test "SID register write with change detection" {
     c64.mem.data[0x1001] = 0x18;
     c64.mem.data[0x1002] = 0xD4;
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0x55, c64.cpu.c64.sid.registers[24]);
+    try std.testing.expectEqual(0x55, c64.cpu.sid.registers[24]);
     try std.testing.expectEqual(true, c64.cpu.sid_reg_changed);
     c64.cpu.a = 0x55; // Same value
     c64.cpu.pc = 0x1000;
@@ -918,7 +918,7 @@ test "SID register write overwrite" {
     c64.cpu.a = 0x44;
     c64.cpu.pc = 0x1000; // Same address
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0x44, c64.cpu.c64.sid.registers[4]);
+    try std.testing.expectEqual(0x44, c64.cpu.sid.registers[4]);
     try std.testing.expectEqual(true, c64.cpu.sid_reg_changed); // Should detect change
 }
 
@@ -966,7 +966,7 @@ test "SID rapid write sequence" {
     c64.cpu.a = 0x81; // Waveform: noise
     c64.cpu.pc = 0x1000;
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0x81, c64.cpu.c64.sid.registers[4]);
+    try std.testing.expectEqual(0x81, c64.cpu.sid.registers[4]);
     try std.testing.expectEqual(true, c64.cpu.sid_reg_changed);
 }
 
@@ -1050,7 +1050,7 @@ test "LDA ADC STA sequence" {
     _ = c64.cpu.runStep(); // ADC
     _ = c64.cpu.runStep(); // STA
     try std.testing.expectEqual(0x25, c64.cpu.a); // 20 + 5 = 25
-    try std.testing.expectEqual(0x25, c64.cpu.c64.sid.registers[0]);
+    try std.testing.expectEqual(0x25, c64.cpu.sid.registers[0]);
 }
 
 test "SID overwrite with same value" {
@@ -1067,7 +1067,7 @@ test "SID overwrite with same value" {
     c64.cpu.pc = 0x1000;
     c64.cpu.a = 0x42; // Same value
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0x42, c64.cpu.c64.sid.registers[4]);
+    try std.testing.expectEqual(0x42, c64.cpu.sid.registers[4]);
     try std.testing.expectEqual(false, c64.cpu.sid_reg_changed); // No change
 }
 
@@ -1113,12 +1113,12 @@ test "STX and STY to SID" {
     c64.mem.data[0x1001] = 0x00;
     c64.mem.data[0x1002] = 0xD4;
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0x42, c64.cpu.c64.sid.registers[0]);
+    try std.testing.expectEqual(0x42, c64.cpu.sid.registers[0]);
     c64.cpu.y = 0x55;
     c64.cpu.pc = 0x1000;
     c64.mem.data[0x1000] = 0x8C; // STY $D400
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0x55, c64.cpu.c64.sid.registers[0]);
+    try std.testing.expectEqual(0x55, c64.cpu.sid.registers[0]);
 }
 
 test "CMP absolute X with page cross" {
@@ -1173,7 +1173,7 @@ test "ORA to SID filter control" {
     c64.mem.data[0x1004] = 0xD4;
     _ = c64.cpu.runStep(); // ORA
     _ = c64.cpu.runStep(); // STA
-    try std.testing.expectEqual(0xDF, c64.cpu.c64.sid.registers[23]); // Fix to $DF
+    try std.testing.expectEqual(0xDF, c64.cpu.sid.registers[23]); // Fix to $DF
 }
 test "SID register write sync" {
     var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x1000);
@@ -1343,7 +1343,7 @@ test "STA to SID D417" {
     c64.mem.data[0x1001] = 0x17;
     c64.mem.data[0x1002] = 0xD4;
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0xCF, c64.cpu.c64.sid.registers[23]);
+    try std.testing.expectEqual(0xCF, c64.cpu.sid.registers[23]);
 }
 
 test "AND immediate preserves bit 7" {
@@ -1360,7 +1360,7 @@ test "AND immediate preserves bit 7" {
     _ = c64.cpu.runStep(); // AND
     try std.testing.expectEqual(0xCF, c64.cpu.a);
     _ = c64.cpu.runStep(); // STA
-    try std.testing.expectEqual(0xCF, c64.cpu.c64.sid.registers[23]);
+    try std.testing.expectEqual(0xCF, c64.cpu.sid.registers[23]);
 }
 
 test "ORA immediate sets bit 7" {
@@ -1377,7 +1377,7 @@ test "ORA immediate sets bit 7" {
     _ = c64.cpu.runStep(); // ORA
     try std.testing.expectEqual(0x80, c64.cpu.a);
     _ = c64.cpu.runStep(); // STA
-    try std.testing.expectEqual(0x80, c64.cpu.c64.sid.registers[23]);
+    try std.testing.expectEqual(0x80, c64.cpu.sid.registers[23]);
 }
 
 test "EOR immediate flips bit 7" {
@@ -1394,7 +1394,7 @@ test "EOR immediate flips bit 7" {
     _ = c64.cpu.runStep(); // EOR
     try std.testing.expectEqual(0xCF, c64.cpu.a); // $4F ^ $80 = $CF
     _ = c64.cpu.runStep(); // STA
-    try std.testing.expectEqual(0xCF, c64.cpu.c64.sid.registers[23]);
+    try std.testing.expectEqual(0xCF, c64.cpu.sid.registers[23]);
 }
 
 test "ASL shifts into bit 7" {
@@ -1411,7 +1411,7 @@ test "ASL shifts into bit 7" {
     try std.testing.expectEqual(0xCE, c64.cpu.a); // $67 << 1 = $CE
     try std.testing.expectEqual(0, c64.cpu.flags.c); // No carry
     _ = c64.cpu.runStep(); // STA
-    try std.testing.expectEqual(0xCE, c64.cpu.c64.sid.registers[23]);
+    try std.testing.expectEqual(0xCE, c64.cpu.sid.registers[23]);
 }
 
 test "LSR clears bit 7" {
@@ -1428,7 +1428,7 @@ test "LSR clears bit 7" {
     try std.testing.expectEqual(0x67, c64.cpu.a); // $CF >> 1 = $67
     try std.testing.expectEqual(1, c64.cpu.flags.c); // Carry set
     _ = c64.cpu.runStep(); // STA
-    try std.testing.expectEqual(0x67, c64.cpu.c64.sid.registers[23]);
+    try std.testing.expectEqual(0x67, c64.cpu.sid.registers[23]);
 }
 
 test "ADC sets bit 7" {
@@ -1448,7 +1448,7 @@ test "ADC sets bit 7" {
     try std.testing.expectEqual(0, c64.cpu.flags.c);
     try std.testing.expectEqual(1, c64.cpu.flags.n);
     _ = c64.cpu.runStep(); // STA
-    try std.testing.expectEqual(0xCF, c64.cpu.c64.sid.registers[23]);
+    try std.testing.expectEqual(0xCF, c64.cpu.sid.registers[23]);
 }
 
 test "ROL with carry sets bit 7" {
@@ -1466,7 +1466,7 @@ test "ROL with carry sets bit 7" {
     try std.testing.expectEqual(0x9F, c64.cpu.a); // ($4F << 1) | 1 = $9F
     try std.testing.expectEqual(0, c64.cpu.flags.c);
     _ = c64.cpu.runStep(); // STA
-    try std.testing.expectEqual(0x9F, c64.cpu.c64.sid.registers[23]);
+    try std.testing.expectEqual(0x9F, c64.cpu.sid.registers[23]);
 }
 
 test "STA absolute X to D417" {
@@ -1480,7 +1480,7 @@ test "STA absolute X to D417" {
     c64.mem.data[0x1001] = 0x15;
     c64.mem.data[0x1002] = 0xD4;
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0xCF, c64.cpu.c64.sid.registers[23]); // $D417 = 23
+    try std.testing.expectEqual(0xCF, c64.cpu.sid.registers[23]); // $D417 = 23
 }
 
 // Test 1: Basic Indirect Indexed Read
@@ -1550,7 +1550,7 @@ test "Indirect Indexed LDA ($46),Y with Y Increment" {
     _ = c64.cpu.runStep(); // STA $D401
 
     try testing.expectEqual(@as(u8, 0x33), c64.cpu.a);
-    try testing.expectEqual(@as(u8, 0x33), c64.cpu.c64.sid.registers[1]);
+    try testing.expectEqual(@as(u8, 0x33), c64.cpu.sid.registers[1]);
     try testing.expectEqual(@as(u8, 0x02), c64.cpu.y);
 }
 
@@ -1579,7 +1579,7 @@ test "Indirect Indexed LDA ($46),Y from Log A7E1" {
     _ = c64.cpu.runStep(); // LDA ($46),Y
     try testing.expectEqual(@as(u8, 0x82), c64.cpu.a); // Should load $82
     _ = c64.cpu.runStep(); // STA $D417
-    try testing.expectEqual(@as(u8, 0x82), c64.cpu.c64.sid.registers[23]);
+    try testing.expectEqual(@as(u8, 0x82), c64.cpu.sid.registers[23]);
 }
 
 // Test 5: Pointer Update and Read
@@ -1621,12 +1621,12 @@ test "Indirect Indexed LDA ($46),Y with Pointer Update" {
 
     _ = c64.cpu.runStep(); // LDA $BB
     _ = c64.cpu.runStep(); // STA $D418
-    try testing.expectEqual(@as(u8, 0xBB), c64.cpu.c64.sid.registers[24]);
+    try testing.expectEqual(@as(u8, 0xBB), c64.cpu.sid.registers[24]);
     _ = c64.cpu.runStep(); // LDA #$80
     _ = c64.cpu.runStep(); // STA $46
     _ = c64.cpu.runStep(); // LDA $CC
     _ = c64.cpu.runStep(); // STA $D418
-    try testing.expectEqual(@as(u8, 0xCC), c64.cpu.c64.sid.registers[24]);
+    try testing.expectEqual(@as(u8, 0xCC), c64.cpu.sid.registers[24]);
     try testing.expectEqual(@as(u8, 0x80), c64.cpu.readByte(0x0046));
 }
 
@@ -1667,7 +1667,7 @@ test "Indirect Indexed LDA ($46),Y Table Sequence" {
     _ = c64.cpu.runStep(); // CMP #$FF
     _ = c64.cpu.runStep(); // BEQ (no)
     _ = c64.cpu.runStep(); // STA $D401
-    try testing.expectEqual(@as(u8, 0x04), c64.cpu.c64.sid.registers[1]);
+    try testing.expectEqual(@as(u8, 0x04), c64.cpu.sid.registers[1]);
     _ = c64.cpu.runStep(); // INY
     _ = c64.cpu.runStep(); // JMP $1002
     _ = c64.cpu.runStep(); // LDA $1A
@@ -1675,7 +1675,7 @@ test "Indirect Indexed LDA ($46),Y Table Sequence" {
     _ = c64.cpu.runStep(); // CMP #$FF
     _ = c64.cpu.runStep(); // BEQ (no)
     _ = c64.cpu.runStep(); // STA $D401
-    try testing.expectEqual(@as(u8, 0x1A), c64.cpu.c64.sid.registers[1]);
+    try testing.expectEqual(@as(u8, 0x1A), c64.cpu.sid.registers[1]);
     _ = c64.cpu.runStep(); // INY
     _ = c64.cpu.runStep(); // JMP $1002
     _ = c64.cpu.runStep(); // LDA $FF
@@ -1717,7 +1717,7 @@ test "Indirect Indexed LDA ($46),Y with Page Cross and ASL" {
     try testing.expectEqual(@as(u1, 0), c64.cpu.flags.c); // No carry
     try testing.expectEqual(@as(u1, 1), c64.cpu.flags.n); // Negative
     _ = c64.cpu.runStep(); // STA
-    try testing.expectEqual(@as(u8, 0x84), c64.cpu.c64.sid.registers[1]);
+    try testing.expectEqual(@as(u8, 0x84), c64.cpu.sid.registers[1]);
 }
 
 // Test Table Read with Stack Wrap and EOR
@@ -1763,7 +1763,7 @@ test "Indirect Indexed LDA ($46),Y with Stack Wrap and EOR" {
     try testing.expectEqual(@as(u8, 0xFF), c64.cpu.a); // $55 ^ $AA
     try testing.expectEqual(@as(u1, 1), c64.cpu.flags.n);
     _ = c64.cpu.runStep(); // STA $D418
-    try testing.expectEqual(@as(u8, 0xFF), c64.cpu.c64.sid.registers[24]);
+    try testing.expectEqual(@as(u8, 0xFF), c64.cpu.sid.registers[24]);
 }
 
 // Test Indirect Indexed with AND and Negative Offset Branch
@@ -1809,7 +1809,7 @@ test "Indirect Indexed LDA ($46),Y with AND and BNE Edge" {
     _ = c64.cpu.runStep(); // BNE (no branch, z=1)
     try testing.expectEqual(@as(u16, 0x1008), c64.cpu.pc);
     _ = c64.cpu.runStep(); // STA $D417
-    try testing.expectEqual(@as(u8, 0x00), c64.cpu.c64.sid.registers[23]);
+    try testing.expectEqual(@as(u8, 0x00), c64.cpu.sid.registers[23]);
     // Reset and loop again
     c64.cpu.y = 0x01;
     c64.cpu.pc = 0x1002;
@@ -1884,7 +1884,7 @@ test "Indirect Indexed LDA ($FF),Y with Zero-Page Wrap" {
     _ = c64.cpu.runStep(); // Execute $B1
     try testing.expectEqual(@as(u8, 0x77), c64.cpu.a);
     _ = c64.cpu.runStep();
-    try testing.expectEqual(@as(u8, 0x77), c64.cpu.c64.sid.registers[24]);
+    try testing.expectEqual(@as(u8, 0x77), c64.cpu.sid.registers[24]);
 }
 
 test "SID $D419 Write" {
@@ -1898,7 +1898,7 @@ test "SID $D419 Write" {
     c64.mem.data[0x1002] = 0xD4;
 
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0xCF, c64.cpu.c64.sid.registers[24]);
+    try std.testing.expectEqual(0xCF, c64.cpu.sid.registers[24]);
 }
 
 test "SID $A7E6 to $D418" {
@@ -1937,7 +1937,7 @@ test "SID $A7E6 to $D418" {
 
     _ = c64.cpu.runStep(); // LDA $82
     _ = c64.cpu.runStep(); // STA $D417
-    try std.testing.expectEqual(0x82, c64.cpu.c64.sid.registers[23]);
+    try std.testing.expectEqual(0x82, c64.cpu.sid.registers[23]);
     _ = c64.cpu.runStep(); // JSR $A932
     // Add more steps if $D418 write is here
 }
