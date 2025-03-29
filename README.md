@@ -711,6 +711,38 @@ pub fn main() !void {
 ```
 Manually writes a program to sweep SID registers, executes it step-by-step, and monitors volume changes.
 
+Output:
+```
+[EXE] Executing program ...
+[cpu] PC: 0800 | A9 0A    | LDA #$0A     | A: 00 | X: 00 | Y: 00 | SP: FF | Cycl: 00 | Cycl-TT: 14 | FL: 00100100
+[cpu] PC: 0802 | AA       | TAX          | A: 0A | X: 00 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 16 | FL: 00100100
+[cpu] PC: 0803 | 69 1E    | ADC #$1E     | A: 0A | X: 0A | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 18 | FL: 00100100
+[cpu] PC: 0805 | 9D 00 D4 | STA $D400,X  | A: 28 | X: 0A | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 20 | FL: 00100100
+[EXE] sid register written!
+[sid] registers: 00 00 00 00 00 00 00 00 00 00 28 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+[cpu] PC: 0808 | E8       | INX          | A: 28 | X: 0A | Y: 00 | SP: FF | Cycl: 04 | Cycl-TT: 24 | FL: 00100100
+[cpu] PC: 0809 | E0 19    | CPX #$19     | A: 28 | X: 0B | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 26 | FL: 00100100
+[cpu] PC: 080B | D0 F6    | BNE $0803    | A: 28 | X: 0B | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 28 | FL: 10100100
+[cpu] PC: 0803 | 69 1E    | ADC #$1E     | A: 28 | X: 0B | Y: 00 | SP: FF | Cycl: 03 | Cycl-TT: 31 | FL: 10100100
+[cpu] PC: 0805 | 9D 00 D4 | STA $D400,X  | A: 46 | X: 0B | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 33 | FL: 00100100
+[EXE] sid register written!
+[sid] registers: 00 00 00 00 00 00 00 00 00 00 28 46 00 00 00 00 00 00 00 00 00 00 00 00 00
+...
+sid] registers: 00 00 00 00 00 00 00 00 00 00 28 46 64 82 A0 BE DC FA 18 36 54 72 90 AE 00 
+[cpu] PC: 0808 | E8       | INX          | A: AE | X: 17 | Y: 00 | SP: FF | Cycl: 04 | Cycl-TT: 193 | FL: 10100100
+[cpu] PC: 0809 | E0 19    | CPX #$19     | A: AE | X: 18 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 195 | FL: 00100100
+[cpu] PC: 080B | D0 F6    | BNE $0803    | A: AE | X: 18 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 197 | FL: 10100100
+[cpu] PC: 0803 | 69 1E    | ADC #$1E     | A: AE | X: 18 | Y: 00 | SP: FF | Cycl: 03 | Cycl-TT: 200 | FL: 10100100
+[cpu] PC: 0805 | 9D 00 D4 | STA $D400,X  | A: CC | X: 18 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 202 | FL: 10100100
+[EXE] sid register written!
+[sid] registers: 00 00 00 00 00 00 00 00 00 00 28 46 64 82 A0 BE DC FA 18 36 54 72 90 AE CC 
+[EXE] sid volume changed: CC
+[cpu] PC: 0808 | E8       | INX          | A: CC | X: 18 | Y: 00 | SP: FF | Cycl: 44 | Cycl-TT: 246 | FL: 10100100
+[cpu] PC: 0809 | E0 19    | CPX #$19     | A: CC | X: 19 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 248 | FL: 00100100
+[cpu] PC: 080B | D0 F6    | BNE $0803    | A: CC | X: 19 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 250 | FL: 00100111
+[cpu] PC: 080D | 60       | RTS          | A: CC | X: 19 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 252 | FL: 00100111
+[cpu] RTS EXIT!
+```
 
 ## Building the Project
 #### Requirements
