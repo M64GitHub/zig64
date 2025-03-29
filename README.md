@@ -13,7 +13,7 @@ A **Commodore 64 MOS 6510 emulator core** implemented in **Zig**, designed for p
 Built as the **computational backbone** of a virtual C64 system, it supports a variety of applications—from analyzing and debugging C64 programs to serving as the engine for SID sound emulation libraries like 🎧 [zigreSID](https://github.com/M64GitHub/zigreSID).  
 Leveraging Zig’s modern features, it provides a clean and extensible platform for accurately emulating C64 behavior.
 
-This project lowers the barriers to C64 emulation by offering an accessible entry point for developers and enthusiasts alike. With its straightforward design and Zig’s intuitive tooling, tasks like debugging intricate C64 programs, tracing execution paths, or testing software behavior become approachable, empowering users to explore and experiment with minimal setup or complexity.
+A goal of this project is to lower the barriers to C64 emulation, providing an accessible entry point for developers and enthusiasts alike. With its straightforward design and Zig’s intuitive tooling, tasks like debugging intricate C64 programs, tracing execution paths, or testing software behavior are made approachable, empowering users to explore and experiment with minimal setup or complexity.
 
 <br>
 
