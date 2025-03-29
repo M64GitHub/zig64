@@ -82,7 +82,7 @@ C008:  A0 00     LDY #$00
 C00A:  A9 41     LDA #$41
 C00C:  99 00 04  STA $0400,Y
 C00F:  A9 01     LDA #$01
-C011:  99 00 D8  STA $D800,
+C011:  99 00 D8  STA $D800,Y
 ...
 [EXE] RUN
 [cpu] PC: C000 | 78       | SEI          | A: 00 | X: 00 | Y: 00 | SP: FF | Cycl: 00 | Cycl-TT: 0 | FL: 00100100
