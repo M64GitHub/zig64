@@ -97,37 +97,37 @@ zig build run-loadprg -- -prg c64asm/test.prg
 ...
 ...
 [EXE] Disassembling from: C000
-$C000: SEI
-$C001: LDA #$00
-$C003: STA $01
-$C005: LDX #$FF
-$C007: TXS
-$C008: LDY #$00
-$C00A: LDA #$41
-$C00C: STA $0400,Y
-$C00F: LDA #$01
-$C011: STA $D800,Y
-$C014: INY
-$C015: CPY #$FF
-$C017: BNE $C00A
-$C019: LDA #$05
-$C01B: LDX #$03
-$C01D: CLC
-$C01E: ADC #$02
-$C020: DEX
-$C021: BNE $C01D
-$C023: STA $D020
-$C026: LDA #$00
-$C028: CMP #$01
-$C02A: BEQ $C02E
-$C02C: BMI $C031
-$C02E: JMP $C036
-$C031: LDA #$FF
-$C033: STA $D021
-$C036: LDA #$37
-$C038: STA $01
-$C03A: CLI
-$C03B: RTS
+C000:  78        SEI         
+C001:  A9 00     LDA #$00    
+C003:  85 01     STA $01     
+C005:  A2 FF     LDX #$FF    
+C007:  9A        TXS         
+C008:  A0 00     LDY #$00    
+C00A:  A9 41     LDA #$41    
+C00C:  99 00 04  STA $0400,Y 
+C00F:  A9 01     LDA #$01    
+C011:  99 00 D8  STA $D800,Y 
+C014:  C8        INY         
+C015:  C0 FF     CPY #$FF    
+C017:  D0 F1     BNE $C00A   
+C019:  A9 05     LDA #$05    
+C01B:  A2 03     LDX #$03    
+C01D:  18        CLC         
+C01E:  69 02     ADC #$02    
+C020:  CA        DEX         
+C021:  D0 FA     BNE $C01D   
+C023:  8D 20 D0  STA $D020   
+C026:  A9 00     LDA #$00    
+C028:  C9 01     CMP #$01    
+C02A:  F0 02     BEQ $C02E   
+C02C:  30 03     BMI $C031   
+C02E:  4C 36 C0  JMP $C036   
+C031:  A9 FF     LDA #$FF    
+C033:  8D 21 D0  STA $D021   
+C036:  A9 37     LDA #$37    
+C038:  85 01     STA $01     
+C03A:  58        CLI         
+C03B:  60        RTS         
 
 [EXE] RUN
 [cpu] PC: C000 | 78       | SEI          | A: 00 | X: 00 | Y: 00 | SP: FD | Cycl: 00 | Cycl-TT: 0 | FL: 00100100
