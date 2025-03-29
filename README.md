@@ -4,20 +4,29 @@
 ![Version](https://img.shields.io/badge/version-0.2.0-8a2be2?style=flat)
 ![Zig](https://img.shields.io/badge/Zig-0.14.0-orange?style=flat)
 
-A **Commodore 64 MOS6510 emulator core** written in **Zig**, designed for accuracy, efficiency, and seamless integration into C64-based projects.  
-This emulator delivers cycle-accurate execution, precise rasterbeam emulation for PAL and NTSC video synchronization, and SID register tracking. Designed for C64 software analysis and program execution, it ensures faithful reproduction of C64 behavior with high precision.
+# Commodore 64 MOS 6510 Emulator Core
 
-It serves as the **computational core of a C64 system**, making it suitable for a range of applications, from testing and debugging C64 software to powering SID music playback engines like 🎧 [zigreSID](https://github.com/M64GitHub/zigreSID).  
+A **Commodore 64 MOS 6510 emulator core** implemented in **Zig**, designed for precision, flexibility, and seamless integration into C64-focused projects. This emulator delivers cycle-accurate execution, detailed raster beam emulation for PAL and NTSC video synchronization, and SID register tracking, making it a robust foundation for C64 software analysis, execution, and development.
+
+Built as the **computational backbone** of a virtual C64 system, it supports a variety of applications—from analyzing and debugging C64 programs to serving as the engine for SID music hacking projects like 🎧 [zigreSID](https://github.com/M64GitHub/zigreSID). Leveraging Zig’s modern features, it provides a clean and extensible platform for accurately emulating C64 behavior.
 
 <br>
 
-## 🚀 Features  
-- 🎮 **Fully Functional 6510 CPU Emulator** – Implements all legal `MOS 6502/6510` instructions and addressing modes with pinpoint accuracy.  
-- 🎞 **Video Synchronization** – Executes CPU cycles in perfect harmony with PAL or NTSC, featuring full `rasterbeam` emulation and precise `bad line` handling.  
-- 🎵 **SID Register Modification Detection** – Tracks every write to SID registers, ideal for debugging and analyzing SID interactions.  
-- 💾 **Program Loading Support** – Seamlessly loads `.prg` files to run C64 programs like a real machine.  
-- 🛠 **CPU Debugging** – Robust tools to inspect CPU registers, flags, memory, VIC state, and SID registers in real-time.  
-- 🔍 **Disassembler / Instruction Metadata Decoder** – Decodes 6502/6510 opcodes into human-readable mnemonics, enriched with metadata like size, instruction group, addressing mode, operand, operand-type, operand-size, access type (read/write), and more for seamless code tracing.
+## 🚀 Key Features
+- 🎮 **Cycle-Accurate 6510 CPU Emulation**  
+  Implements all documented MOS 6502/6510 instructions and addressing modes with exact timing and behavior, ensuring faithful program execution.
+- 🎞 **Video Synchronization**  
+  Aligns CPU cycles with PAL and NTSC video timings, including full raster beam emulation and precise bad line handling for authentic raster interrupt behavior.
+- 🎵 **SID Register Monitoring**  
+  Tracks all writes to SID registers, enabling detailed analysis and debugging of audio interactions.
+- 💾 **Program Loading Capabilities**  
+  Supports loading `.prg` files directly into memory, simplifying integration and execution of existing C64 programs and codebases.
+- 🛠 **Comprehensive Debugging Tools**  
+  Provides detailed inspection of CPU registers, flags, memory, VIC-II state, and SID registers, with single-step and full-run capabilities for precise control.
+- 🔍 **Robust Disassembler & Instruction Metadata**  
+  Decodes 6502/6510 opcodes into human-readable mnemonics, enriched with metadata (instruction size, group, addressing mode, operand details: type, size, access), ideal for code tracing and analysis.
+- 🧪 **Testing C64 Programs with Zig**  
+  Integrates seamlessly with Zig’s powerful testing infrastructure, enabling developers to write unit tests for C64 programs and verify emulator behavior with ease.
 
 <br>
 
