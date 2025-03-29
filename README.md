@@ -64,7 +64,37 @@ pub fn main() !void {
     try c64.run();
 }
 ```
-
+Output
+```
+[EXE] initializing emulator
+[EXE] Loading 'example.prg'
+[c64] loading file: 'example.prg'
+[c64] file load address: $C000
+[c64] writing mem: C000 offs: 0002 data: 78
+...
+[EXE] Disassembling from: C000
+C000:  78        SEI
+C001:  A9 00     LDA #$00
+C003:  85 01     STA $01
+C005:  A2 FF     LDX #$FF
+C007:  9A        TXS
+C008:  A0 00     LDY #$00
+C00A:  A9 41     LDA #$41
+C00C:  99 00 04  STA $0400,Y
+C00F:  A9 01     LDA #$01
+C011:  99 00 D8  STA $D800,
+...
+[EXE] RUN
+[cpu] PC: C000 | 78       | SEI          | A: 00 | X: 00 | Y: 00 | SP: FF | Cycl: 00 | Cycl-TT: 0 | FL: 00100100
+[cpu] PC: C001 | A9 00    | LDA #$00     | A: 00 | X: 00 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 2 | FL: 00100100
+[cpu] PC: C003 | 85 01    | STA $01      | A: 00 | X: 00 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 4 | FL: 00100110
+[cpu] PC: C005 | A2 FF    | LDX #$FF     | A: 00 | X: 00 | Y: 00 | SP: FF | Cycl: 03 | Cycl-TT: 7 | FL: 00100110
+[cpu] PC: C007 | 9A       | TXS          | A: 00 | X: FF | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 9 | FL: 10100100
+[cpu] PC: C008 | A0 00    | LDY #$00     | A: 00 | X: FF | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 11 | FL: 10100100
+[cpu] PC: C00A | A9 41    | LDA #$41     | A: 00 | X: FF | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 13 | FL: 00100110
+[cpu] PC: C00C | 99 00 04 | STA $0400,Y  | A: 41 | X: FF | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 15 | FL: 00100100
+[cpu] PC: C00F | A9 01    | LDA #$01     | A: 41 | X: FF | Y: 00 | SP: FF | Cycl: 04 | Cycl-TT: 19 | FL: 00100100
+```
 
 ## Overview
 
