@@ -5,32 +5,35 @@
 ![Version](https://img.shields.io/badge/version-0.3.0-8a2be2?style=flat)
 ![Zig](https://img.shields.io/badge/Zig-0.14.0-orange?style=flat)
 
-A **Commodore 64 MOS 6510 emulator core** implemented in **Zig**, designed for precision, flexibility, and seamless integration into C64-focused projects. This emulator delivers cycle-accurate execution, detailed raster beam emulation for PAL and NTSC video synchronization, and SID register tracking, making it a robust foundation for C64 software analysis, execution, and development.
+A **Commodore 64 MOS 6510 emulator core** implemented in **Zig**, engineered for precision, flexibility, and seamless integration into C64-focused projects. This emulator delivers cycle-accurate CPU execution, detailed raster beam emulation for PAL and NTSC video synchronization, and advanced SID register tracking with change decoding, making it an ideal foundation for C64 software analysis, dissecting SID player routines, analyzing register manipulations, and debugging.
 
-Built as the **computational backbone** of a virtual C64 system, it supports a variety of applications—from analyzing and debugging C64 programs to serving as the engine for SID sound emulation libraries like 🎧 [zigreSID](https://github.com/M64GitHub/zigreSID).  
-Leveraging Zig’s modern features, it provides a clean and extensible platform for accurately emulating C64 behavior.
+Built as the **computational backbone** of a virtual C64 system, it powers a range of applications—from tracing and debugging 6510 assembly with rich CPU state insights to dissecting SID register manipulations for tools like 🎧 [zigreSID](https://github.com/M64GitHub/zigreSID). Leveraging Zig’s modern features, it offers a clean, extensible platform with enhanced debugging capabilities, including step-by-step CPU traces and detailed SID change analysis.
 
-This project **began with a love for Commodore 64 SID music** and a desire to recreate and enhance that experience across platforms. As a musician using the C64, I aimed to tweak and modify SID tunes, which required working with `.sid` files—archives that embed 6510 CPU assembly code for player routines. To unlock this potential, I needed a CPU emulator to execute these routines, analyze how they manipulate SID registers over time, and build custom tools for sound experimentation, laying the groundwork for this emulator core.
+This project **sparked from a passion for Commodore 64 SID music**, aiming to recreate and elevate that experience across platforms. As a musician tweaking SID tunes via `.sid` files—archives embedding 6510 assembly for player routines—I needed a core to execute these, trace SID register changes with cycle precision, to enable custom sound tools. That vision grew into this emulator, blending nostalgia with cutting-edge emulation tech.
 
-**A goal** of this project is to **lower the barriers** to C64 emulation, providing an accessible entry point for developers and enthusiasts alike. With its straightforward design and Zig’s intuitive tooling, tasks like debugging intricate C64 programs, tracing execution paths, or testing software behavior are made approachable, empowering users to explore and experiment with minimal setup or complexity.
-
-
+**A key goal** is to **lower the barriers** to C64 emulation, offering an accessible entry point for developers and enthusiasts alike. With intuitive Zig tooling, robust CPU debugging, and SID state tracking, it simplifies analyzing intricate C64 programs, decoding SID behavior, and testing software—empowering users to explore, experiment, and create with ease.
 
 ## 🚀 Key Features
 - 🎮 **Cycle-Accurate 6510 CPU Emulation**  
-  Implements all documented MOS 6502/6510 instructions and addressing modes with exact timing and behavior, ensuring faithful program execution.
+  Implements all documented MOS 6502/6510 instructions and addressing modes with exact timing and behavior, ensuring faithful program execution down to the cycle.
+
 - 🎞 **Video Synchronization**  
-  Aligns CPU cycles with PAL and NTSC video timings, including full raster beam emulation and precise bad line handling for authentic raster interrupt behavior.
-- 🎵 **SID Register Monitoring and Decoding**  
-  Tracks all writes to SID registers and decodes them into meaningful structs, enabling detailed analysis and debugging of audio interactions.
+  Aligns CPU cycles with PAL and NTSC video timings, featuring full raster beam emulation and precise bad line handling for authentic raster interrupt behavior.
+
+- 🎵 **Advanced SID Register Tracking & Decoding**  
+  Monitors all SID register writes with cycle precision, decoding changes into detailed structs (e.g., waveforms, envelopes), perfect for analyzing player routines and sound interactions.
+
 - 💾 **Program Loading Capabilities**  
-  Supports loading `.prg` files directly into memory, simplifying integration and execution of existing C64 programs and codebases.
-- 🛠 **Comprehensive Debugging Tools**  
-  Provides detailed inspection of CPU registers, flags, memory, VIC-II state, and SID registers, with single-step and full-run capabilities for precise control.
+  Loads `.prg` files directly into memory, streamlining execution and integration of C64 programs and `.sid` player codebases.
+
+- 🛠 **Powerful Debugging Tools**  
+  Offers step-by-step CPU tracing, rich state inspection (registers, flags, memory, VIC-II, SID), and SID change logging, empowering precise control and deep analysis.
+
 - 🔍 **Robust Disassembler & Instruction Metadata**  
-  Decodes 6502/6510 opcodes into human-readable mnemonics, enriched with metadata (instruction size, group, addressing mode, operand details: type, size, access), ideal for code tracing and analysis.
+  Transforms 6502/6510 opcodes into readable mnemonics with metadata (size, group, addressing mode, operand type/size/access), ideal for code tracing and reverse-engineering.
+
 - 🧪 **Testing C64 Programs with Zig**  
-  Integrates seamlessly with Zig’s powerful testing infrastructure, enabling developers to write unit tests for C64 programs and verify emulator behavior with ease.
+  Seamlessly integrates with Zig’s testing framework, enabling developers to write unit tests for C64 code and verify emulator behavior with ease.
 
 ## Quick Start Demo
 
@@ -112,7 +115,7 @@ The sections below outline their mechanics, API, and examples to guide you in us
 ## Component Interactions
 
 **C64: Emulator Core**  
-The `C64` struct serves as the main struct, initializing components and loading `.prg` files into `Ram64k` with `loadPrg()`. It directs `Cpu` execution through `run()`, `runFrames()`, or `call()`, the latter clearing and tracking SID register changes during subroutine execution (flag `sid.ext_reg_written`, see below).
+The `C64` struct serves as the main struct, initializing components like `Cpu`, `Sid`, `Vic`, and `Ram64k`, and loading `.prg` files into `Ram64k` with `loadPrg()`. It directs `Cpu` execution through `run()`, `runFrames()`, or `call()`, the latter resetting CPU state and tracking SID register changes during subroutine execution via flags like `sid.ext_reg_written` and `sid.ext_reg_changed`. For advanced SID analysis, `callSidTrace()` executes subroutines while capturing every register change with cycle precision into an array of `RegisterChange` structs, which can be aggregated across multiple calls using `appendSidChanges()`—ideal for debugging `.sid` files or custom sound routines.
 
 **Cpu: Execution Engine**  
 The `Cpu` struct drives the emulator as the 6502 execution core, fetching instructions from `Ram64k` and stepping through them with `runStep()`. It orchestrates cycle-accurate execution, managing registers (`pc`, `a`, `x`, `y`, `sp`), status flags, and memory operations while coordinating with `Vic` for timing and `Sid` for register writes. Integrated with `Asm`, it leverages decoded `Instruction` metadata to execute opcodes and supports debugging with detailed trace output.
@@ -151,8 +154,9 @@ The `Asm` struct serves as a powerful tool for decoding, analyzing, and disassem
 - **Flexibility**: Supports all 6502 addressing modes and operand types, with optional second operands (e.g., for indexed modes), making it a versatile bridge between emulation and development.
 
 ## API Reference
+
 ### C64
-The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64 system.
+The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64 system, with advanced SID tracing capabilities.
 
 - **Fields**:
   ```zig
@@ -169,9 +173,9 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
       allocator: std.mem.Allocator,
       vic_model: Vic.Model,
       init_addr: u16
-  ) !*C64
+  ) !C64
   ```
-  Initializes a new heap-allocated C64 instance with default settings.
+  Initializes a new C64 instance with default settings, allocating resources as needed.
 
   ```zig
   pub fn deinit(
@@ -189,14 +193,14 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
       pc_to_loadaddr: bool
   ) !u16
   ```
-  Loads a `.prg` file into memory and returns the load address.
+  Loads a `.prg` file into `Ram64k` and returns the load address; if `pc_to_loadaddr` is true, sets the CPU’s program counter to the load address.
 
   ```zig
   pub fn run(
       c64: *C64
   ) void
   ```
-  Executes the CPU until program termination (RTS).
+  Executes the CPU continuously from the current program counter until program termination (RTS).
 
   ```zig
   pub fn call(
@@ -204,7 +208,7 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
       address: u16
   ) void
   ```
-  Calls a specific assembly subroutine, returning on RTS.
+  Calls a specific assembly subroutine at the given address, resetting CPU state, tracking SID register changes via `sid.ext_reg_written` and `sid.ext_reg_changed`, and returning on RTS.
 
   ```zig
   pub fn runFrames(
@@ -212,8 +216,48 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
       frame_count: u32
   ) u32
   ```
-  Runs the CPU for a specified number of frames, returning the number executed; frame timing adapts to PAL or NTSC VIC settings.
+  Runs the CPU for a specified number of frames, returning the number executed; frame timing adapts to PAL or NTSC VIC settings for accurate synchronization.
 
+  ```zig
+  pub fn callSidTrace(
+      c64: *C64,
+      address: u16,
+      allocator: std.mem.Allocator
+  ) ![]Sid.RegisterChange
+  ```
+  Executes a subroutine at the specified address, tracing all SID register changes into an array of `RegisterChange` structs with cycle information; returns the collected changes (caller must free with `allocator.free()`).
+
+  - **Example**:
+    ```zig
+    const changes = try c64.callSidTrace(0x0800, allocator);
+    defer allocator.free(changes);
+    for (changes) |change| {
+        std.debug.print("Cycle {d}: {s} changed {X:02} => {X:02}\n",
+            .{ change.cycle, @tagName(change.meaning), change.old_value, change.new_value });
+    }
+    ```
+    Traces SID changes from a subroutine at `$0800`, printing each change with cycle and register details.
+
+  ```zig
+  pub fn appendSidChanges(
+      existing_changes: *std.ArrayList(Sid.RegisterChange),
+      new_changes: []Sid.RegisterChange
+  ) !void
+  ```
+  Static function to append new SID register changes to an existing `ArrayList`, enabling aggregation of changes across multiple `callSidTrace()` runs.
+  - **Example**:
+    ```zig
+    var all_changes = std.ArrayList(Sid.RegisterChange).init(allocator);
+    defer all_changes.deinit();
+    const addresses = [_]u16{ 0x0800, 0x0900 };
+    for (addresses) |addr| {
+        const changes = try c64.callSidTrace(addr, allocator);
+        defer allocator.free(changes);
+        try C64.appendSidChanges(&all_changes, changes);
+    }
+    std.debug.print("Total SID changes: {d}\n", .{ all_changes.items.len });
+    ```
+    Traces SID changes from a subroutine at `$0800`, printing each change with cycle and register details.
 
 ### Cpu
 The core component executing 6510 instructions, driving the virtual C64 system.
@@ -300,6 +344,12 @@ The core component executing 6510 instructions, driving the virtual C64 system.
   ) void
   ```
   Writes a byte slice to memory starting at the specified address.
+  - **Example**:
+    ```zig
+    const code = [_]u8{ 0xA9, 0x42, 0x8D, 0x00, 0xD4 }; // LDA #$42, STA $D400
+    cpu.writeMem(&code, 0x0800);
+    ```
+    Loads a simple SID register write (osc1_freq_lo = 0x42) into memory at `$0800`.
 
   ```zig
   pub fn printStatus(
@@ -377,6 +427,14 @@ The core component executing 6510 instructions, driving the virtual C64 system.
   ) u8
   ```
   Executes one CPU instruction, returning the number of cycles taken. The main execution function.
+  - **Example**:
+    ```zig
+    cpu.dbg_enabled = true;
+    while (cpu.runStep() != 0) {
+        cpu.printTrace(); // Logs each step’s instruction and state
+    }
+    ```
+    Runs the CPU step-by-step, printing a trace of each instruction executed.
 
 ### Ram64k
 The memory component managing the C64’s 64KB address space.
@@ -508,6 +566,15 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
   ) void
   ```
   Writes a value to the specified SID register, updates tracking fields, sets `last_change` if altered, and logs detailed changes if `dbg_enabled` is true.
+  - **Example**:
+    ```zig
+    sid.writeRegister(0, 0x42); // Set osc1_freq_lo to 0x42
+    if (sid.reg_changed) {
+        std.debug.print("Osc1 freq lo changed from {X:02} to {X:02}\n",
+            .{ sid.reg_changed_from, sid.reg_changed_to });
+    }
+    ```
+    Writes to oscillator 1’s frequency low register and checks for a change.
 
   ```zig
   pub fn writeRegisterCycle(
@@ -518,6 +585,17 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
   ) void
   ```
   Writes a value to the specified SID register, records the CPU cycle in `last_write_cycle`, updates tracking fields, sets `last_change` if altered, and logs changes if `dbg_enabled` is true.
+  - **Example**:
+    ```zig
+    sid.dbg_enabled = true;
+    sid.writeRegisterCycle(4, 0x41, 100); // Set osc1_control to Pulse+Gate at cycle 100
+    if (sid.last_change) |change| {
+        std.debug.print("Cycle {d}: {s} set to {X:02}\n",
+            .{ change.cycle, @tagName(change.meaning), change.new_value });
+        // Expected output: "Cycle 100: osc1_control set to 41"
+    }
+    ```
+  Writes to oscillator 1’s control register with cycle info and logs the change.
 
   ```zig
   pub fn volumeChanged(
@@ -554,6 +632,20 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
   ) bool
   ```
   Returns true if the change affects the frequency registers (`freq_lo` or `freq_hi`) of the specified oscillator (1–3).
+  - **Example**:
+    ```zig
+    const stdout = std.io.getStdOut().writer();
+    sid.writeRegisterCycle(0, 0x42, 50);  // Set osc1_freq_lo to 0x42 at cycle 50
+    if (sid.last_change) |change| {
+        if (Sid.oscFreqChanged(1, change)) {
+            try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n",
+                .{ change.old_value, change.new_value });
+            // Expected output: "Osc1 freq updated: 00 => 42"
+        }
+    }
+    ```
+    Checks if oscillator 1’s frequency changed after a register write, printing the update.
+  
 
   ```zig
   pub fn oscPulseWidthChanged(
@@ -578,6 +670,20 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
   ) bool
   ```
   Returns true if the change affects the attack/decay register of the specified oscillator (1–3).
+  - **Example**:
+    ```zig
+    const stdout = std.io.getStdOut().writer();
+    sid.writeRegisterCycle(5, 0x53, 60);  // Set osc1_attack_decay to 0x53 at cycle 60
+    if (sid.last_change) |change| {
+        if (Sid.oscAttackDecayChanged(1, change)) {
+            const ad = Sid.AttackDecay.fromValue(change.new_value);
+            try stdout.print("Osc1 attack/decay: A={d}, D={d}\n",
+                .{ ad.attack, ad.decay });
+            // Expected output: "Osc1 attack/decay: A=5, D=3"
+        }
+    }
+    ```
+    Checks if oscillator 1’s attack/decay changed, decoding and printing the new values.
 
   ```zig
   pub fn oscSustainReleaseChanged(
@@ -778,6 +884,14 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
   ) !void
   ```
   Disassembles and prints `count` instructions from memory starting at `pc_start`.
+  - **Example**:
+    ```zig
+    const mem = [_]u8{ 0xA9, 0x42, 0x8D, 0x00, 0xD4 }; // LDA #$42, STA $D400
+    try Asm.disassembleForward(&mem, 0x0800, 2);
+    // Prints:
+    // 0800:  A9 42      LDA #$42
+    // 0802:  8D 00 D4   STA $D400
+    ```
 
   ```zig
   pub fn disassembleInsn(
@@ -787,6 +901,14 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
   ) ![]const u8
   ```
   Converts an instruction into a human-readable string (e.g., `"LDA #$10"`).
+  - **Example**:
+    ```zig
+    const mem = [_]u8{ 0xA9, 0x42, 0x8D, 0x00, 0xD4 }; // LDA #$42, STA $D400
+    try Asm.disassembleForward(&mem, 0x0800, 2);
+    // Prints:
+    // 0800: A9 42     LDA #$42
+    // 0802: 8D 00 D4  STA $D400
+    ```
 
   ```zig
   pub fn disassembleCodeLine(
@@ -803,10 +925,18 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
   ) Instruction
   ```
   Decodes a byte slice into an `Instruction` struct with metadata.
+  - **Example**:
+    ```zig
+    const bytes = [_]u8{ 0x8D, 0x00, 0xD4 }; // STA $D400
+    const insn = Asm.decodeInstruction(&bytes);
+    std.debug.print("{s} addr_mode: {s}\n",
+        .{ insn.mnemonic, @tagName(insn.addr_mode) });
+    // Prints: "STA addr_mode: absolute"
+    ```
 
 ## Example Code
 
-Below are practical examples to demonstrate using the zig64 emulator core. Starting with short snippets for specific tasks, followed by examples showcasing SID register analysis and a complete example of manually programming and stepping through a routine.
+Below are practical examples to demonstrate using the zig64 emulator core. Starting with short snippets for specific tasks, followed by examples showcasing SID register analysis  a complete example of manually programming and stepping through a routine.
 
 ### Single-Step CPU Execution
 ```zig
@@ -818,15 +948,6 @@ std.debug.print("Executed one step, took {} cycles\n", .{cycles});
 ```
 Runs a single CPU instruction and prints the cycle count.
 
-### Disassembling a Memory Range
-```zig
-var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0xC000);
-defer c64.deinit(allocator);
-
-try C64.Asm.disassembleForward(&c64.mem.data, 0xC000, 5);
-```
-Disassembles five instructions starting at address `$C000`.
-
 ### Reading SID Registers
 ```zig
 var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0x0000);
@@ -837,6 +958,15 @@ std.debug.print("SID register 0: {X:0>2}\n", .{regs[0]});
 ```
 Retrieves and prints the first SID register value.
 
+### Disassembling a Memory Range
+```zig
+var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0xC000);
+defer c64.deinit(allocator);
+
+try C64.Asm.disassembleForward(&c64.mem.data, 0xC000, 5);
+```
+Disassembles five instructions starting at address `$C000`.
+
 ### Detecting SID Volume Changes
 ```zig
 var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0xC000);
@@ -845,9 +975,9 @@ defer c64.deinit(allocator);
 c64.sid.writeRegister(24, 0x0F); // Set volume to 15, no filters
 c64.sid.writeRegister(24, 0x47); // Change to volume 7, high-pass on
 if (c64.sid.last_change) |change| {
-    if (c64.sid.volumeChanged(change)) {
-        const old_vol = c64.sid.FilterModeVolume.fromValue(change.old_value).volume;
-        const new_vol = c64.sid.FilterModeVolume.fromValue(change.new_value).volume;
+    if (Sid.volumeChanged(change)) {
+        const old_vol = Sid.FilterModeVolume.fromValue(change.old_value).volume;
+        const new_vol = Sid.FilterModeVolume.fromValue(change.new_value).volume;
         std.debug.print("Volume changed from {d} to {d}!\n", .{ old_vol, new_vol });
     }
 }
@@ -861,7 +991,7 @@ defer c64.deinit(allocator);
 
 c64.sid.writeRegister(0, 0x12); // Osc1 freq lo
 if (c64.sid.last_change) |change| {
-    if (c64.sid.oscFreqChanged(change, 1)) {
+    if (Sid.oscFreqChanged(change, 1)) {
         std.debug.print("Osc1 frequency changed: {X:02} => {X:02}!\n", 
             .{ change.old_value, change.new_value });
     }
@@ -869,19 +999,37 @@ if (c64.sid.last_change) |change| {
 ```
 Updates an oscillator 1 frequency register and detects the change.
 
-### Analyzing Oscillator Envelope Adjustments
+### Analyzing Oscillator Frequency and Envelope Adjustments
 ```zig
-var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0xC000);
-defer c64.deinit(allocator);
-
-c64.sid.writeRegister(5, 0x53); // Osc1 attack/decay to A=5, D=3
-if (c64.sid.last_change) |change| {
-    if (c64.sid.oscAttackDecayChanged(change, 1)) {
-        const ad = c64.sid.AttackDecay.fromValue(change.new_value);
-        std.debug.print("Osc1 envelope AD changed: Attack={d}, Decay={d}!\n", 
-            .{ ad.attack, ad.decay });
-    }
-}
+  const stdout = std.io.getStdOut().writer();
+  sid.writeRegisterCycle(0, 0x42, 50);  // Set osc1_freq_lo to 0x42 at cycle 50
+  if (sid.last_change) |change| {
+      if (Sid.oscFreqChanged(1, change)) {
+          try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n",
+              .{ change.old_value, change.new_value });
+          // Expected output: "Osc1 freq updated: 00 => 42"
+      }
+      if (Sid.oscAttackDecayChanged(1, change)) {
+          const ad = Sid.AttackDecay.fromValue(change.new_value);
+          try stdout.print("Osc1 attack/decay: A={d}, D={d}\n",
+              .{ ad.attack, ad.decay });
+          // (No output here since it’s not osc1_attack_decay)
+      }
+  }
+  sid.writeRegisterCycle(5, 0x53, 60);  // Set osc1_attack_decay to 0x53 at cycle 60
+  if (sid.last_change) |change| {
+      if (Sid.oscFreqChanged(1, change)) {
+          try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n",
+              .{ change.old_value, change.new_value });
+          // (No output here since it’s not a freq change)
+      }
+      if (Sid.oscAttackDecayChanged(1, change)) {
+          const ad = Sid.AttackDecay.fromValue(change.new_value);
+          try stdout.print("Osc1 attack/decay: A={d}, D={d}\n",
+              .{ ad.attack, ad.decay });
+          // Expected output: "Osc1 attack/decay: A=5, D=3"
+      }
+  }
 ```
 Modifies an oscillator 1 attack/decay register and prints the new envelope settings.
 
