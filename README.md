@@ -134,8 +134,13 @@ The `Sid` struct manages its register state, mapped into C64 memory at `base_add
 - **Change Detection**: If a write alters a register’s value, `reg_changed` and `ext_reg_changed` flags are set to `true`, with detailed state (`reg_changed_idx`, `reg_changed_from`, `reg_changed_to`) recorded for debugging or hooking. Debug output, enabled via `dbg_enabled`, logs all writes and changes with register addresses (offset from `$D400`), values, and cycles (when using `writeRegisterCycle()`).
 - **Integration**: The `Cpu` delegates SID register writes during execution, via `writeRegisterCycle()` offloading state management to `Sid`.
 
-**Asm: Instruction Decoder**  
-`Asm` processes `Ram64k` bytes into `Instruction` structs with `decodeInstruction()`, enabling `Cpu` code analysis. Its `disassembleCodeLine()` function format this data into readable output.
+**Asm: Instruction Decoder, Disassembler and Assembly Support**  
+The `Asm` struct serves as a powerful tool for decoding, analyzing, and disassembling 6502 instructions from `Ram64k` bytes, while also enabling manual assembly with predefined `Instruction` metadata. It processes opcodes into detailed `Instruction` structs via `decodeInstruction()`, categorizing them by group (e.g., `branch`, `load_store`) and addressing mode (e.g., `immediate`, `absolute`). This supports complex code analysis for the `Cpu` and human-readable output through `disassembleCodeLine()`. Additionally, its structured constants (e.g., `Asm.lda_imm`) double as an assembly interface with IDE autocomplete support.
+
+- **Decoding & Analysis**: `decodeInstruction()` transforms raw bytes into `Instruction` structs, capturing opcode, mnemonic, addressing mode, operand details (type, size, access), and group. This metadata enables abstract analysis, such as tracking register usage or memory access patterns.
+- **Disassembly**: `disassembleCodeLine()` and `disassembleForward()` format instructions into readable strings (e.g., `LDA #$0A` or `JMP $1234`), adjusting for addressing modes and branch offsets, ideal for debugging or code inspection.
+- **Manual Assembly**: Predefined `Instruction` constants (e.g., `Asm.lda_abs`, `Asm.jmp_ind`) expose opcodes and metadata for direct use. For example, `c64.cpu.writeByte(Asm.lda_imm.opcode, 0x0800)` followed by `c64.cpu.writeByte(0x0A, 0x0801)` assembles `LDA #$0A` at address `$0800`, with autocomplete enhancing usability in editors.
+- **Flexibility**: Supports all 6502 addressing modes and operand types, with optional second operands (e.g., for indexed modes), making it a versatile bridge between emulation and development.
 
 ## API Reference
 ### C64
