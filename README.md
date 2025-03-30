@@ -133,8 +133,7 @@ The `Vic` struct emulates the VIC-II chip’s timing behavior, focusing on raste
 - **Memory Integration**: Updates `$D011` and `$D012` in `Ram64k` to mimic VIC-II register changes, supporting raster interrupt logic without rendering.
 - **Timing Precision**: Relies on CPU cycle counts (e.g., 63 cycles per PAL raster line, 40 cycles stolen on bad lines) to align execution. On bad lines, `Vic` updates `cpu.cycles_executed`, `cpu.cycles_last_step`, `cpu.cycles_since_hsync`, and `cpu.cycles_since_vsync` by adding stolen cycles.
 
-**Sid: Register Management**  
-### Sid: Advanced Register Management and Analysis
+**Sid: Register Management and Analysis**  
 The `Sid` struct emulates the SID chip’s register state, mapped into C64 memory at `base_address` (typically `$D400`), offering a powerful interface for tracking, decoding, and analyzing writes from the `Cpu`. Register updates are handled via `writeRegister(reg: usize, val: u8)` for general writes and `writeRegisterCycle(reg: usize, val: u8, cycle: usize)` for cycle tracking, maintaining the internal `[25]u8` register array accessible through `getRegisters()`.
 
 - **Write Tracking**: Each write sets `reg_written` to `true`, storing the register index in `reg_written_idx` and value in `reg_written_val`. The `ext_reg_written` flag signals external systems (persistent until cleared, e.g., by `call()`), while `writeRegisterCycle()` logs the CPU cycle in `last_write_cycle`.
