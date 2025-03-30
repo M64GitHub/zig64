@@ -111,22 +111,22 @@ The sections below outline their mechanics, API, and examples to guide you in us
 
 ### System Breakdown
 
-**`C64`: Emulator Core**
+**`C64`: Emulator Core**  
 The `C64` struct initializes and links the emulator’s components, loading `.prg` files into `Ram64k` and directing `Cpu` execution via `call()`, `run()` or `runFrames()`. It acts as the entry point, managing memory and timing interactions.
 
-**`Cpu`: Execution Engine**
+**`Cpu`: Execution Engine**  
 The `Cpu` fetches and executes 6510 instructions from `Ram64k`, updating registers and tracking SID register writes through `sidRegWritten()`. It syncs with `Vic` for cycle accuracy, stepping through code with `runStep()`.
 
-**`Ram64k`: System RAM**
+**`Ram64k`: System RAM**  
 `Ram64k` provides a 64KB memory array, serving as the shared storage for `Cpu` instructions, `Vic` registers, and `Sid` data. It supports direct writes from `C64.loadPrg()` and `Cpu.writeByte()`.
 
-**`Vic`: Video Timing, Raster Beam**
+**`Vic`: Video Timing, Raster Beam**  
 `Vic` emulates raster timing, advancing lines with `emulateD012()` and signaling sync events like vsync or bad lines to `Cpu`. It uses `model` (PAL/NTSC) to adjust cycle counts, ensuring accurate interrupt timing.
 
-**`Sid`: Register Holder
+**`Sid`: Register Holder**  
 The `Sid` struct stores register values at a configurable `base_address`, updated by `Cpu` writes. It offers `getRegisters()` for inspection, with future potential for sound logic.
 
-**`Asm`: Instruction Decoder**
+**`Asm`: Instruction Decoder**  
 `Asm` decodes raw bytes into `Instruction` structs via `decodeInstruction()`, providing metadata like addressing modes and operands. Functions like `disassembleCodeLine()` format this data into readable output, aiding analysis.
 
 ## API Reference
