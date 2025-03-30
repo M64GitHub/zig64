@@ -109,25 +109,25 @@ Each component features its own `dbg_enabled` flag—e.g., `c64.dbg_enabled` for
 The `Asm` struct enhances this core with a powerful disassembler and metadata decoder, offering detailed instruction analysis.  
 The sections below outline their mechanics, API, and examples to guide you in using this emulator core effectively.
 
-### System Breakdown
+### Component Interactions
 
 **C64: Emulator Core**  
-The `C64` struct initializes and links the emulator’s components, loading `.prg` files into `Ram64k` and directing `Cpu` execution via `call()`, `run()` or `runFrames()`. It acts as the entry point, managing memory and timing interactions.
+The `C64` struct serves as the main struct, initializing components and loading `.prg` files into `Ram64k` with `loadPrg()`. It directs `Cpu` execution through `run()`, `runFrames()`, or `call()`, the latter clearing and tracking SID register changes during subroutine execution (flag `ext_sid_reg_written()`, see below).
 
-**Cpu: Execution Engine**  
-The `Cpu` fetches and executes 6510 instructions from `Ram64k`, updating registers and tracking SID register writes through `sidRegWritten()`. It syncs with `Vic` for cycle accuracy, stepping through code with `runStep()`.
+**Cpu: Execution Engine** 
+The `Cpu` drives execution by fetching instructions from `Ram64k` and stepping via `runStep()`, syncing cycles with `Vic`. It tracks `Sid` writes with `sidRegWritten()` (cleared each step) and `ext_sid_reg_written()` (persistent until manually cleared), updating register states.
 
 **Ram64k: System RAM**  
-`Ram64k` provides a 64KB memory array, serving as the shared storage for `Cpu` instructions, `Vic` registers, and `Sid` data. It supports direct writes from `C64.loadPrg()` and `Cpu.writeByte()`.
+`Ram64k` acts as the central memory pool, accepting writes from `C64.loadPrg()` and `Cpu.writeByte()`. It feeds instruction data to `Cpu` and register values to `Vic` and `Sid`, ensuring system-wide consistency.
 
-**Vic: Video Timing, Raster Beam**  
-`Vic` emulates raster timing, advancing lines with `emulateD012()` and signaling sync events like vsync or bad lines to `Cpu`. It uses `model` (PAL/NTSC) to adjust cycle counts, ensuring accurate interrupt timing.
+**Vic: Video Timing / Raster Beamer**  
+`Vic` regulates timing by advancing raster lines with `emulateD012()`, notifying `Cpu` of vsync or bad line events. It adjusts `Cpu` cycle counts based on `model` (PAL/NTSC), maintaining accurate emulation timing.
 
-**Sid: Register Holder**  
-The `Sid` struct stores register values at a configurable `base_address`, updated by `Cpu` writes. It offers `getRegisters()` for inspection, with future potential for sound logic.
+**Sid: Registers**  
+The `Sid` struct holds register values at `base_address`, updated by `Cpu` writes during execution. It provides `getRegisters()` for state inspection, linking `Cpu` activity to SID analysis.
 
 **Asm: Instruction Decoder**  
-`Asm` decodes raw bytes into `Instruction` structs via `decodeInstruction()`, providing metadata like addressing modes and operands. Functions like `disassembleCodeLine()` format this data into readable output, aiding analysis.
+`Asm` processes `Ram64k` bytes into `Instruction` structs with `decodeInstruction()`, enabling `Cpu` code analysis. Its `disassembleCodeLine()` function format this data into readable output.
 
 ## API Reference
 ### C64
