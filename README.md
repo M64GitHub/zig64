@@ -244,17 +244,15 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
   Static function to append new SID register changes to an existing `ArrayList`, enabling aggregation of changes across multiple `callSidTrace()` runs.
   - **Example**:
     ```zig
-    cpu.dbg_enabled = true;
-    while (cpu.runStep() != 0) {
-        cpu.printTrace(); // Logs each step’s instruction and state
+    var all_changes = std.ArrayList(Sid.RegisterChange).init(allocator);
+    defer all_changes.deinit();
+    const addresses = [_]u16{ 0x0800, 0x0900 };
+    for (addresses) |addr| {
+        const changes = try c64.callSidTrace(addr, allocator);
+        defer allocator.free(changes);
+        try C64.appendSidChanges(&all_changes, changes);
     }
-    ```
-    const changes = try c64.callSidTrace(0x0800, allocator);
-    defer allocator.free(changes);
-    for (changes) |change| {
-        std.debug.print("Cycle {d}: {s} changed {X:02} => {X:02}\n",
-           .{ change.cycle, @tagName(change.meaning), change.old_value, change.new_value });
-     }
+    std.debug.print("Total SID changes: {d}\n", .{ all_changes.items.len });
     ```
     Traces SID changes from a subroutine at `$0800`, printing each change with cycle and register details.
 
