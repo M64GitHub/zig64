@@ -400,7 +400,7 @@ The memory component managing the C64’s 64KB address space.
   Resets all memory to zero.
 
 ### Sid
-The placeholder component for SID register storage.
+Emulates the SID chip’s register state, providing advanced tracking, decoding, and analysis of register writes.
 
 - **Fields**:
   ```zig
@@ -417,6 +417,66 @@ The placeholder component for SID register storage.
   ext_reg_written: bool,   // Persistent flag for external systems, set on any write (cleared manually)
   ext_reg_changed: bool,   // Persistent flag for external systems, set on any change (cleared manually)
   last_write_cycle: usize, // CPU cycle of the last write (tracked by writeRegisterCycle)
+  last_change: ?RegisterChange, // Details of the last register change, if any
+  ```
+
+- **Types**:
+  ```zig
+  pub const RegisterMeaning = enum(usize) {
+      osc1_freq_lo = 0, osc1_freq_hi, osc1_pw_lo, osc1_pw_hi, osc1_control,
+      osc1_attack_decay, osc1_sustain_release, osc2_freq_lo, osc2_freq_hi,
+      osc2_pw_lo, osc2_pw_hi, osc2_control, osc2_attack_decay, osc2_sustain_release,
+      osc3_freq_lo, osc3_freq_hi, osc3_pw_lo, osc3_pw_hi, osc3_control,
+      osc3_attack_decay, osc3_sustain_release, filter_freq_lo, filter_freq_hi,
+      filter_res_control, filter_mode_volume,
+  } // Maps register indices to their SID functions
+  ```
+  ```zig
+  pub const WaveformControl = packed struct(u8) {
+      gate: bool, sync: bool, ring_mod: bool, test_bit: bool,
+      triangle: bool, sawtooth: bool, pulse: bool, noise: bool,
+      pub fn fromValue(val: u8) WaveformControl // Converts a value to bitfields
+  } // Decodes oscillator control registers (e.g., $D404)
+  ```
+  ```zig
+  pub const FilterResControl = packed struct(u8) {
+      osc1: bool, osc2: bool, osc3: bool, ext: bool, resonance: u4,
+      pub fn fromValue(val: u8) FilterResControl // Converts a value to bitfields
+  } // Decodes filter resonance/routing ($D417)
+  ```
+  ```zig
+  pub const FilterModeVolume = packed struct(u8) {
+      volume: u4, low_pass: bool, band_pass: bool, high_pass: bool, osc3_off: bool,
+      pub fn fromValue(val: u8) FilterModeVolume // Converts a value to bitfields
+  } // Decodes filter mode and volume ($D418)
+  ```
+  ```zig
+  pub const AttackDecay = packed struct(u8) {
+      decay: u4, attack: u4,
+      pub fn fromValue(val: u8) AttackDecay // Converts a value to bitfields
+  } // Decodes attack/decay envelope settings (e.g., $D405)
+  ```
+  ```zig
+  pub const SustainRelease = packed struct(u8) {
+      release: u4, sustain: u4,
+      pub fn fromValue(val: u8) SustainRelease // Converts a value to bitfields
+  } // Decodes sustain/release envelope settings (e.g., $D406)
+  ```
+  ```zig
+  pub const RegisterChange = struct {
+      meaning: RegisterMeaning,    // Register that changed
+      old_value: u8,              // Value before the change
+      new_value: u8,              // Value after the change
+      details: union(enum) {      // Decoded details of the new value
+          waveform: WaveformControl,
+          filter_res: FilterResControl,
+          filter_mode: FilterModeVolume,
+          attack_decay: AttackDecay,
+          sustain_release: SustainRelease,
+          raw: u8,
+      },
+  } // Captures the full context of a register change
+  ```
 
 - **Functions**:
   ```zig
@@ -447,7 +507,7 @@ The placeholder component for SID register storage.
       val: u8
   ) void
   ```
-  Writes a value to the specified SID register, updating tracking fields and logging changes if `dbg_enabled` is true.
+  Writes a value to the specified SID register, updates tracking fields, sets `last_change` if altered, and logs detailed changes if `dbg_enabled` is true.
 
   ```zig
   pub fn writeRegisterCycle(
@@ -457,7 +517,75 @@ The placeholder component for SID register storage.
       cycle: usize
   ) void
   ```
-  Writes a value to the specified SID register, records the CPU cycle in `last_write_cycle`, updates tracking fields, and logs changes if `dbg_enabled` is true.
+  Writes a value to the specified SID register, records the CPU cycle in `last_write_cycle`, updates tracking fields, sets `last_change` if altered, and logs changes if `dbg_enabled` is true.
+
+  ```zig
+  pub fn volumeChanged(
+      change: RegisterChange
+  ) bool
+  ```
+  Returns true if the change affects the volume register (`filter_mode_volume`, `$D418`).
+
+  ```zig
+  pub fn filterModeChanged(
+      change: RegisterChange
+  ) bool
+  ```
+  Returns true if the change affects the filter mode register (`filter_mode_volume`, `$D418`).
+
+  ```zig
+  pub fn filterFreqChanged(
+      change: RegisterChange
+  ) bool
+  ```
+  Returns true if the change affects the filter frequency registers (`filter_freq_lo` or `filter_freq_hi`, `$D415`–`$D416`).
+
+  ```zig
+  pub fn filterResChanged(
+      change: RegisterChange
+  ) bool
+  ```
+  Returns true if the change affects the filter resonance/routing register (`filter_res_control`, `$D417`).
+
+  ```zig
+  pub fn oscFreqChanged(
+      change: RegisterChange,
+      osc: u2
+  ) bool
+  ```
+  Returns true if the change affects the frequency registers (`freq_lo` or `freq_hi`) of the specified oscillator (1–3).
+
+  ```zig
+  pub fn oscPulseWidthChanged(
+      change: RegisterChange,
+      osc: u2
+  ) bool
+  ```
+  Returns true if the change affects the pulse width registers (`pw_lo` or `pw_hi`) of the specified oscillator (1–3).
+
+  ```zig
+  pub fn oscWaveformChanged(
+      change: RegisterChange,
+      osc: u2
+  ) bool
+  ```
+  Returns true if the change affects the waveform control register (`control`) of the specified oscillator (1–3).
+
+  ```zig
+  pub fn oscAttackDecayChanged(
+      change: RegisterChange,
+      osc: u2
+  ) bool
+  ```
+  Returns true if the change affects the attack/decay register of the specified oscillator (1–3).
+
+  ```zig
+  pub fn oscSustainReleaseChanged(
+      change: RegisterChange,
+      osc: u2
+  ) bool
+  ```
+  Returns true if the change affects the sustain/release register of the specified oscillator (1–3).
 
 ### Vic
 The video timing component synchronizing CPU cycles with C64 raster behavior.
