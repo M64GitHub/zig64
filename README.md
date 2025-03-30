@@ -15,19 +15,25 @@ This project **sparked from a passion for Commodore 64 SID music**, aiming to re
 
 ## 🚀 Key Features
 - 🎮 **Cycle-Accurate 6510 CPU Emulation**  
-  Implements all documented MOS 6502/6510 instructions and addressing modes with exact timing and behavior, ensuring faithful program execution.
+  Implements all documented MOS 6502/6510 instructions and addressing modes with exact timing and behavior, ensuring faithful program execution down to the cycle.
+
 - 🎞 **Video Synchronization**  
-  Aligns CPU cycles with PAL and NTSC video timings, including full raster beam emulation and precise bad line handling for authentic raster interrupt behavior.
-- 🎵 **SID Register Monitoring and Decoding**  
-  Tracks all writes to SID registers and decodes them into meaningful structs, enabling detailed analysis and debugging of audio interactions.
+  Aligns CPU cycles with PAL and NTSC video timings, featuring full raster beam emulation and precise bad line handling for authentic raster interrupt behavior.
+
+- 🎵 **Advanced SID Register Tracking & Decoding**  
+  Monitors all SID register writes with cycle precision, decoding changes into detailed structs (e.g., waveforms, envelopes), perfect for analyzing player routines and sound interactions.
+
 - 💾 **Program Loading Capabilities**  
-  Supports loading `.prg` files directly into memory, simplifying integration and execution of existing C64 programs and codebases.
-- 🛠 **Comprehensive Debugging Tools**  
-  Provides detailed inspection of CPU registers, flags, memory, VIC-II state, and SID registers, with single-step and full-run capabilities for precise control.
+  Loads `.prg` files directly into memory, streamlining execution and integration of C64 programs and `.sid` player codebases.
+
+- 🛠 **Powerful Debugging Tools**  
+  Offers step-by-step CPU tracing, rich state inspection (registers, flags, memory, VIC-II, SID), and SID change logging, empowering precise control and deep analysis.
+
 - 🔍 **Robust Disassembler & Instruction Metadata**  
-  Decodes 6502/6510 opcodes into human-readable mnemonics, enriched with metadata (instruction size, group, addressing mode, operand details: type, size, access), ideal for code tracing and analysis.
+  Transforms 6502/6510 opcodes into readable mnemonics with metadata (size, group, addressing mode, operand type/size/access), ideal for code tracing and reverse-engineering.
+
 - 🧪 **Testing C64 Programs with Zig**  
-  Integrates seamlessly with Zig’s powerful testing infrastructure, enabling developers to write unit tests for C64 programs and verify emulator behavior with ease.
+  Seamlessly integrates with Zig’s testing framework, enabling developers to write unit tests for C64 code and verify emulator behavior with ease.
 
 ## Quick Start Demo
 
