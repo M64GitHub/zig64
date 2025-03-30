@@ -1017,7 +1017,7 @@ defer c64.deinit(allocator);
 c64.sid.writeRegister(24, 0x0F); // Set volume to 15, no filters
 c64.sid.writeRegister(24, 0x47); // Change to volume 7, high-pass on
 if (c64.sid.last_change) |change| {
-    if (Sid.volumeChanged(change)) {
+    if (change.volumeChanged()) {
         const old_vol = Sid.FilterModeVolume.fromValue(change.old_value).volume;
         const new_vol = Sid.FilterModeVolume.fromValue(change.new_value).volume;
         std.debug.print("Volume changed from {d} to {d}!\n", .{ old_vol, new_vol });
@@ -1033,7 +1033,7 @@ defer c64.deinit(allocator);
 
 c64.sid.writeRegister(0, 0x12); // Osc1 freq lo
 if (c64.sid.last_change) |change| {
-    if (Sid.oscFreqChanged(change, 1)) {
+    if (change.oscFreqChanged(1)) {
         std.debug.print("Osc1 frequency changed: {X:02} => {X:02}!\n", 
             .{ change.old_value, change.new_value });
     }
@@ -1046,12 +1046,12 @@ Updates an oscillator 1 frequency register and detects the change.
   const stdout = std.io.getStdOut().writer();
   sid.writeRegisterCycle(0, 0x42, 50);  // Set osc1_freq_lo to 0x42 at cycle 50
   if (sid.last_change) |change| {
-      if (Sid.oscFreqChanged(1, change)) {
+      if (change.oscFreqChanged(1)) {
           try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n",
               .{ change.old_value, change.new_value });
           // Expected output: "Osc1 freq updated: 00 => 42"
       }
-      if (Sid.oscAttackDecayChanged(1, change)) {
+      if (change.oscAttackDecayChanged(1)) {
           const ad = Sid.AttackDecay.fromValue(change.new_value);
           try stdout.print("Osc1 attack/decay: A={d}, D={d}\n",
               .{ ad.attack, ad.decay });
@@ -1060,12 +1060,12 @@ Updates an oscillator 1 frequency register and detects the change.
   }
   sid.writeRegisterCycle(5, 0x53, 60);  // Set osc1_attack_decay to 0x53 at cycle 60
   if (sid.last_change) |change| {
-      if (Sid.oscFreqChanged(1, change)) {
+      if (change.oscFreqChanged(1)) {
           try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n",
               .{ change.old_value, change.new_value });
           // (No output here since it’s not a freq change)
       }
-      if (Sid.oscAttackDecayChanged(1, change)) {
+      if (change.oscAttackDecayChanged(1)) {
           const ad = Sid.AttackDecay.fromValue(change.new_value);
           try stdout.print("Osc1 attack/decay: A={d}, D={d}\n",
               .{ ad.attack, ad.decay });
@@ -1123,19 +1123,19 @@ pub fn main() !void {
             try stdout.print("SID register {s} changed!\n", .{@tagName(change.meaning)});
 
             // Check specific changes using static Sid functions
-            if (Sid.volumeChanged(change)) {
+            if (change.volumeChanged()) {
                 const old_vol = Sid.FilterModeVolume.fromValue(change.old_value).volume;
                 const new_vol = Sid.FilterModeVolume.fromValue(change.new_value).volume;
                 try stdout.print("Volume changed: {d} => {d}\n", .{ old_vol, new_vol });
             }
-            if (Sid.oscWaveformChanged(change, 1)) {
+            if (change.oscWaveformChanged(1)) {
                 const wf = Sid.WaveformControl.fromValue(change.new_value);
                 try stdout.print("Osc1 waveform updated: Pulse={}\n", .{wf.pulse});
             }
-            if (Sid.oscFreqChanged(change, 1)) {
+            if (change.oscFreqChanged(1)) {
                 try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n", .{ change.old_value, change.new_value });
             }
-            if (Sid.oscAttackDecayChanged(change, 1)) {
+            if (change.oscAttackDecayChanged(1)) {
                 const ad = Sid.AttackDecay.fromValue(change.new_value);
                 try stdout.print("Osc1 attack/decay: A={d}, D={d}\n", .{ ad.attack, ad.decay });
             }
