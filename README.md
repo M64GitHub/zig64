@@ -606,6 +606,17 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
     }
     ```
     Writes to oscillator 1’s frequency low register and checks for a change.
+  - **Example**:
+    ```zig
+    sid.dbg_enabled = true;
+    sid.writeRegister(0, 0x42); // Set osc1_freq_lo to 0x42
+    if (sid.last_change) |change| {
+        std.debug.print("{s} updated to {X:02} (was {X:02})\n",
+            .{ @tagName(change.meaning), change.new_value, change.old_value });
+        // Expected output: "osc1_freq_lo updated to 42 (was 00)"
+    }
+    ```
+    Writes to oscillator 1’s frequency low register and logs the change details, using `last_change: RegisterChange`.
 
   ```zig
   pub fn writeRegisterCycle(
@@ -626,7 +637,8 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
         // Expected output: "Cycle 100: osc1_control set to 41"
     }
     ```
-  Writes to oscillator 1’s control register with cycle info and logs the change.
+    Writes to oscillator 1’s control register with cycle info and logs the change.
+  
 
   ```zig
   pub fn volumeChanged(
