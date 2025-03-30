@@ -114,7 +114,7 @@ The sections below outline their mechanics, API, and examples to guide you in us
 **C64: Emulator Core**  
 The `C64` struct serves as the main struct, initializing components and loading `.prg` files into `Ram64k` with `loadPrg()`. It directs `Cpu` execution through `run()`, `runFrames()`, or `call()`, the latter clearing and tracking SID register changes during subroutine execution (flag `ext_sid_reg_written()`, see below).
 
-**Cpu: Execution Engine** 
+**Cpu: Execution Engine**  
 The `Cpu` drives execution by fetching instructions from `Ram64k` and stepping via `runStep()`, syncing cycles with `Vic`. It tracks `Sid` writes with `sidRegWritten()` (cleared each step) and `ext_sid_reg_written()` (persistent until manually cleared), updating register states.
 
 **Ram64k: System RAM**  
