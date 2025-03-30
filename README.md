@@ -114,22 +114,22 @@ The sections below outline their mechanics, API, and examples to guide you in us
 ### System Breakdown
 
 #### C64: System Coordinator
-The `C64` struct initializes and links the emulator’s components, loading `.prg` files into `Ram64k` and directing `Cpu` execution via `call`, `run` or `runFrames`. It acts as the entry point, managing memory and timing interactions.
+The `C64` struct initializes and links the emulator’s components, loading `.prg` files into `Ram64k` and directing `Cpu` execution via `call()`, `run()` or `runFrames()`. It acts as the entry point, managing memory and timing interactions.
 
 #### Cpu: Execution Engine
-The `Cpu` fetches and executes 6510 instructions from `Ram64k`, updating registers and tracking SID register writes through `sidRegWritten`. It syncs with `Vic` for cycle accuracy, stepping through code with `runStep`.
+The `Cpu` fetches and executes 6510 instructions from `Ram64k`, updating registers and tracking SID register writes through `sidRegWritten()`. It syncs with `Vic` for cycle accuracy, stepping through code with `runStep()`.
 
 #### Ram64k: Memory Backbone
-`Ram64k` provides a 64KB memory array, serving as the shared storage for `Cpu` instructions, `Vic` registers, and `Sid` data. It supports direct writes from `C64.loadPrg` and `Cpu.writeByte`.
+`Ram64k` provides a 64KB memory array, serving as the shared storage for `Cpu` instructions, `Vic` registers, and `Sid` data. It supports direct writes from `C64.loadPrg()` and `Cpu.writeByte()`.
 
 #### Vic: Timing Keeper
-`Vic` emulates raster timing, advancing lines with `emulateD012` and signaling sync events like vsync or bad lines to `Cpu`. It uses `model` (PAL/NTSC) to adjust cycle counts, ensuring accurate interrupt timing.
+`Vic` emulates raster timing, advancing lines with `emulateD012()` and signaling sync events like vsync or bad lines to `Cpu`. It uses `model` (PAL/NTSC) to adjust cycle counts, ensuring accurate interrupt timing.
 
 #### Sid: Register Holder
-The `Sid` struct stores register values at a configurable `base_address`, updated by `Cpu` writes. It offers `getRegisters` for inspection, with future potential for sound logic.
+The `Sid` struct stores register values at a configurable `base_address`, updated by `Cpu` writes. It offers `getRegisters()` for inspection, with future potential for sound logic.
 
 #### Asm: Instruction Decoder
-`Asm` decodes raw bytes into `Instruction` structs via `decodeInstruction`, providing metadata like addressing modes and operands. Functions like `disassembleCodeLine` format this data into readable output, aiding analysis.
+`Asm` decodes raw bytes into `Instruction` structs via `decodeInstruction()`, providing metadata like addressing modes and operands. Functions like `disassembleCodeLine()` format this data into readable output, aiding analysis.
 
 ## API Reference
 ### C64
@@ -764,14 +764,14 @@ zig build test
 ## Using zig64 In Your Project
 To add `zig64` as a dependency, use:
 ```sh
-zig fetch --save https://github.com/M64GitHub/zig64/archive/refs/tags/v0.2.0-alpha.tar.gz
+zig fetch --save https://github.com/M64GitHub/zig64/archive/refs/tags/v0.3.0-alpha.tar.gz
 ```
 This will add the dependency to your `build.zig.zon`:
 ```zig
 .dependencies = .{
     .zig64 = .{
-        .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.2.0-alpha.tar.gz",
-        .hash = "zig64-0.2.0-v6FneuiXAwDZ6n7QNBVykEJsMxkbIyfHTNqdjy_ZZ_3l",
+        .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.3.0-alpha.tar.gz",
+        .hash = "zig64-0.3.0-v6FneuzIAwDe6e7JVVAlVQVpPveNACUk5xOI-Q1mwHR-",
     },
 },
 ```
