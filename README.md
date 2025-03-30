@@ -102,7 +102,7 @@ This emulator is structured as a set of modular components, forming the foundati
 - `Cpu`: Executes 6510 instructions.
 - `Ram64k`: Manages 64KB of memory.
 - `Vic`: Controls video timing.
-- `Sid`: Serves as a (for now) register placeholder.
+- `Sid`: Holds register values and tracks register writes.
 - `Asm`: Provides assembly metadata decoding and disassembly.
 
 Each component features its own `dbg_enabled` flag—e.g., `c64.dbg_enabled` for emulator logs, `cpu.dbg_enabled` for execution details—enabling targeted debugging. The `Cpu` powers the system, running code and tracking SID register writes, while `Vic` ensures cycle-accurate timing.  
@@ -123,8 +123,12 @@ The `Cpu` drives execution by fetching instructions from `Ram64k` and stepping v
 **Vic: Video Timing / Raster Beamer**  
 `Vic` regulates timing by advancing raster lines with `emulateD012()`, notifying `Cpu` of vsync or bad line events. It adjusts `Cpu` cycle counts based on `model` (PAL/NTSC), maintaining accurate emulation timing.
 
-**Sid: Registers**  
-The `Sid` struct holds register values at `base_address`, updated by `Cpu` writes during execution. It provides `getRegisters()` for state inspection, linking `Cpu` activity to SID analysis.
+**Sid: Register Management**
+The `Sid` struct manages its register state, mapped into C64 memory at `base_address` (typically `$D400`), providing a robust interface for tracking and analyzing writes from the `Cpu`. Register updates are handled through two key functions: `writeRegister(reg: usize, val: u8)` for general-purpose writes and `writeRegisterCycle(reg: usize, val: u8, cycle: u64)` for cycle-specific tracking. Both functions maintain the internal `[25]u8` register array, accessible via `getRegisters()` for state inspection.
+
+- **Write Tracking**: Each write sets `reg_written` to the target register index and `reg_written_val` to its value, with `ext_reg_written` signaling external systems of the update (persistent until manually cleared). The `writeRegisterCycle()` function additionally records the CPU cycle of the write in `last_write_cycle`, enabling precise tracking of when the write occurred.
+- **Change Detection**: If a write alters a register’s value, `reg_changed` and `ext_reg_changed` flags are set, with detailed state (`reg_changed_idx`, `reg_changed_from`, `reg_changed_to`) recorded for debugging or hooking. Debug output, enabled via `dbg_enabled`, logs all writes and changes with register addresses (offset from `$D400`), values, and cycles (when applicable).
+- **Integration**: The `Cpu` delegates SID register writes during execution, offloading state management to `Sid`. 
 
 **Asm: Instruction Decoder**  
 `Asm` processes `Ram64k` bytes into `Instruction` structs with `decodeInstruction()`, enabling `Cpu` code analysis. Its `disassembleCodeLine()` function format this data into readable output.
