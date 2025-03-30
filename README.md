@@ -1225,7 +1225,7 @@ This will add the dependency to your `build.zig.zon`:
 .dependencies = .{
     .zig64 = .{
         .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.4.0.tar.gz",
-        .hash = "zig64-0.4.0-v6Fneth1BABnxtNJheRTBBjuuM0vx6IJyphKR13VfKbN",
+        .hash = "zig64-0.4.0-v6Fnevh-BADQQLrOWxSwFPI_uzYK_c75MpZtAyP2zosT",
     },
 },
 ```
