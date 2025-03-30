@@ -71,7 +71,6 @@ Output
 [c64] writing mem: C000 offs: 0002 data: 78
 Loaded 'example.prg' at $C000
 ...
-[EXE] Disassembling from: C000
 C000:  78        SEI
 C001:  A9 00     LDA #$00
 C003:  85 01     STA $01
