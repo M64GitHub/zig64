@@ -637,11 +637,11 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
     ```zig
     const stdout = std.io.getStdOut().writer();
     sid.writeRegisterCycle(0, 0x42, 50);  // Set osc1_freq_lo to 0x42 at cycle 50
-    if (sid.last_change) |change| {
-        if (Sid.oscFreqChanged(1, change)) {
-            try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n",
-                .{ change.old_value, change.new_value });
-            // Expected output: "Osc1 freq updated: 00 => 42"
+        if (sid.last_change) |change| {
+            if (change.oscFreqChanged(1)) {
+                try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n",
+                    .{ change.old_value, change.new_value });
+        // Expected output: "Osc1 freq updated: 00 => 42"
         }
     }
     ```
@@ -676,7 +676,7 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
     const stdout = std.io.getStdOut().writer();
     sid.writeRegisterCycle(5, 0x53, 60);  // Set osc1_attack_decay to 0x53 at cycle 60
     if (sid.last_change) |change| {
-        if (Sid.oscAttackDecayChanged(1, change)) {
+        if (change.oscAttackDecayChanged(1)) {
             const ad = Sid.AttackDecay.fromValue(change.new_value);
             try stdout.print("Osc1 attack/decay: A={d}, D={d}\n",
                 .{ ad.attack, ad.decay });
