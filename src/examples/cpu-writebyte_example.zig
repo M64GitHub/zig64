@@ -1,79 +1,69 @@
-// zig64 - loadPrg example
 const std = @import("std");
 const C64 = @import("zig64");
+const Sid = C64.Sid;
 const Asm = C64.Asm;
 
 pub fn main() !void {
-    const gpa = std.heap.page_allocator;
+    const allocator = std.heap.page_allocator;
     const stdout = std.io.getStdOut().writer();
 
-    try stdout.print("[EXE] initializing emulator\n", .{});
+    // Initialize the C64 emulator at $0800 with PAL VIC
+    var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0x0800);
+    defer c64.deinit(allocator);
 
-    var c64 = try C64.init(gpa, C64.Vic.Model.pal, 0x0800);
-    defer c64.deinit(gpa);
+    // Print initial emulator state
+    try stdout.print("CPU start address: ${X:0>4}\n", .{c64.cpu.pc});
+    try stdout.print("VIC model: {s}\n", .{@tagName(c64.vic.model)});
+    try stdout.print("SID base address: ${X:0>4}\n", .{c64.sid.base_address});
 
-    try stdout.print("[EXE] cpu init address: {X:0>4}\n", .{
-        c64.cpu.pc,
-    });
-    try stdout.print("[EXE] c64 vic type: {s}\n", .{
-        @tagName(c64.vic.model),
-    });
-    try stdout.print("[EXE] c64 sid base address: {X:0>4}\n", .{
-        c64.sid.base_address,
-    });
-    try stdout.print("[EXE] cpu status:\n", .{});
-    c64.cpu.printStatus();
+    // Write a SID register sweep program to $0800
+    try stdout.print("\nWriting SID sweep program to $0800...\n", .{});
+    c64.cpu.writeByte(Asm.lda_imm.opcode, 0x0800); // LDA #$0A     ; Load initial value 10
+    c64.cpu.writeByte(0x0A, 0x0801);
+    c64.cpu.writeByte(Asm.tax.opcode, 0x0802); // TAX          ; X = A (index for SID regs)
+    c64.cpu.writeByte(Asm.adc_imm.opcode, 0x0803); // ADC #$1E     ; Add 30 to A
+    c64.cpu.writeByte(0x1E, 0x0804);
+    c64.cpu.writeByte(Asm.sta_absx.opcode, 0x0805); // STA $D400,X  ; Store A to SID reg X
+    c64.cpu.writeByte(0x00, 0x0806);
+    c64.cpu.writeByte(0xD4, 0x0807);
+    c64.cpu.writeByte(Asm.inx.opcode, 0x0808); // INX          ; Increment X
+    c64.cpu.writeByte(Asm.cpx_imm.opcode, 0x0809); // CPX #$19     ; Compare X with 25
+    c64.cpu.writeByte(0x19, 0x080A);
+    c64.cpu.writeByte(Asm.bne.opcode, 0x080B); // BNE $0803    ; Loop back if X < 25
+    c64.cpu.writeByte(0xF6, 0x080C); // (offset -10)
+    c64.cpu.writeByte(Asm.rts.opcode, 0x080D); // RTS          ; Return
 
-    try stdout.print("\n", .{});
-
-    // -- manually write a program into memory
-
-    try stdout.print("[EXE] Writing program ...\n", .{});
-
-    // 0800: A9 0A                       LDA #$0A        ; 2
-    // 0802: AA                          TAX             ; 2
-    // 0803: 69 1E                       ADC #$1E        ; 2 loop start:
-    // 0805: 9D 00 D4                    STA $D400,X     ; 5 write sid register X
-    // 0808: E8                          INX             ; 2
-    // 0809: E0 19                       CPX #$19        ; 2
-    // 080B: D0 F6                       BNE $0803       ; 2/3 loop
-    // 080D: 60                          RTS             ; 6
-
-    c64.cpu.writeByte(Asm.lda_imm.opcode, 0x0800); //  LDA
-    c64.cpu.writeByte(0x0a, 0x0801); //                            #0A     ; 10
-    c64.cpu.writeByte(Asm.tax.opcode, 0x0802); //      TAX
-    c64.cpu.writeByte(Asm.adc_imm.opcode, 0x0803); //  ADC
-    c64.cpu.writeByte(0x1e, 0x0804); //                            #$1E
-    c64.cpu.writeByte(Asm.sta_absx.opcode, 0x0805); // STA $
-    c64.cpu.writeByte(0x00, 0x0806); //                               00
-    c64.cpu.writeByte(0xd4, 0x0807); //                             D4
-    c64.cpu.writeByte(Asm.inx.opcode, 0x0808); //      INX
-    c64.cpu.writeByte(Asm.cpx_imm.opcode, 0x0809); //  CPX
-    c64.cpu.writeByte(0x19, 0x080A); //                            #19
-    c64.cpu.writeByte(Asm.bne.opcode, 0x080B); //      BNE
-    c64.cpu.writeByte(0xf6, 0x080C); //                            $0803 (-10)
-    c64.cpu.writeByte(Asm.rts.opcode, 0x080D); //      RTS
-    c64.cpu.printStatus();
-
-    // manually execute single steps, print cpu status
-    // and check sid register modifications
-
-    try stdout.print("[EXE] Executing program ...\n", .{});
-    var sid_volume_old = c64.sid.getRegisters()[24];
+    // Enable debugging for CPU and SID
     c64.cpu.dbg_enabled = true;
-    while (c64.cpu.runStep() != 0) {
-        if (c64.cpu.sidRegWritten()) {
-            try stdout.print("[EXE] sid register written!\n", .{});
-            c64.sid.printRegisters();
+    c64.sid.dbg_enabled = true;
 
-            const sid_registers = c64.sid.getRegisters();
-            if (sid_volume_old != sid_registers[24]) {
-                try stdout.print("[EXE] sid volume changed: {X:0>2}\n", .{
-                    sid_registers[24],
-                });
-                sid_volume_old = sid_registers[24];
+    // Step through the program, analyzing SID changes
+    try stdout.print("\nExecuting SID sweep step-by-step...\n", .{});
+    while (c64.cpu.runStep() != 0) {
+        if (c64.sid.last_change) |change| {
+            try stdout.print("SID register {s} changed!\n", .{@tagName(change.meaning)});
+
+            // Check specific changes using static Sid functions
+            if (Sid.volumeChanged(change)) {
+                const old_vol = Sid.FilterModeVolume.fromValue(change.old_value).volume;
+                const new_vol = Sid.FilterModeVolume.fromValue(change.new_value).volume;
+                try stdout.print("Volume changed: {d} => {d}\n", .{ old_vol, new_vol });
+            }
+            if (Sid.oscWaveformChanged(change, 1)) {
+                const wf = Sid.WaveformControl.fromValue(change.new_value);
+                try stdout.print("Osc1 waveform updated: Pulse={}\n", .{wf.pulse});
+            }
+            if (Sid.oscFreqChanged(change, 1)) {
+                try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n", .{ change.old_value, change.new_value });
+            }
+            if (Sid.oscAttackDecayChanged(change, 1)) {
+                const ad = Sid.AttackDecay.fromValue(change.new_value);
+                try stdout.print("Osc1 attack/decay: A={d}, D={d}\n", .{ ad.attack, ad.decay });
             }
         }
     }
-    try stdout.print("\n\n", .{});
+
+    // Final SID state
+    try stdout.print("\nFinal SID registers:\n", .{});
+    c64.sid.printRegisters();
 }

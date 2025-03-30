@@ -1,4 +1,4 @@
-pub const version = "0.3.0";
+pub const version = "0.4.0";
 
 const std = @import("std");
 const stdout = std.io.getStdOut().writer();
@@ -46,7 +46,7 @@ pub fn call(c64: *C64, address: u16) void {
     c64.cpu.psToFlags();
     c64.cpu.sp = 0xFF;
 
-    c64.cpu.ext_sid_reg_written = false;
+    c64.sid.ext_reg_written = false;
     c64.cpu.pushW(0x0000);
     c64.cpu.pc = address;
     if (c64.dbg_enabled) {
@@ -55,8 +55,44 @@ pub fn call(c64: *C64, address: u16) void {
         }) catch {};
     }
     while (c64.cpu.runStep() != 0) {}
-    c64.cpu.sid_reg_written = c64.cpu.ext_sid_reg_written;
-    c64.cpu.sid_reg_changed = c64.cpu.ext_sid_reg_changed;
+    c64.sid.reg_written = c64.sid.ext_reg_written;
+    c64.sid.reg_changed = c64.sid.ext_reg_changed;
+}
+
+pub fn callSidTrace(
+    c64: *C64,
+    address: u16,
+    allocator: std.mem.Allocator,
+) ![]Sid.RegisterChange {
+    // Reset CPU state like call()
+    c64.cpu.status = 0x00;
+    c64.cpu.psToFlags();
+    c64.cpu.sp = 0xFF;
+
+    c64.sid.ext_reg_written = false;
+    c64.cpu.pushW(0x0000);
+    c64.cpu.pc = address;
+
+    if (c64.dbg_enabled) {
+        stdout.print("[c64] tracing SID from address: {X:0>4}\n", .{address}) catch {};
+    }
+
+    // ArrayList to collect RegisterChange instances
+    var changes = std.ArrayList(Sid.RegisterChange).init(allocator);
+    defer changes.deinit(); // Frees the list memory, not the items
+
+    // Run the program, collecting SID changes
+    while (c64.cpu.runStep() != 0) {
+        if (c64.sid.last_change) |change| {
+            try changes.append(change); // Add the change to the array
+        }
+    }
+
+    c64.sid.reg_written = c64.sid.ext_reg_written;
+    c64.sid.reg_changed = c64.sid.ext_reg_changed;
+
+    // Return the owned slice of changes
+    return changes.toOwnedSlice();
 }
 
 pub fn loadPrg(
@@ -138,4 +174,10 @@ pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) !u16 {
     }
     if (pc_to_loadaddr) c64.cpu.pc = load_address;
     return load_address;
+}
+
+pub fn appendSidChanges(existing_changes: *std.ArrayList(
+    Sid.RegisterChange,
+), new_changes: []Sid.RegisterChange) !void {
+    try existing_changes.appendSlice(new_changes);
 }

@@ -20,10 +20,6 @@ cycles_executed: u32,
 cycles_since_vsync: u16,
 cycles_since_hsync: u8,
 cycles_last_step: u8,
-sid_reg_changed: bool,
-sid_reg_written: bool,
-ext_sid_reg_written: bool,
-ext_sid_reg_changed: bool,
 mem: *Ram64k,
 sid: *Sid,
 vic: *Vic,
@@ -72,10 +68,6 @@ pub fn init(mem: *Ram64k, sid: *Sid, vic: *Vic, pc_start: u16) Cpu {
         .cycles_executed = 0,
         .cycles_last_step = 0,
         .opcode_last = 0x00, // No opcode executed yet
-        .sid_reg_changed = false,
-        .sid_reg_written = false,
-        .ext_sid_reg_written = false,
-        .ext_sid_reg_changed = false,
         .cycles_since_vsync = 0,
         .cycles_since_hsync = 0,
         .mem = mem,
@@ -226,20 +218,9 @@ pub fn readWordZP(cpu: *Cpu, addr: u8) u16 {
 
 pub fn writeByte(cpu: *Cpu, val: u8, addr: u16) void {
     const sid_base = cpu.sid.base_address;
+    // check sid reg writes
     if ((addr >= sid_base) and (addr <= (sid_base + 25))) {
-        cpu.sid_reg_written = true;
-        cpu.ext_sid_reg_written = true;
-        cpu.sid.registers[addr - sid_base] = val;
-        if (cpu.sid.dbg_enabled) {
-            std.debug.print(
-                "[DEBUG] Write ${X:04} = {X:02}, PC={X:04}\n",
-                .{ addr, val, cpu.pc },
-            );
-        }
-        if (cpu.mem.data[addr] != val) {
-            cpu.sid_reg_changed = true;
-            cpu.ext_sid_reg_changed = true;
-        }
+        cpu.sid.writeRegisterCycle(addr - sid_base, val, cpu.cycles_executed);
     }
     cpu.mem.data[addr] = val;
     cpu.cycles_executed +%= 1;
@@ -252,7 +233,7 @@ pub fn writeWord(cpu: *Cpu, val: u16, addr: u16) void {
 }
 
 pub fn sidRegWritten(cpu: *Cpu) bool {
-    return cpu.sid_reg_written;
+    return cpu.sid.reg_written;
 }
 
 fn flagsToPS(cpu: *Cpu) void {
@@ -625,8 +606,9 @@ fn cmpReg(cpu: *Cpu, op: u8, reg_val: u8) void {
 }
 
 pub fn runStep(cpu: *Cpu) u8 {
-    cpu.sid_reg_written = false;
-    cpu.sid_reg_changed = false;
+    cpu.sid.reg_written = false;
+    cpu.sid.reg_changed = false;
+    cpu.sid.last_change = null;
     cpu.vic.vsync_happened = false;
     cpu.vic.hsync_happened = false;
     cpu.vic.badline_happened = false;
@@ -1428,10 +1410,6 @@ pub fn runStep(cpu: *Cpu) u8 {
 
     if (cpu.vic.dbg_enabled) {
         cpu.vic.printStatus();
-    }
-
-    if (cpu.sid.dbg_enabled and cpu.sid_reg_written) {
-        cpu.sid.printRegisters();
     }
 
     // return from interrupt vector
