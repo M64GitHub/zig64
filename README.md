@@ -224,7 +224,7 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
   ```
   Executes a subroutine at the specified address, tracing all SID register changes into an array of `RegisterChange` structs with cycle information; returns the collected changes (caller must free with `allocator.free()`).
 
- - **Example**:
+  **Example**:
   ```zig
   const changes = try c64.callSidTrace(0x0800, allocator);
   defer allocator.free(changes);
@@ -242,16 +242,17 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
   ) !void
   ```
   Static function to append new SID register changes to an existing `ArrayList`, enabling aggregation of changes across multiple `callSidTrace()` runs.
-   - **Example**:
-      ```zig
-      const changes = try c64.callSidTrace(0x0800, allocator);
-      defer allocator.free(changes);
-      for (changes) |change| {
-          std.debug.print("Cycle {d}: {s} changed {X:02} => {X:02}\n",
-             .{ change.cycle, @tagName(change.meaning), change.old_value, change.new_value });
-      }
-      ```
-      Traces SID changes from a subroutine at `$0800`, printing each change with cycle and register details.
+
+  **Example**:
+  ```zig
+  const changes = try c64.callSidTrace(0x0800, allocator);
+  defer allocator.free(changes);
+  for (changes) |change| {
+      std.debug.print("Cycle {d}: {s} changed {X:02} => {X:02}\n",
+         .{ change.cycle, @tagName(change.meaning), change.old_value, change.new_value });
+   }
+  ```
+  Traces SID changes from a subroutine at `$0800`, printing each change with cycle and register details.
 
 ### Cpu
 The core component executing 6510 instructions, driving the virtual C64 system.
