@@ -109,7 +109,7 @@ Each component features its own `dbg_enabled` flag—e.g., `c64.dbg_enabled` for
 The `Asm` struct enhances this core with a powerful disassembler and metadata decoder, offering detailed instruction analysis.  
 The sections below outline their mechanics, API, and examples to guide you in using this emulator core effectively.
 
-### Component Interactions
+## Component Interactions
 
 **C64: Emulator Core**  
 The `C64` struct serves as the main struct, initializing components and loading `.prg` files into `Ram64k` with `loadPrg()`. It directs `Cpu` execution through `run()`, `runFrames()`, or `call()`, the latter clearing and tracking SID register changes during subroutine execution (flag `sid.reg_written`, see below).
