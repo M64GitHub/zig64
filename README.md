@@ -123,7 +123,7 @@ The `Cpu` drives execution by fetching instructions from `Ram64k` and stepping v
 **Vic: Video Timing / Raster Beamer**  
 `Vic` regulates timing by advancing raster lines with `emulateD012()`, notifying `Cpu` of vsync or bad line events. It adjusts `Cpu` cycle counts based on `model` (PAL/NTSC), maintaining accurate emulation timing.
 
-**Sid: Advanced Register Management**  
+**Sid: Register Management**  
 The `Sid` struct manages its register state, mapped into C64 memory at `base_address` (typically `$D400`), providing an interface for tracking and analyzing writes from the `Cpu`. Register updates are handled through two key functions: `writeRegister(reg: usize, val: u8)` for general-purpose writes and `writeRegisterCycle(reg: usize, val: u8, cycle: usize)` for additional cycle tracking. Both functions maintain the internal `[25]u8` register array, accessible via `getRegisters()` for state inspection.
 
 - **Write Tracking**: Each write sets `reg_written` to `true` and stores the target register index in `reg_written_idx` and its value in `reg_written_val`. The `ext_reg_written` flag signals external systems of the update (persistent until manually cleared, used byt the emulators `call()` function for example). The `writeRegisterCycle()` function additionally records the CPU cycle of the write in `last_write_cycle`, enabling precise tracking of when the write occurred.
