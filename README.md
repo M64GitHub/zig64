@@ -365,9 +365,9 @@ The core component executing 6510 instructions, driving the virtual C64 system.
 The memory component managing the C64’s 64KB address space.
 
 - **Fields**:
-```zig
-data: [0x10000]u8 // Array holding 64KB of memory.
-```
+  ```zig
+  data: [0x10000]u8 // Array holding 64KB of memory.
+  ```
 
 - **Functions**:
   ```zig
