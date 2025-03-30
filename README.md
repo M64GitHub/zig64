@@ -151,8 +151,9 @@ The `Asm` struct serves as a powerful tool for decoding, analyzing, and disassem
 - **Flexibility**: Supports all 6502 addressing modes and operand types, with optional second operands (e.g., for indexed modes), making it a versatile bridge between emulation and development.
 
 ## API Reference
+
 ### C64
-The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64 system.
+The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64 system, with advanced SID tracing capabilities.
 
 - **Fields**:
   ```zig
@@ -169,9 +170,9 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
       allocator: std.mem.Allocator,
       vic_model: Vic.Model,
       init_addr: u16
-  ) !*C64
+  ) !C64
   ```
-  Initializes a new heap-allocated C64 instance with default settings.
+  Initializes a new C64 instance with default settings, allocating resources as needed.
 
   ```zig
   pub fn deinit(
@@ -189,14 +190,14 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
       pc_to_loadaddr: bool
   ) !u16
   ```
-  Loads a `.prg` file into memory and returns the load address.
+  Loads a `.prg` file into `Ram64k` and returns the load address; if `pc_to_loadaddr` is true, sets the CPU’s program counter to the load address.
 
   ```zig
   pub fn run(
       c64: *C64
   ) void
   ```
-  Executes the CPU until program termination (RTS).
+  Executes the CPU continuously from the current program counter until program termination (RTS).
 
   ```zig
   pub fn call(
@@ -204,7 +205,7 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
       address: u16
   ) void
   ```
-  Calls a specific assembly subroutine, returning on RTS.
+  Calls a specific assembly subroutine at the given address, resetting CPU state, tracking SID register changes via `sid.ext_reg_written` and `sid.ext_reg_changed`, and returning on RTS.
 
   ```zig
   pub fn runFrames(
@@ -212,8 +213,24 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
       frame_count: u32
   ) u32
   ```
-  Runs the CPU for a specified number of frames, returning the number executed; frame timing adapts to PAL or NTSC VIC settings.
+  Runs the CPU for a specified number of frames, returning the number executed; frame timing adapts to PAL or NTSC VIC settings for accurate synchronization.
 
+  ```zig
+  pub fn callSidTrace(
+      c64: *C64,
+      address: u16,
+      allocator: std.mem.Allocator
+  ) ![]Sid.RegisterChange
+  ```
+  Executes a subroutine at the specified address, tracing all SID register changes into an array of `RegisterChange` structs with cycle information; returns the collected changes (caller must free with `allocator.free()`).
+
+  ```zig
+  pub fn appendSidChanges(
+      existing_changes: *std.ArrayList(Sid.RegisterChange),
+      new_changes: []Sid.RegisterChange
+  ) !void
+  ```
+  Static function to append new SID register changes to an existing `ArrayList`, enabling aggregation of changes across multiple `callSidTrace()` runs.
 
 ### Cpu
 The core component executing 6510 instructions, driving the virtual C64 system.
