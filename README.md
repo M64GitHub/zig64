@@ -683,10 +683,10 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
     ```zig
     const stdout = std.io.getStdOut().writer();
     sid.writeRegisterCycle(0, 0x42, 50);  // Set osc1_freq_lo to 0x42 at cycle 50
-        if (sid.last_change) |change| {
-            if (change.oscFreqChanged(1)) {
-                try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n",
-                    .{ change.old_value, change.new_value });
+    if (sid.last_change) |change| {
+        if (change.oscFreqChanged(1)) {
+            try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n",
+                .{ change.old_value, change.new_value });
         // Expected output: "Osc1 freq updated: 00 => 42"
         }
     }
