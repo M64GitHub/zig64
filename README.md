@@ -21,8 +21,8 @@ This project **began with a love for Commodore 64 SID music** and a desire to re
   Implements all documented MOS 6502/6510 instructions and addressing modes with exact timing and behavior, ensuring faithful program execution.
 - 🎞 **Video Synchronization**  
   Aligns CPU cycles with PAL and NTSC video timings, including full raster beam emulation and precise bad line handling for authentic raster interrupt behavior.
-- 🎵 **SID Register Monitoring**  
-  Tracks all writes to SID registers, enabling detailed analysis and debugging of audio interactions.
+- 🎵 **SID Register Monitoring and Decoding**  
+  Tracks all writes to SID registers and decodes them into meaningful structs, enabling detailed analysis and debugging of audio interactions.
 - 💾 **Program Loading Capabilities**  
   Supports loading `.prg` files directly into memory, simplifying integration and execution of existing C64 programs and codebases.
 - 🛠 **Comprehensive Debugging Tools**  
