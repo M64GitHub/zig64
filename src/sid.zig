@@ -110,10 +110,13 @@ pub const FilterModeVolume = packed struct(u8) {
         return @bitCast(val);
     }
 };
+
 pub const RegisterChange = struct {
-    meaning: RegisterMeaning,
-    old_value: u8,
-    new_value: u8,
+    cycle: usize, // CPU cycle of the change
+    meaning: RegisterMeaning, // Semantic meaning (e.g., osc1_freq_lo)
+    old_value: u8, // Previous register value
+    new_value: u8, // New register value
+
     details: union(enum) {
         waveform: WaveformControl,
         filter_res: FilterResControl,
@@ -122,7 +125,77 @@ pub const RegisterChange = struct {
         sustain_release: SustainRelease,
         raw: u8,
     },
-    cycle: usize,
+
+    // Volume change ($D418)
+    pub fn volumeChanged(self: RegisterChange) bool {
+        return self.meaning == .filter_mode_volume;
+    }
+
+    // Filter mode change ($D418 - low-pass, band-pass, high-pass, osc3_off)
+    pub fn filterModeChanged(self: RegisterChange) bool {
+        return self.meaning == .filter_mode_volume;
+    }
+
+    // Filter frequency change ($D415-$D416)
+    pub fn filterFreqChanged(self: RegisterChange) bool {
+        return self.meaning == .filter_freq_lo or
+            self.meaning == .filter_freq_hi;
+    }
+
+    // Filter resonance/routing change ($D417)
+    pub fn filterResChanged(self: RegisterChange) bool {
+        return self.meaning == .filter_res_control;
+    }
+
+    // Oscillator frequency change (osc = 1, 2, or 3)
+    pub fn oscFreqChanged(self: RegisterChange, osc: u2) bool {
+        return switch (osc) {
+            1 => self.meaning == .osc1_freq_lo or self.meaning == .osc1_freq_hi,
+            2 => self.meaning == .osc2_freq_lo or self.meaning == .osc2_freq_hi,
+            3 => self.meaning == .osc3_freq_lo or self.meaning == .osc3_freq_hi,
+            else => false, // Invalid oscillator number
+        };
+    }
+
+    // Oscillator pulse width change (osc = 1, 2, or 3)
+    pub fn oscPulseWidthChanged(self: RegisterChange, osc: u2) bool {
+        return switch (osc) {
+            1 => self.meaning == .osc1_pw_lo or self.meaning == .osc1_pw_hi,
+            2 => self.meaning == .osc2_pw_lo or self.meaning == .osc2_pw_hi,
+            3 => self.meaning == .osc3_pw_lo or self.meaning == .osc3_pw_hi,
+            else => false,
+        };
+    }
+
+    // Oscillator waveform/control change (osc = 1, 2, or 3)
+    pub fn oscWaveformChanged(self: RegisterChange, osc: u2) bool {
+        return switch (osc) {
+            1 => self.meaning == .osc1_control,
+            2 => self.meaning == .osc2_control,
+            3 => self.meaning == .osc3_control,
+            else => false,
+        };
+    }
+
+    // Oscillator attack/decay change (osc = 1, 2, or 3)
+    pub fn oscAttackDecayChanged(self: RegisterChange, osc: u2) bool {
+        return switch (osc) {
+            1 => self.meaning == .osc1_attack_decay,
+            2 => self.meaning == .osc2_attack_decay,
+            3 => self.meaning == .osc3_attack_decay,
+            else => false,
+        };
+    }
+
+    // Oscillator sustain/release change (osc = 1, 2, or 3)
+    pub fn oscSustainReleaseChanged(self: RegisterChange, osc: u2) bool {
+        return switch (osc) {
+            1 => self.meaning == .osc1_sustain_release,
+            2 => self.meaning == .osc2_sustain_release,
+            3 => self.meaning == .osc3_sustain_release,
+            else => false,
+        };
+    }
 };
 
 pub fn init(base_address: u16) Sid {
@@ -372,75 +445,4 @@ fn printChange(sid: *Sid, meaning: RegisterMeaning, val: u8) void {
             );
         },
     }
-}
-
-// Volume change ($D418)
-pub fn volumeChanged(change: RegisterChange) bool {
-    return change.meaning == .filter_mode_volume;
-}
-
-// Filter mode change ($D418 - low-pass, band-pass, high-pass, osc3_off)
-pub fn filterModeChanged(change: RegisterChange) bool {
-    return change.meaning == .filter_mode_volume;
-}
-
-// Filter frequency change ($D415-$D416)
-pub fn filterFreqChanged(change: RegisterChange) bool {
-    return change.meaning == .filter_freq_lo or
-        change.meaning == .filter_freq_hi;
-}
-
-// Filter resonance/routing change ($D417)
-pub fn filterResChanged(change: RegisterChange) bool {
-    return change.meaning == .filter_res_control;
-}
-
-// Oscillator frequency change (osc = 1, 2, or 3)
-pub fn oscFreqChanged(change: RegisterChange, osc: u2) bool {
-    return switch (osc) {
-        1 => change.meaning == .osc1_freq_lo or change.meaning == .osc1_freq_hi,
-        2 => change.meaning == .osc2_freq_lo or change.meaning == .osc2_freq_hi,
-        3 => change.meaning == .osc3_freq_lo or change.meaning == .osc3_freq_hi,
-        else => false, // Invalid oscillator number
-    };
-}
-
-// Oscillator pulse width change (osc = 1, 2, or 3)
-pub fn oscPulseWidthChanged(change: RegisterChange, osc: u2) bool {
-    return switch (osc) {
-        1 => change.meaning == .osc1_pw_lo or change.meaning == .osc1_pw_hi,
-        2 => change.meaning == .osc2_pw_lo or change.meaning == .osc2_pw_hi,
-        3 => change.meaning == .osc3_pw_lo or change.meaning == .osc3_pw_hi,
-        else => false,
-    };
-}
-
-// Oscillator waveform/control change (osc = 1, 2, or 3)
-pub fn oscWaveformChanged(change: RegisterChange, osc: u2) bool {
-    return switch (osc) {
-        1 => change.meaning == .osc1_control,
-        2 => change.meaning == .osc2_control,
-        3 => change.meaning == .osc3_control,
-        else => false,
-    };
-}
-
-// Oscillator attack/decay change (osc = 1, 2, or 3)
-pub fn oscAttackDecayChanged(change: RegisterChange, osc: u2) bool {
-    return switch (osc) {
-        1 => change.meaning == .osc1_attack_decay,
-        2 => change.meaning == .osc2_attack_decay,
-        3 => change.meaning == .osc3_attack_decay,
-        else => false,
-    };
-}
-
-// Oscillator sustain/release change (osc = 1, 2, or 3)
-pub fn oscSustainReleaseChanged(change: RegisterChange, osc: u2) bool {
-    return switch (osc) {
-        1 => change.meaning == .osc1_sustain_release,
-        2 => change.meaning == .osc2_sustain_release,
-        3 => change.meaning == .osc3_sustain_release,
-        else => false,
-    };
 }

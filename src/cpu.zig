@@ -150,7 +150,7 @@ pub fn printStatus(cpu: *Cpu) void {
     const end = @min(cpu.pc +% 3, cpu.mem.data.len);
     @memcpy(bytes[0..(end - cpu.pc)], cpu.mem.data[cpu.pc..end]);
     const insn = Asm.decodeInstruction(&bytes);
-    const disasm = Asm.disassembleInsn(&buf_disasm, cpu.pc, insn) catch
+    const disasm = Asm.disassembleInstruction(&buf_disasm, cpu.pc, insn) catch
         "???";
 
     const insn_size = Asm.getInstructionSize(insn);

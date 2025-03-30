@@ -44,19 +44,19 @@ pub fn main() !void {
             try stdout.print("SID register {s} changed!\n", .{@tagName(change.meaning)});
 
             // Check specific changes using static Sid functions
-            if (Sid.volumeChanged(change)) {
+            if (change.volumeChanged()) {
                 const old_vol = Sid.FilterModeVolume.fromValue(change.old_value).volume;
                 const new_vol = Sid.FilterModeVolume.fromValue(change.new_value).volume;
                 try stdout.print("Volume changed: {d} => {d}\n", .{ old_vol, new_vol });
             }
-            if (Sid.oscWaveformChanged(change, 1)) {
+            if (change.oscWaveformChanged(1)) {
                 const wf = Sid.WaveformControl.fromValue(change.new_value);
                 try stdout.print("Osc1 waveform updated: Pulse={}\n", .{wf.pulse});
             }
-            if (Sid.oscFreqChanged(change, 1)) {
+            if (change.oscFreqChanged(1)) {
                 try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n", .{ change.old_value, change.new_value });
             }
-            if (Sid.oscAttackDecayChanged(change, 1)) {
+            if (change.oscAttackDecayChanged(1)) {
                 const ad = Sid.AttackDecay.fromValue(change.new_value);
                 try stdout.print("Osc1 attack/decay: A={d}, D={d}\n", .{ ad.attack, ad.decay });
             }
