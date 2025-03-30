@@ -56,7 +56,7 @@ pub fn main() !void {
 
     // Load and disassemble a .prg file
     const load_address = try c64.loadPrg(allocator, "example.prg", true);
-    try stdout.print("Loaded 'example.prg' at ${X:0>4}\n\n", .{load_address});
+    try stdout.print("Loaded 'example.prg' at ${X:0>4}\n", .{load_address});
     try Asm.disassembleForward(&c64.mem.data, load_address, 10);
 
     // Run the program
@@ -69,8 +69,8 @@ Output
 [c64] loading file: 'example.prg'
 [c64] file load address: $C000
 [c64] writing mem: C000 offs: 0002 data: 78
-Loaded 'example.prg' at $C000
 ...
+Loaded 'example.prg' at $C000
 C000:  78        SEI
 C001:  A9 00     LDA #$00
 C003:  85 01     STA $01
