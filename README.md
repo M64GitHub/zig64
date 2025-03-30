@@ -583,15 +583,16 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
   ```
   Writes a value to the specified SID register, records the CPU cycle in `last_write_cycle`, updates tracking fields, sets `last_change` if altered, and logs changes if `dbg_enabled` is true.
   - **Example**:
-    ```zig
-    sid.dbg_enabled = true;
-    sid.writeRegisterCycle(4, 0x41, 100); // Set osc1_control to Pulse+Gate at cycle 100
-    if (sid.last_change) |change| {
-        std.debug.print("Cycle {d}: {s} set to {X:02}\n",
-            .{ change.cycle, @tagName(change.meaning), change.new_value });
-    }
-    ```
-    Writes to oscillator 1’s control register with cycle info and logs the change.
+  ```zig
+  sid.dbg_enabled = true;
+  sid.writeRegisterCycle(4, 0x41, 100); // Set osc1_control to Pulse+Gate at cycle 100
+  if (sid.last_change) |change| {
+      std.debug.print("Cycle {d}: {s} set to {X:02}\n",
+          .{ change.cycle, @tagName(change.meaning), change.new_value });
+      // Expected output: "Cycle 100: osc1_control set to 41"
+  }
+  ```
+  Writes to oscillator 1’s control register with cycle info and logs the change.
 
   ```zig
   pub fn volumeChanged(
