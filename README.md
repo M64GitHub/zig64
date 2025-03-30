@@ -61,7 +61,7 @@ pub fn main() !void {
 
     // Run the program
     try stdout.print("\nRunning...\n", .{});
-    try c64.run();
+    c64.run();
 }
 ```
 Output
