@@ -465,7 +465,7 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
   ```zig
   base_address: u16,       // Base memory address for SID registers (typically 0xD400)
   registers: [25]u8,       // Array of 25 SID registers
-  dbg_enabled: bool,       // Enables debug logging for SID register writes and changes
+  dbg_enabled: bool,       // Enables debug logging for SID operations
   reg_written: bool,       // True if a register write occurred in the last operation
   reg_written_idx: usize,  // Index of the last written register
   reg_written_val: u8,     // Value written to the last register
@@ -522,20 +522,50 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
   } // Decodes sustain/release envelope settings (e.g., $D406)
   ```
   ```zig
-  pub const RegisterChange = struct {
-      meaning: RegisterMeaning,    // Register that changed
-      old_value: u8,              // Value before the change
-      new_value: u8,              // Value after the change
-      details: union(enum) {      // Decoded details of the new value
+  RegisterChange = struct {
+      cycle: usize,          // CPU cycle of the change
+      meaning: RegisterMeaning, // Semantic meaning (e.g., osc1_freq_lo)
+      old_value: u8,         // Previous register value
+      new_value: u8,         // New register value
+      details: union {       // Decoded details of the change
+          none: void,
           waveform: WaveformControl,
           filter_res: FilterResControl,
           filter_mode: FilterModeVolume,
           attack_decay: AttackDecay,
           sustain_release: SustainRelease,
-          raw: u8,
       },
-  } // Captures the full context of a register change
+
+      // Volume change ($D418)
+      pub fn volumeChanged(self: RegisterChange) bool 
+          
+      // Filter mode change ($D418 - low-pass, band-pass, high-pass, osc3_off)
+      pub fn filterModeChanged(self: RegisterChange) bool 
+
+      // Filter frequency change ($D415-$D416)
+      pub fn filterFreqChanged(self: RegisterChange) bool 
+
+      // Filter resonance/routing change ($D417)
+      pub fn filterResChanged(self: RegisterChange) bool 
+
+      // Oscillator frequency change (osc = 1, 2, or 3)
+      pub fn oscFreqChanged(self: RegisterChange, osc: u2) bool 
+
+      // Oscillator pulse width change (osc = 1, 2, or 3)
+      pub fn oscPulseWidthChanged(self: RegisterChange, osc: u2) bool 
+
+      // Oscillator waveform/control change (osc = 1, 2, or 3)
+      pub fn oscWaveformChanged(self: RegisterChange, osc: u2) bool 
+
+      // Oscillator attack/decay change (osc = 1, 2, or 3)
+      pub fn oscAttackDecayChanged(self: RegisterChange, osc: u2) bool 
+
+      // Oscillator sustain/release change (osc = 1, 2, or 3)
+      pub fn oscSustainReleaseChanged(self: RegisterChange, osc: u2) bool
+  }
   ```
+  Captures details of a SID register change with methods to analyze specific updates and a union for decoded register specifics.
+
 
 - **Functions**:
   ```zig
@@ -566,7 +596,7 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
       val: u8
   ) void
   ```
-  Writes a value to the specified SID register, updates tracking fields, sets `last_change` if altered, and logs detailed changes if `dbg_enabled` is true.
+  Writes a value to a specific SID register, updating tracking flags and state (`reg_written`, `reg_written_idx`, `reg_written_val`, `ext_reg_written`, `reg_changed`, `reg_changed_idx`, `reg_changed_from`, `reg_changed_to`, `ext_reg_changed`, and `last_change` if applicable).
   - **Example**:
     ```zig
     sid.writeRegister(0, 0x42); // Set osc1_freq_lo to 0x42
@@ -585,7 +615,7 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
       cycle: usize
   ) void
   ```
-  Writes a value to the specified SID register, records the CPU cycle in `last_write_cycle`, updates tracking fields, sets `last_change` if altered, and logs changes if `dbg_enabled` is true.
+  Writes a value to the specified SID register, records the CPU cycle in `last_write_cycle`, updating tracking flags and state (`reg_written`, `reg_written_idx`, `reg_written_val`, `ext_reg_written`, `reg_changed`, `reg_changed_idx`, `reg_changed_from`, `reg_changed_to`, `ext_reg_changed`, and `last_change` if applicable).
   - **Example**:
     ```zig
     sid.dbg_enabled = true;
