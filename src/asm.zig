@@ -6,7 +6,7 @@ pub const Asm = @This();
 pub const Group = enum {
     branch, // Jumps and branches (e.g., JSR, BEQ)
     load_store, // Load/store ops (e.g., LDA, STA)
-    control, // CPU control (e.g., NOP, CLI)
+    control, // CPU control (e.g., CLC, CLI, SEI)
     math, // Arithmetic (e.g., ADC, SBC)
     logic, // Bitwise (e.g., AND, ORA)
     compare, // Comparisons (e.g., CMP, CPX)
