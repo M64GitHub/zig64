@@ -215,10 +215,6 @@ The core component executing 6510 instructions, driving the virtual C64 system.
   cycles_since_vsync: u16,   // Cycles since last vertical sync
   cycles_since_hsync: u8,    // Cycles since last horizontal sync
   cycles_last_step: u8,      // Cycles from the last step
-  sid_reg_changed: bool,     // Indicates SID register changes detected in current instructon
-  sid_reg_written: bool,     // Flags SID register writes in current instruction
-  ext_sid_reg_written: bool, // Flags SID register writes. To be manually cleared. Used for C64.call()
-  ext_sid_reg_changed: bool, // Indicates SID register changes. Manually clear.
   mem: *Ram64k,              // Pointer to the system’s 64KB memory
   sid: *Sid,                 // Pointer to the SID / registers
   vic: *Vic,                 // Pointer to the VIC timing component
@@ -391,10 +387,19 @@ The placeholder component for SID register storage.
 
 - **Fields**:
   ```zig
-  base_address: u16,   // Base memory address for SID registers (typically 0xD400)
-  registers: [25]u8,   // Array of 25 SID registers
-  dbg_enabled: bool,   // Enables debug logging for SID register values
-  ```
+  base_address: u16,       // Base memory address for SID registers (typically 0xD400)
+  registers: [25]u8,       // Array of 25 SID registers
+  dbg_enabled: bool,       // Enables debug logging for SID register writes and changes
+  reg_written: bool,       // True if a register write occurred in the last operation
+  reg_written_idx: usize,  // Index of the last written register
+  reg_written_val: u8,     // Value written to the last register
+  reg_changed: bool,       // True if a register value changed in the last write
+  reg_changed_idx: usize,  // Index of the last changed register
+  reg_changed_from: u8,    // Previous value of the last changed register
+  reg_changed_to: u8,      // New value of the last changed register
+  ext_reg_written: bool,   // Persistent flag for external systems, set on any write (cleared manually)
+  ext_reg_changed: bool,   // Persistent flag for external systems, set on any change (cleared manually)
+  last_write_cycle: usize, // CPU cycle of the last write (tracked by writeRegisterCycle)
 
 - **Functions**:
   ```zig
