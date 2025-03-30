@@ -629,6 +629,20 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
   ) bool
   ```
   Returns true if the change affects the frequency registers (`freq_lo` or `freq_hi`) of the specified oscillator (1–3).
+  - **Example**:
+    ```zig
+    const stdout = std.io.getStdOut().writer();
+    sid.writeRegisterCycle(0, 0x42, 50);  // Set osc1_freq_lo to 0x42 at cycle 50
+    if (sid.last_change) |change| {
+        if (Sid.oscFreqChanged(1, change)) {
+            try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n",
+                .{ change.old_value, change.new_value });
+            // Expected output: "Osc1 freq updated: 00 => 42"
+        }
+    }
+    ```
+    Checks if oscillator 1’s frequency changed after a register write, printing the update.
+  
 
   ```zig
   pub fn oscPulseWidthChanged(
@@ -653,6 +667,20 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
   ) bool
   ```
   Returns true if the change affects the attack/decay register of the specified oscillator (1–3).
+  - **Example**:
+    ```zig
+    const stdout = std.io.getStdOut().writer();
+    sid.writeRegisterCycle(5, 0x53, 60);  // Set osc1_attack_decay to 0x53 at cycle 60
+    if (sid.last_change) |change| {
+        if (Sid.oscAttackDecayChanged(1, change)) {
+            const ad = Sid.AttackDecay.fromValue(change.new_value);
+            try stdout.print("Osc1 attack/decay: A={d}, D={d}\n",
+                .{ ad.attack, ad.decay });
+            // Expected output: "Osc1 attack/decay: A=5, D=3"
+        }
+    }
+    ```
+    Checks if oscillator 1’s attack/decay changed, decoding and printing the new values.
 
   ```zig
   pub fn oscSustainReleaseChanged(
@@ -968,19 +996,37 @@ if (c64.sid.last_change) |change| {
 ```
 Updates an oscillator 1 frequency register and detects the change.
 
-### Analyzing Oscillator Envelope Adjustments
+### Analyzing Oscillator Frequency and Envelope Adjustments
 ```zig
-var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0xC000);
-defer c64.deinit(allocator);
-
-c64.sid.writeRegister(5, 0x53); // Osc1 attack/decay to A=5, D=3
-if (c64.sid.last_change) |change| {
-    if (Sid.oscAttackDecayChanged(change, 1)) {
-        const ad = Sid.AttackDecay.fromValue(change.new_value);
-        std.debug.print("Osc1 envelope AD changed: Attack={d}, Decay={d}!\n", 
-            .{ ad.attack, ad.decay });
-    }
-}
+  const stdout = std.io.getStdOut().writer();
+  sid.writeRegisterCycle(0, 0x42, 50);  // Set osc1_freq_lo to 0x42 at cycle 50
+  if (sid.last_change) |change| {
+      if (Sid.oscFreqChanged(1, change)) {
+          try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n",
+              .{ change.old_value, change.new_value });
+          // Expected output: "Osc1 freq updated: 00 => 42"
+      }
+      if (Sid.oscAttackDecayChanged(1, change)) {
+          const ad = Sid.AttackDecay.fromValue(change.new_value);
+          try stdout.print("Osc1 attack/decay: A={d}, D={d}\n",
+              .{ ad.attack, ad.decay });
+          // (No output here since it’s not osc1_attack_decay)
+      }
+  }
+  sid.writeRegisterCycle(5, 0x53, 60);  // Set osc1_attack_decay to 0x53 at cycle 60
+  if (sid.last_change) |change| {
+      if (Sid.oscFreqChanged(1, change)) {
+          try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n",
+              .{ change.old_value, change.new_value });
+          // (No output here since it’s not a freq change)
+      }
+      if (Sid.oscAttackDecayChanged(1, change)) {
+          const ad = Sid.AttackDecay.fromValue(change.new_value);
+          try stdout.print("Osc1 attack/decay: A={d}, D={d}\n",
+              .{ ad.attack, ad.decay });
+          // Expected output: "Osc1 attack/decay: A=5, D=3"
+      }
+  }
 ```
 Modifies an oscillator 1 attack/decay register and prints the new envelope settings.
 
