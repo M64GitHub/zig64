@@ -101,11 +101,11 @@ pub fn disassembleForward(mem: []u8, pc_start: u16, count: usize) !void {
         const end = @min(pc +% 3, mem.len);
         @memcpy(bytes[0..(end - pc)], mem[pc..end]);
 
-        const insn = Asm.decodeInstruction(&bytes);
+        const insn = decodeInstruction(&bytes);
         var obuf: [32]u8 = undefined;
-        const str = try Asm.disassembleCodeLine(&obuf, pc, insn);
+        const str = try disassembleCodeLine(&obuf, pc, insn);
         stdout.print("{s}\n", .{str}) catch {};
-        pc = pc +% Asm.getInstructionSize(insn);
+        pc = pc +% getInstructionSize(insn);
     }
 }
 
