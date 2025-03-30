@@ -407,7 +407,7 @@ The placeholder component for SID register storage.
       base_address: u16
   ) Sid
   ```
-  Initializes a new SID instance with the specified base address, zeroing all registers.
+  Initializes a new SID instance with the specified base address, zeroing all registers and resetting tracking fields.
 
   ```zig
   pub fn getRegisters(
@@ -422,6 +422,25 @@ The placeholder component for SID register storage.
   ) void
   ```
   Prints the current SID register values in hexadecimal format.
+
+  ```zig
+  pub fn writeRegister(
+      sid: *Sid,
+      reg: usize,
+      val: u8
+  ) void
+  ```
+  Writes a value to the specified SID register, updating tracking fields and logging changes if `dbg_enabled` is true.
+
+  ```zig
+  pub fn writeRegisterCycle(
+      sid: *Sid,
+      reg: usize,
+      val: u8,
+      cycle: usize
+  ) void
+  ```
+  Writes a value to the specified SID register, records the CPU cycle in `last_write_cycle`, updates tracking fields, and logs changes if `dbg_enabled` is true.
 
 ### Vic
 The video timing component synchronizing CPU cycles with C64 raster behavior.
