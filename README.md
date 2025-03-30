@@ -121,7 +121,11 @@ The `Cpu` drives execution by fetching instructions from `Ram64k` and stepping v
 `Ram64k` acts as the central memory pool, accepting writes from `C64.loadPrg()` and `Cpu.writeByte()`. It feeds instruction data to `Cpu` and register values to `Vic` and `Sid`, ensuring system-wide consistency.
 
 **Vic: Video Timing / Raster Beamer**  
-`Vic` regulates timing by advancing raster lines with `emulateD012()`, notifying `Cpu` of vsync or bad line events. It adjusts `Cpu` cycle counts based on `model` (PAL/NTSC), maintaining accurate emulation timing.
+The `Vic` struct emulates the VIC-II chip’s timing behavior, focusing on raster line advancement and CPU synchronization without generating video output. Timing is driven by the `Cpu` during instruction execution, where the number of cycles taken increments `Vic` counters. The `emulateD012()` function then advances the virtual raster beam, updating the raster line counter (`$D012`) and tracking events like vsync, hsync, and bad lines. These events adjust specific `Cpu` fields based on the `model` (PAL or NTSC), ensuring accurate timing and raster interrupt emulation.
+
+- **Raster Tracking**: Advances `rasterline` and sets flags (`vsync_happened`, `hsync_happened`, `badline_happened`, `rasterline_changed`) to reflect timing events. Vsync resets the raster line to 0, while bad lines (every 8th line at offset 3) trigger cycle adjustments.
+- **Memory Integration**: Updates `$D011` and `$D012` in `Ram64k` to mimic VIC-II register changes, supporting raster interrupt logic without rendering.
+- **Timing Precision**: Relies on CPU cycle counts (e.g., 63 cycles per PAL raster line, 40 cycles stolen on bad lines) to align execution. On bad lines, `Vic` updates `cpu.cycles_executed`, `cpu.cycles_last_step`, `cpu.cycles_since_hsync`, and `cpu.cycles_since_vsync` by adding stolen cycles.
 
 **Sid: Register Management**  
 The `Sid` struct manages its register state, mapped into C64 memory at `base_address` (typically `$D400`), providing an interface for tracking and analyzing writes from the `Cpu`. Register updates are handled through two key functions: `writeRegister(reg: usize, val: u8)` for general-purpose writes and `writeRegisterCycle(reg: usize, val: u8, cycle: usize)` for additional cycle tracking. Both functions maintain the internal `[25]u8` register array, accessible via `getRegisters()` for state inspection.
