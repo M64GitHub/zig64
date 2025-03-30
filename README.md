@@ -16,6 +16,22 @@ This project **began with a love for Commodore 64 SID music** and a desire to re
 
 
 
+
+# Commodore 64 MOS 6510 Emulator Core
+
+![Tests](https://github.com/M64GitHub/flagZ/actions/workflows/test.yml/badge.svg)
+![License](https://img.shields.io/badge/license-MIT-brightgreen?style=flat)
+![Version](https://img.shields.io/badge/version-0.3.0-8a2be2?style=flat)
+![Zig](https://img.shields.io/badge/Zig-0.14.0-orange?style=flat)
+
+A **Commodore 64 MOS 6510 emulator core** implemented in **Zig**, engineered for precision, flexibility, and seamless integration into C64-focused projects. This emulator delivers cycle-accurate CPU execution, detailed raster beam emulation for PAL and NTSC video synchronization, and advanced SID register tracking with change decoding, making it an ideal foundation for C64 software analysis, dissecting SID player routines, analyzing register manipulations, and debugging.
+
+Built as the **computational backbone** of a virtual C64 system, it powers a range of applications—from tracing and debugging 6510 assembly with rich CPU state insights to dissecting SID register manipulations for tools like 🎧 [zigreSID](https://github.com/M64GitHub/zigreSID). Leveraging Zig’s modern features, it offers a clean, extensible platform with enhanced debugging capabilities, including step-by-step CPU traces and detailed SID change analysis.
+
+This project **sparked from a passion for Commodore 64 SID music**, aiming to recreate and elevate that experience across platforms. As a musician tweaking SID tunes via `.sid` files—archives embedding 6510 assembly for player routines—I needed a core to execute these, trace SID register changes with cycle precision, to enable custom sound tools. That vision grew into this emulator, blending nostalgia with cutting-edge emulation tech.
+
+**A key goal** is to **lower the barriers** to C64 emulation, offering an accessible entry point for developers and enthusiasts alike. With intuitive Zig tooling, robust CPU debugging, and SID state tracking, it simplifies analyzing intricate C64 programs, decoding SID behavior, and testing software—empowering users to explore, experiment, and create with ease.
+
 ## 🚀 Key Features
 - 🎮 **Cycle-Accurate 6510 CPU Emulation**  
   Implements all documented MOS 6502/6510 instructions and addressing modes with exact timing and behavior, ensuring faithful program execution.
