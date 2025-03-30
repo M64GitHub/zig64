@@ -115,7 +115,13 @@ The sections below outline their mechanics, API, and examples to guide you in us
 The `C64` struct serves as the main struct, initializing components and loading `.prg` files into `Ram64k` with `loadPrg()`. It directs `Cpu` execution through `run()`, `runFrames()`, or `call()`, the latter clearing and tracking SID register changes during subroutine execution (flag `sid.reg_written`, see below).
 
 **Cpu: Execution Engine**  
-The `Cpu` drives execution by fetching instructions from `Ram64k` and stepping via `runStep()`, syncing cycles with `Vic`. It tracks `Sid` writes with `sidRegWritten()` (cleared each step), when setting them via `sid.writeRegister()`.
+The `Cpu` struct drives the emulator as the 6502 execution core, fetching instructions from `Ram64k` and stepping through them with `runStep()`. It orchestrates cycle-accurate execution, managing registers (`pc`, `a`, `x`, `y`, `sp`), status flags, and memory operations while coordinating with `Vic` for timing and `Sid` for register writes. Integrated with `Asm`, it leverages decoded `Instruction` metadata to execute opcodes and supports debugging with detailed trace output.
+
+- **Execution Flow**: `runStep()` fetches each opcode, executes it (e.g., `LDA`, `AND`, `JMP`), and updates cycle counters (`cycles_executed`, `cycles_last_step`). It resets tracking flags for `Sid` and `Vic` per step, ensuring fresh state tracking.
+- **Memory & I/O**: Reads and writes via `readByte()` and `writeByte()`, routing SID register updates to `sid.writeRegisterCycle()` for addresses `$D400`–`$D419`. Cycle counts increment with each operation, reflecting 6502 timing.
+- **Timing Sync**: Tracks cycles since vsync/hsync (`cycles_since_vsync`, `cycles_since_hsync`) and delegates raster beam emulation to `Vic.emulateD012()`, which adjusts these counters for events like bad lines.
+- **Debugging**: When `dbg_enabled` is true, `printStatus()` and `printTrace()` provide snapshots of registers, flags, and disassembled instructions (via `Asm`), making execution transparent.
+- **Flexibility**: Supports resets (`reset()`, `hardReset()`), manual memory writes (`writeMem()`), and stack operations (`pushW()`, `popW()`), offering full control for emulation and testing.
 
 **Ram64k: System RAM**  
 `Ram64k` acts as the central memory pool, accepting writes from `C64.loadPrg()` and `Cpu.writeByte()`. It feeds instruction data to `Cpu` and register values to `Vic` and `Sid`, ensuring system-wide consistency.
