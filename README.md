@@ -806,7 +806,7 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
 
 ## Example Code
 
-Below are practical examples to demonstrate using the zig64 emulator core. Starting with short snippets for specific tasks, followed by a complete example of manually programming and stepping through a routine.
+Below are practical examples to demonstrate using the zig64 emulator core. Starting with short snippets for specific tasks, followed by examples showcasing SID register analysis and a complete example of manually programming and stepping through a routine.
 
 ### Single-Step CPU Execution
 ```zig
@@ -818,6 +818,15 @@ std.debug.print("Executed one step, took {} cycles\n", .{cycles});
 ```
 Runs a single CPU instruction and prints the cycle count.
 
+### Disassembling a Memory Range
+```zig
+var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0xC000);
+defer c64.deinit(allocator);
+
+try C64.Asm.disassembleForward(&c64.mem.data, 0xC000, 5);
+```
+Disassembles five instructions starting at address `$C000`.
+
 ### Reading SID Registers
 ```zig
 var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0x0000);
@@ -828,14 +837,53 @@ std.debug.print("SID register 0: {X:0>2}\n", .{regs[0]});
 ```
 Retrieves and prints the first SID register value.
 
-### Disassembling a Memory Range
+### Detecting SID Volume Changes
 ```zig
 var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0xC000);
 defer c64.deinit(allocator);
 
-try C64.Asm.disassembleForward(&c64.mem.data, 0xC000, 5);
+c64.sid.writeRegister(24, 0x0F); // Set volume to 15, no filters
+c64.sid.writeRegister(24, 0x47); // Change to volume 7, high-pass on
+if (c64.sid.last_change) |change| {
+    if (c64.sid.volumeChanged(change)) {
+        const old_vol = c64.sid.FilterModeVolume.fromValue(change.old_value).volume;
+        const new_vol = c64.sid.FilterModeVolume.fromValue(change.new_value).volume;
+        std.debug.print("Volume changed from {d} to {d}!\n", .{ old_vol, new_vol });
+    }
+}
 ```
-Disassembles five instructions starting at address `$C000`.
+Writes to the SID volume/filter register and checks for volume changes, printing the old and new values.
+
+### Monitoring Oscillator Frequency Updates
+```zig
+var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0xC000);
+defer c64.deinit(allocator);
+
+c64.sid.writeRegister(0, 0x12); // Osc1 freq lo
+if (c64.sid.last_change) |change| {
+    if (c64.sid.oscFreqChanged(change, 1)) {
+        std.debug.print("Osc1 frequency changed: {X:02} => {X:02}!\n", 
+            .{ change.old_value, change.new_value });
+    }
+}
+```
+Updates an oscillator 1 frequency register and detects the change.
+
+### Analyzing Oscillator Envelope Adjustments
+```zig
+var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0xC000);
+defer c64.deinit(allocator);
+
+c64.sid.writeRegister(5, 0x53); // Osc1 attack/decay to A=5, D=3
+if (c64.sid.last_change) |change| {
+    if (c64.sid.oscAttackDecayChanged(change, 1)) {
+        const ad = c64.sid.AttackDecay.fromValue(change.new_value);
+        std.debug.print("Osc1 envelope AD changed: Attack={d}, Decay={d}!\n", 
+            .{ ad.attack, ad.decay });
+    }
+}
+```
+Modifies an oscillator 1 attack/decay register and prints the new envelope settings.
 
 ### Full Example: Programming and Stepping a SID Routine
 ```zig
