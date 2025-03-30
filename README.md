@@ -895,7 +895,7 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
     ```
 
   ```zig
-  pub fn disassembleInsn(
+  pub fn disassembleInstruction(
       buffer: []u8,
       pc: u16,
       insn: Instruction
@@ -903,13 +903,12 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
   ```
   Converts an instruction into a human-readable string (e.g., `"LDA #$10"`).
   - **Example**:
-    ```zig
-    const mem = [_]u8{ 0xA9, 0x42, 0x8D, 0x00, 0xD4 }; // LDA #$42, STA $D400
-    try Asm.disassembleForward(&mem, 0x0800, 2);
-    // Prints:
-    // 0800: A9 42     LDA #$42
-    // 0802: 8D 00 D4  STA $D400
-    ```
+  ```zig
+  var buffer: [32]u8 = undefined;
+  const insn = Asm.decodeInstruction(&[_]u8{ 0xA9, 0x10 }); // LDA #$10
+  const disasm = try Asm.disassembleInstruction(&buffer, 0x0800, insn);
+  std.debug.print("{s}\n", .{disasm}); // Prints: "LDA #$10"
+  ```
 
   ```zig
   pub fn disassembleCodeLine(
