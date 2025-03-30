@@ -134,11 +134,13 @@ The `Sid` struct stores register values at a configurable `base_address`, update
 The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64 system.
 
 - **Fields**:
-  - `cpu: Cpu` - The 6510 CPU instance.
-  - `mem: Ram64k` - 64KB memory.
-  - `vic: Vic` - Video timing component.
-  - `sid: Sid` - SID register tracker.
-  - `dbg_enabled: bool` - Enables debug logging for the emulator.
+  ```zig
+  cpu: Cpu,          // The 6510 CPU instance
+  mem: Ram64k,       // 64KB memory
+  vic: Vic,          // Video Timing / Raster Beamer
+  sid: Sid,          // SID registers
+  dbg_enabled: bool, // Enables debug logging for the emulator
+  ```
 
 - **Functions**:
   ```zig
@@ -196,27 +198,29 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
 The core component executing 6510 instructions, driving the virtual C64 system.
 
 - **Fields**:
-  - `pc: u16` - Program counter.
-  - `sp: u8` - Stack pointer.
-  - `a: u8` - Accumulator register.
-  - `x: u8` - X index register.
-  - `y: u8` - Y index register.
-  - `status: u8` - Status register (raw byte).
-  - `flags: CpuFlags` - Structured status flags (e.g., carry, zero).
-  - `opcode_last: u8` - Last executed opcode.
-  - `cycles_executed: u32` - Total cycles run.
-  - `cycles_since_vsync: u16` - Cycles since last vertical sync.
-  - `cycles_since_hsync: u8` - Cycles since last horizontal sync.
-  - `cycles_last_step: u8` - Cycles from the last step.
-  - `sid_reg_changed: bool` - Indicates SID register changes detected in current instructon.
-  - `sid_reg_written: bool` - Flags SID register writes in current instruction.
-  - `ext_sid_reg_written: bool` - Flags SID register writes. To be manually cleared. Used for C64.call().
-  - `ext_sid_reg_changed: bool` - Indicates SID register changes. Manually clear.
-  - `mem: *Ram64k` - Pointer to the system’s 64KB memory.
-  - `sid: *Sid` - Pointer to the SID / registers.
-  - `vic: *Vic` - Pointer to the VIC timing component.
-  - `dbg_enabled: bool` - Enables debug logging for CPU execution.
-
+  ```zig
+  pc: u16,                   // Program counter
+  sp: u8,                    // Stack pointer
+  a: u8,                     // Accumulator register
+  x: u8,                     // X index register
+  y: u8,                     // Y index register
+  status: u8,                // Status register (raw byte)
+  flags: CpuFlags,           // Structured status flags (e.g., carry, zero)
+  opcode_last: u8,           // Last executed opcode
+  cycles_executed: u32,      // Total cycles run
+  cycles_since_vsync: u16,   // Cycles since last vertical sync
+  cycles_since_hsync: u8,    // Cycles since last horizontal sync
+  cycles_last_step: u8,      // Cycles from the last step
+  sid_reg_changed: bool,     // Indicates SID register changes detected in current instructon
+  sid_reg_written: bool,     // Flags SID register writes in current instruction
+  ext_sid_reg_written: bool, // Flags SID register writes. To be manually cleared. Used for C64.call()
+  ext_sid_reg_changed: bool, // Indicates SID register changes. Manually clear.
+  mem: *Ram64k,              // Pointer to the system’s 64KB memory
+  sid: *Sid,                 // Pointer to the SID / registers
+  vic: *Vic,                 // Pointer to the VIC timing component
+  dbg_enabled: bool,         // Enables debug logging for CPU execution
+  ```
+  
 - **Types**:
   ```zig
   CpuFlags = struct {
@@ -361,7 +365,9 @@ The core component executing 6510 instructions, driving the virtual C64 system.
 The memory component managing the C64’s 64KB address space.
 
 - **Fields**:
-  - `data: [0x10000]u8` - Array holding 64KB of memory.
+```zig
+data: [0x10000]u8 // Array holding 64KB of memory.
+```
 
 - **Functions**:
   ```zig
@@ -380,9 +386,11 @@ The memory component managing the C64’s 64KB address space.
 The placeholder component for SID register storage.
 
 - **Fields**:
-  - `base_address: u16` - Base memory address for SID registers (typically `0xD400`).
-  - `registers: [25]u8` - Array of 25 SID registers.
-  - `dbg_enabled: bool` - Enables debug logging for SID register values.
+  ```zig
+  base_address: u16,   // Base memory address for SID registers (typically 0xD400)
+  registers: [25]u8,   // Array of 25 SID registers
+  dbg_enabled: bool,   // Enables debug logging for SID register values
+  ```
 
 - **Functions**:
   ```zig
@@ -410,16 +418,18 @@ The placeholder component for SID register storage.
 The video timing component synchronizing CPU cycles with C64 raster behavior.
 
 - **Fields**:
-  - `model: Model` - VIC model (PAL or NTSC).
-  - `vsync_happened: bool` - Flags vertical sync occurrence.
-  - `hsync_happened: bool` - Flags horizontal sync occurrence.
-  - `badline_happened: bool` - Indicates a bad line event.
-  - `rasterline_changed: bool` - Marks raster line updates.
-  - `rasterline: u16` - Current raster line number.
-  - `frame_ctr: usize` - Frame counter.
-  - `mem: *Ram64k` - Pointer to the system’s 64KB memory.
-  - `cpu: *Cpu` - Pointer to the CPU instance (to update cycle counters).
-  - `dbg_enabled: bool` - Enables debug logging for VIC timing.
+  ```zig
+  model: Model,             // VIC model (PAL or NTSC)
+  vsync_happened: bool,     // Flags vertical sync occurrence
+  hsync_happened: bool,     // Flags horizontal sync occurrence
+  badline_happened: bool,   // Indicates a bad line event
+  rasterline_changed: bool, // Marks raster line updates
+  rasterline: u16,          // Current raster line number
+  frame_ctr: usize,         // Frame counter
+  mem: *Ram64k,             // Pointer to the system’s 64KB memory
+  cpu: *Cpu,                // Pointer to the CPU instance (to update cycle counters)
+  dbg_enabled: bool,        // Enables debug logging for VIC timing
+  ```
 
 - **Types**:
   ```zig
