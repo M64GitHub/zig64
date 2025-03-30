@@ -885,92 +885,127 @@ if (c64.sid.last_change) |change| {
 ```
 Modifies an oscillator 1 attack/decay register and prints the new envelope settings.
 
-### Full Example: Programming and Stepping a SID Routine
+### Manually Programming and Stepping a SID Sweep Routine
 ```zig
 const std = @import("std");
 const C64 = @import("zig64");
+const Sid = C64.Sid;
 const Asm = C64.Asm;
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
     const stdout = std.io.getStdOut().writer();
 
-    // Initialize the C64 emulator
+    // Initialize the C64 emulator at $0800 with PAL VIC
     var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0x0800);
     defer c64.deinit(allocator);
 
     // Print initial emulator state
-    try stdout.print("CPU init address: ${X:0>4}\n", .{c64.cpu.pc});
-    try stdout.print("VIC type: {s}\n", .{@tagName(c64.vic.model)});
+    try stdout.print("CPU start address: ${X:0>4}\n", .{c64.cpu.pc});
+    try stdout.print("VIC model: {s}\n", .{@tagName(c64.vic.model)});
     try stdout.print("SID base address: ${X:0>4}\n", .{c64.sid.base_address});
 
-    // Write a small program to memory (SID register sweep)
-    try stdout.print("\nWriting program to $0800...\n", .{});
-    c64.cpu.writeByte(Asm.lda_imm.opcode, 0x0800);    // LDA #$0A
+    // Write a SID register sweep program to $0800
+    try stdout.print("\nWriting SID sweep program to $0800...\n", .{});
+    c64.cpu.writeByte(Asm.lda_imm.opcode, 0x0800); // LDA #$0A     ; Load initial value 10
     c64.cpu.writeByte(0x0A, 0x0801);
-    c64.cpu.writeByte(Asm.tax.opcode, 0x0802);        // TAX
-    c64.cpu.writeByte(Asm.adc_imm.opcode, 0x0803);    // ADC #$1E
+    c64.cpu.writeByte(Asm.tax.opcode, 0x0802); // TAX          ; X = A (index for SID regs)
+    c64.cpu.writeByte(Asm.adc_imm.opcode, 0x0803); // ADC #$1E     ; Add 30 to A
     c64.cpu.writeByte(0x1E, 0x0804);
-    c64.cpu.writeByte(Asm.sta_absx.opcode, 0x0805);   // STA $D400,X
+    c64.cpu.writeByte(Asm.sta_absx.opcode, 0x0805); // STA $D400,X  ; Store A to SID reg X
     c64.cpu.writeByte(0x00, 0x0806);
     c64.cpu.writeByte(0xD4, 0x0807);
-    c64.cpu.writeByte(Asm.inx.opcode, 0x0808);        // INX
-    c64.cpu.writeByte(Asm.cpx_imm.opcode, 0x0809);    // CPX #$19
+    c64.cpu.writeByte(Asm.inx.opcode, 0x0808); // INX          ; Increment X
+    c64.cpu.writeByte(Asm.cpx_imm.opcode, 0x0809); // CPX #$19     ; Compare X with 25
     c64.cpu.writeByte(0x19, 0x080A);
-    c64.cpu.writeByte(Asm.bne.opcode, 0x080B);        // BNE $0803
-    c64.cpu.writeByte(0xF6, 0x080C);
-    c64.cpu.writeByte(Asm.rts.opcode, 0x080D);        // RTS
+    c64.cpu.writeByte(Asm.bne.opcode, 0x080B); // BNE $0803    ; Loop back if X < 25
+    c64.cpu.writeByte(0xF6, 0x080C); // (offset -10)
+    c64.cpu.writeByte(Asm.rts.opcode, 0x080D); // RTS          ; Return
 
-    // Step through the program, monitoring SID changes
-    try stdout.print("\nExecuting program step-by-step...\n", .{});
+    // Enable debugging for CPU and SID
     c64.cpu.dbg_enabled = true;
-    var sid_volume_old = c64.sid.getRegisters()[24];
+    c64.sid.dbg_enabled = true;
+
+    // Step through the program, analyzing SID changes
+    try stdout.print("\nExecuting SID sweep step-by-step...\n", .{});
     while (c64.cpu.runStep() != 0) {
-        if (c64.cpu.sidRegWritten()) {
-            try stdout.print("SID register written!\n", .{});
-            c64.sid.printRegisters();
-            const sid_volume = c64.sid.getRegisters()[24];
-            if (sid_volume_old != sid_volume) {
-                try stdout.print("SID volume changed: ${X:0>2}\n", .{sid_volume});
-                sid_volume_old = sid_volume;
+        if (c64.sid.last_change) |change| {
+            try stdout.print("SID register {s} changed!\n", .{@tagName(change.meaning)});
+
+            // Check specific changes using static Sid functions
+            if (Sid.volumeChanged(change)) {
+                const old_vol = Sid.FilterModeVolume.fromValue(change.old_value).volume;
+                const new_vol = Sid.FilterModeVolume.fromValue(change.new_value).volume;
+                try stdout.print("Volume changed: {d} => {d}\n", .{ old_vol, new_vol });
+            }
+            if (Sid.oscWaveformChanged(change, 1)) {
+                const wf = Sid.WaveformControl.fromValue(change.new_value);
+                try stdout.print("Osc1 waveform updated: Pulse={}\n", .{wf.pulse});
+            }
+            if (Sid.oscFreqChanged(change, 1)) {
+                try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n", .{ change.old_value, change.new_value });
+            }
+            if (Sid.oscAttackDecayChanged(change, 1)) {
+                const ad = Sid.AttackDecay.fromValue(change.new_value);
+                try stdout.print("Osc1 attack/decay: A={d}, D={d}\n", .{ ad.attack, ad.decay });
             }
         }
     }
+
+    // Final SID state
+    try stdout.print("\nFinal SID registers:\n", .{});
+    c64.sid.printRegisters();
 }
 ```
-Manually writes a program to sweep SID registers, executes it step-by-step, and monitors volume changes.
+This program writes a small routine to sweep through SID registers `$D400`–`$D418`, incrementing a value and storing it with an index. It runs step-by-step, using `last_change` and utility functions to detect and analyze specific SID updates (e.g., volume, oscillator 1 frequency, waveform, envelope).
 
 Output:
 ```
-[EXE] Executing program ...
+CPU start address: $0800
+VIC model: pal
+SID base address: $D400
+Writing SID sweep program to $0800...
+Executing SID sweep step-by-step...
 [cpu] PC: 0800 | A9 0A    | LDA #$0A     | A: 00 | X: 00 | Y: 00 | SP: FF | Cycl: 00 | Cycl-TT: 14 | FL: 00100100
 [cpu] PC: 0802 | AA       | TAX          | A: 0A | X: 00 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 16 | FL: 00100100
 [cpu] PC: 0803 | 69 1E    | ADC #$1E     | A: 0A | X: 0A | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 18 | FL: 00100100
 [cpu] PC: 0805 | 9D 00 D4 | STA $D400,X  | A: 28 | X: 0A | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 20 | FL: 00100100
-[EXE] sid register written!
-[sid] registers: 00 00 00 00 00 00 00 00 00 00 28 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+[sid] reg changed: D40A : 00 => 28
+[sid] osc2_pw_hi changed: D40A : 00 => 28
+SID register osc2_pw_hi changed!
 [cpu] PC: 0808 | E8       | INX          | A: 28 | X: 0A | Y: 00 | SP: FF | Cycl: 04 | Cycl-TT: 24 | FL: 00100100
 [cpu] PC: 0809 | E0 19    | CPX #$19     | A: 28 | X: 0B | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 26 | FL: 00100100
 [cpu] PC: 080B | D0 F6    | BNE $0803    | A: 28 | X: 0B | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 28 | FL: 10100100
 [cpu] PC: 0803 | 69 1E    | ADC #$1E     | A: 28 | X: 0B | Y: 00 | SP: FF | Cycl: 03 | Cycl-TT: 31 | FL: 10100100
 [cpu] PC: 0805 | 9D 00 D4 | STA $D400,X  | A: 46 | X: 0B | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 33 | FL: 00100100
-[EXE] sid register written!
-[sid] registers: 00 00 00 00 00 00 00 00 00 00 28 46 00 00 00 00 00 00 00 00 00 00 00 00 00
+[sid] reg changed: D40B : 00 => 46
+[sid] osc2_control changed: D40B : 00 => 46 (Gate: false, Sync: true, Ring: true, Test: false, Tri: false, Saw: false, Pulse: true, Noise: false)
+SID register osc2_control changed!
+[cpu] PC: 0808 | E8       | INX          | A: 46 | X: 0B | Y: 00 | SP: FF | Cycl: 04 | Cycl-TT: 37 | FL: 00100100
+[cpu] PC: 0809 | E0 19    | CPX #$19     | A: 46 | X: 0C | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 39 | FL: 00100100
+[cpu] PC: 080B | D0 F6    | BNE $0803    | A: 46 | X: 0C | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 41 | FL: 10100100
+[cpu] PC: 0803 | 69 1E    | ADC #$1E     | A: 46 | X: 0C | Y: 00 | SP: FF | Cycl: 03 | Cycl-TT: 44 | FL: 10100100
+[cpu] PC: 0805 | 9D 00 D4 | STA $D400,X  | A: 64 | X: 0C | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 46 | FL: 00100100
+[sid] reg changed: D40C : 00 => 64
+[sid] osc2_attack_decay changed: D40C : 00 => 64 (Attack: 6, Decay: 4)
+SID register osc2_attack_decay changed!
 ...
-[sid] registers: 00 00 00 00 00 00 00 00 00 00 28 46 64 82 A0 BE DC FA 18 36 54 72 90 AE 00 
 [cpu] PC: 0808 | E8       | INX          | A: AE | X: 17 | Y: 00 | SP: FF | Cycl: 04 | Cycl-TT: 193 | FL: 10100100
 [cpu] PC: 0809 | E0 19    | CPX #$19     | A: AE | X: 18 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 195 | FL: 00100100
 [cpu] PC: 080B | D0 F6    | BNE $0803    | A: AE | X: 18 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 197 | FL: 10100100
 [cpu] PC: 0803 | 69 1E    | ADC #$1E     | A: AE | X: 18 | Y: 00 | SP: FF | Cycl: 03 | Cycl-TT: 200 | FL: 10100100
 [cpu] PC: 0805 | 9D 00 D4 | STA $D400,X  | A: CC | X: 18 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 202 | FL: 10100100
-[EXE] sid register written!
-[sid] registers: 00 00 00 00 00 00 00 00 00 00 28 46 64 82 A0 BE DC FA 18 36 54 72 90 AE CC 
-[EXE] sid volume changed: CC
+[sid] reg changed: D418 : 00 => CC
+[sid] filter_mode_volume changed: D418 : 00 => CC (Vol: 12, LP: false, BP: false, HP: true, Osc3 Off: true)
+SID register filter_mode_volume changed!
+Volume changed: 0 => 12
 [cpu] PC: 0808 | E8       | INX          | A: CC | X: 18 | Y: 00 | SP: FF | Cycl: 44 | Cycl-TT: 246 | FL: 10100100
 [cpu] PC: 0809 | E0 19    | CPX #$19     | A: CC | X: 19 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 248 | FL: 00100100
 [cpu] PC: 080B | D0 F6    | BNE $0803    | A: CC | X: 19 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 250 | FL: 00100111
 [cpu] PC: 080D | 60       | RTS          | A: CC | X: 19 | Y: 00 | SP: FF | Cycl: 02 | Cycl-TT: 252 | FL: 00100111
 [cpu] RTS EXIT!
+Final SID registers:
+[sid] registers: 00 00 00 00 00 00 00 00 00 00 28 46 64 82 A0 BE DC FA 18 36 54 72 90 AE CC 
 ```
 
 ## Building the Project
