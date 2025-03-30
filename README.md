@@ -339,6 +339,12 @@ The core component executing 6510 instructions, driving the virtual C64 system.
   ) void
   ```
   Writes a byte slice to memory starting at the specified address.
+  - **Example**:
+    ```zig
+    const code = [_]u8{ 0xA9, 0x42, 0x8D, 0x00, 0xD4 }; // LDA #$42, STA $D400
+    cpu.writeMem(&code, 0x0800);
+    ```
+    Loads a simple SID register write (osc1_freq_lo = 0x42) into memory at `$0800`.
 
   ```zig
   pub fn printStatus(
@@ -416,6 +422,14 @@ The core component executing 6510 instructions, driving the virtual C64 system.
   ) u8
   ```
   Executes one CPU instruction, returning the number of cycles taken. The main execution function.
+  - **Example**:
+    ```zig
+    cpu.dbg_enabled = true;
+    while (cpu.runStep() != 0) {
+        cpu.printTrace(); // Logs each step’s instruction and state
+    }
+    ```
+    Runs the CPU step-by-step, printing a trace of each instruction executed.
 
 ### Ram64k
 The memory component managing the C64’s 64KB address space.
