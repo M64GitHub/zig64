@@ -854,13 +854,13 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
   ```
   Disassembles and prints `count` instructions from memory starting at `pc_start`.
   - **Example**:
-  ```zig
-  const mem = [_]u8{ 0xA9, 0x42, 0x8D, 0x00, 0xD4 }; // LDA #$42, STA $D400
-  try Asm.disassembleForward(&mem, 0x0800, 2);
-  // Prints:
-  // 0800:  A9 42      LDA #$42
-  // 0802:  8D 00 D4   STA $D400
-  ```
+    ```zig
+    const mem = [_]u8{ 0xA9, 0x42, 0x8D, 0x00, 0xD4 }; // LDA #$42, STA $D400
+    try Asm.disassembleForward(&mem, 0x0800, 2);
+    // Prints:
+    // 0800:  A9 42      LDA #$42
+    // 0802:  8D 00 D4   STA $D400
+    ```
 
   ```zig
   pub fn disassembleInsn(
@@ -871,13 +871,13 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
   ```
   Converts an instruction into a human-readable string (e.g., `"LDA #$10"`).
   - **Example**:
-  ```zig
-  const mem = [_]u8{ 0xA9, 0x42, 0x8D, 0x00, 0xD4 }; // LDA #$42, STA $D400
-  try Asm.disassembleForward(&mem, 0x0800, 2);
-  // Prints:
-  // 0800: A9 42     LDA #$42
-  // 0802: 8D 00 D4  STA $D400
-  ```
+    ```zig
+    const mem = [_]u8{ 0xA9, 0x42, 0x8D, 0x00, 0xD4 }; // LDA #$42, STA $D400
+    try Asm.disassembleForward(&mem, 0x0800, 2);
+    // Prints:
+    // 0800: A9 42     LDA #$42
+    // 0802: 8D 00 D4  STA $D400
+    ```
 
   ```zig
   pub fn disassembleCodeLine(
@@ -895,13 +895,13 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
   ```
   Decodes a byte slice into an `Instruction` struct with metadata.
   - **Example**:
-  ```zig
-  const bytes = [_]u8{ 0x8D, 0x00, 0xD4 }; // STA $D400
-  const insn = Asm.decodeInstruction(&bytes);
-  std.debug.print("{s} addr_mode: {s}\n",
-      .{ insn.mnemonic, @tagName(insn.addr_mode) });
-  // Prints: "STA addr_mode: absolute"
-  ```
+    ```zig
+    const bytes = [_]u8{ 0x8D, 0x00, 0xD4 }; // STA $D400
+    const insn = Asm.decodeInstruction(&bytes);
+    std.debug.print("{s} addr_mode: {s}\n",
+        .{ insn.mnemonic, @tagName(insn.addr_mode) });
+    // Prints: "STA addr_mode: absolute"
+    ```
 
 ## Example Code
 
