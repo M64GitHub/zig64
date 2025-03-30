@@ -480,7 +480,7 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
 
 - **Fields**: None — acts as a namespace for disassembly functions and types.
 
-- **Types**:
+- **Types** Overview:
   - `Group` - Enumerates instruction categories (e.g., `branch`, `load_store`).
   - `AddrMode` - Defines addressing modes (e.g., `immediate`, `absolute_x`).
   - `OperandType` - Specifies operand kinds (e.g., `register`, `memory`).
