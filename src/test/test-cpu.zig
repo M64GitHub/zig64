@@ -727,8 +727,8 @@ test "SID register write" {
     c64.mem.data[0x1001] = 0x00;
     c64.mem.data[0x1002] = 0xD4;
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0x42, c64.cpu.sid.registers[0]);
-    try std.testing.expectEqual(true, c64.cpu.sid_reg_written);
+    try std.testing.expectEqual(0x42, c64.sid.registers[0]);
+    try std.testing.expectEqual(true, c64.sid.reg_written);
 }
 
 test "SID register write with change detection" {
@@ -741,13 +741,13 @@ test "SID register write with change detection" {
     c64.mem.data[0x1001] = 0x18;
     c64.mem.data[0x1002] = 0xD4;
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0x55, c64.cpu.sid.registers[24]);
-    try std.testing.expectEqual(true, c64.cpu.sid_reg_changed);
+    try std.testing.expectEqual(0x55, c64.sid.registers[24]);
+    try std.testing.expectEqual(true, c64.sid.reg_changed);
     c64.cpu.a = 0x55; // Same value
     c64.cpu.pc = 0x1000;
-    c64.cpu.sid_reg_changed = false;
+    c64.sid.reg_changed = false;
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(false, c64.cpu.sid_reg_changed); // No change
+    try std.testing.expectEqual(false, c64.sid.reg_changed); // No change
 }
 
 test "updateFlags zero and negative" {
@@ -918,8 +918,8 @@ test "SID register write overwrite" {
     c64.cpu.a = 0x44;
     c64.cpu.pc = 0x1000; // Same address
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0x44, c64.cpu.sid.registers[4]);
-    try std.testing.expectEqual(true, c64.cpu.sid_reg_changed); // Should detect change
+    try std.testing.expectEqual(0x44, c64.sid.registers[4]);
+    try std.testing.expectEqual(true, c64.sid.reg_changed); // Should detect change
 }
 
 test "SEC and CLC flag toggle" {
@@ -966,8 +966,8 @@ test "SID rapid write sequence" {
     c64.cpu.a = 0x81; // Waveform: noise
     c64.cpu.pc = 0x1000;
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0x81, c64.cpu.sid.registers[4]);
-    try std.testing.expectEqual(true, c64.cpu.sid_reg_changed);
+    try std.testing.expectEqual(0x81, c64.sid.registers[4]);
+    try std.testing.expectEqual(true, c64.sid.reg_changed);
 }
 
 test "JMP indirect with page boundary" {
@@ -1063,12 +1063,12 @@ test "SID overwrite with same value" {
     c64.mem.data[0x1001] = 0x04;
     c64.mem.data[0x1002] = 0xD4;
     _ = c64.cpu.runStep();
-    c64.cpu.sid_reg_changed = false; // Reset flag
+    c64.sid.reg_changed = false; // Reset flag
     c64.cpu.pc = 0x1000;
     c64.cpu.a = 0x42; // Same value
     _ = c64.cpu.runStep();
-    try std.testing.expectEqual(0x42, c64.cpu.sid.registers[4]);
-    try std.testing.expectEqual(false, c64.cpu.sid_reg_changed); // No change
+    try std.testing.expectEqual(0x42, c64.sid.registers[4]);
+    try std.testing.expectEqual(false, c64.sid.reg_changed); // No change
 }
 
 test "LDX absolute Y with wrap" {
