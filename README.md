@@ -227,7 +227,6 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
   ) ![]Sid.RegisterChange
   ```
   Executes a subroutine at the specified address, tracing all SID register changes into an array of `RegisterChange` structs with cycle information; returns the collected changes (caller must free with `allocator.free()`).
-
   - **Example**:
     ```zig
     const changes = try c64.callSidTrace(0x0800, allocator);
@@ -235,6 +234,11 @@ The main emulator struct, combining CPU, memory, VIC, and SID for a complete C64
     for (changes) |change| {
         std.debug.print("Cycle {d}: {s} changed {X:02} => {X:02}\n",
             .{ change.cycle, @tagName(change.meaning), change.old_value, change.new_value });
+        // Expected output (example from $0800 routine):
+        // "Cycle 9: osc1_freq_lo changed 00 => 10"
+        // "Cycle 15: osc1_freq_hi changed 00 => 11"
+        // "Cycle 21: osc1_control changed 00 => 41"
+        // "Cycle 27: osc1_attack_decay changed 00 => 53"
     }
     ```
     Traces SID changes from a subroutine at `$0800`, printing each change with cycle and register details.
@@ -679,10 +683,10 @@ Emulates the SID chip’s register state, providing advanced tracking, decoding,
     ```zig
     const stdout = std.io.getStdOut().writer();
     sid.writeRegisterCycle(0, 0x42, 50);  // Set osc1_freq_lo to 0x42 at cycle 50
-        if (sid.last_change) |change| {
-            if (change.oscFreqChanged(1)) {
-                try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n",
-                    .{ change.old_value, change.new_value });
+    if (sid.last_change) |change| {
+        if (change.oscFreqChanged(1)) {
+            try stdout.print("Osc1 freq updated: {X:02} => {X:02}\n",
+                .{ change.old_value, change.new_value });
         // Expected output: "Osc1 freq updated: 00 => 42"
         }
     }
@@ -1225,7 +1229,7 @@ This will add the dependency to your `build.zig.zon`:
 .dependencies = .{
     .zig64 = .{
         .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.4.0.tar.gz",
-        .hash = "zig64-0.4.0-v6Fneth1BABnxtNJheRTBBjuuM0vx6IJyphKR13VfKbN",
+        .hash = "zig64-0.4.0-v6Fnevh-BADQQLrOWxSwFPI_uzYK_c75MpZtAyP2zosT",
     },
 },
 ```
