@@ -278,8 +278,6 @@ The core component executing 6510 instructions, driving the virtual C64 system.
   flags: CpuFlags,           // Structured status flags (e.g., carry, zero)
   opcode_last: u8,           // Last executed opcode
   cycles_executed: u32,      // Total cycles run
-  cycles_since_vsync: u16,   // Cycles since last vertical sync
-  cycles_since_hsync: u8,    // Cycles since last horizontal sync
   cycles_last_step: u8,      // Cycles from the last step
   mem: *Ram64k,              // Pointer to the system’s 64KB memory
   sid: *Sid,                 // Pointer to the SID / registers
@@ -752,6 +750,8 @@ The video timing component synchronizing CPU cycles with C64 raster behavior.
   rasterline_changed: bool, // Marks raster line updates
   rasterline: u16,          // Current raster line number
   frame_ctr: usize,         // Frame counter
+  cycles_since_vsync: u16,  // Cycles since last vertical sync
+  cycles_since_hsync: u8,   // Cycles since last horizontal sync
   mem: *Ram64k,             // Pointer to the system’s 64KB memory
   cpu: *Cpu,                // Pointer to the CPU instance (to update cycle counters)
   dbg_enabled: bool,        // Enables debug logging for VIC timing
@@ -790,9 +790,16 @@ The video timing component synchronizing CPU cycles with C64 raster behavior.
   ```zig
   pub fn emulateD012(
       vic: *Vic
-  ) void
+  ) u8
   ```
-  Advances the raster line, updates VIC registers (e.g., `0xD011`, `0xD012`), and handles bad line timing.
+  Advances the raster line, updates VIC registers (`0xD011`, `0xD012`), and handles bad line timing.  
+  Returns number of cycles to add to cpu execution cycles. Helper for `emulate()`.
+
+  ```zig
+  pub fn emulate(vic: *Vic, cycles_last_step: u8) u8
+  ```
+  Updates cycles, and calls `emulateD012()`. Returns result of `emulateD012()`.
+  Called by the cpu in `runStep()`.
 
   ```zig
   pub fn printStatus(
