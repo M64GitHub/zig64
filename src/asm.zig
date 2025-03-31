@@ -109,7 +109,11 @@ pub fn disassembleForward(mem: []u8, pc_start: u16, count: usize) !void {
     }
 }
 
-pub fn disassembleInstruction(buffer: []u8, pc: u16, insn: Instruction) ![]const u8 {
+pub fn disassembleInstruction(
+    buffer: []u8,
+    pc: u16,
+    insn: Instruction,
+) ![]const u8 {
     if (insn.group == .branch and insn.addr_mode == .immediate) {
         if (insn.operand1.len == 1) {
             const offset = @as(i8, @bitCast(insn.operand1.bytes[0]));
@@ -202,7 +206,8 @@ pub fn disassembleInstruction(buffer: []u8, pc: u16, insn: Instruction) ![]const
         },
         .absolute_y => {
             if (insn.operand2) |op| {
-                const addr = @as(u16, op.bytes[0]) | (@as(u16, op.bytes[1]) << 8);
+                const addr = @as(u16, op.bytes[0]) |
+                    (@as(u16, op.bytes[1]) << 8);
                 return std.fmt.bufPrint(
                     buffer,
                     "{s} ${X:0>4},Y",
@@ -248,7 +253,11 @@ pub fn disassembleInstruction(buffer: []u8, pc: u16, insn: Instruction) ![]const
     return std.fmt.bufPrint(buffer, "{s}", .{insn.mnemonic});
 }
 
-pub fn disassembleCodeLine(buffer: []u8, pc: u16, insn: Instruction) ![]const u8 {
+pub fn disassembleCodeLine(
+    buffer: []u8,
+    pc: u16,
+    insn: Instruction,
+) ![]const u8 {
     const size = getInstructionSize(insn);
     var temp_buffer: [16]u8 = undefined;
     const disasm = try disassembleInstruction(&temp_buffer, pc, insn);

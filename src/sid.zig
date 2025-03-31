@@ -252,7 +252,9 @@ pub fn writeRegister(sid: *Sid, reg: usize, val: u8) void {
                     .filter_res_control => .{
                         .filter_res = FilterResControl.fromValue(val),
                     },
-                    .filter_mode_volume => .{ .filter_mode = FilterModeVolume.fromValue(val) },
+                    .filter_mode_volume => .{
+                        .filter_mode = FilterModeVolume.fromValue(val),
+                    },
                     .osc1_attack_decay, .osc2_attack_decay, .osc3_attack_decay => .{
                         .attack_decay = AttackDecay.fromValue(val),
                     },
@@ -316,7 +318,9 @@ pub fn writeRegisterCycle(sid: *Sid, reg: usize, val: u8, cycle: usize) void {
                     .filter_res_control => .{
                         .filter_res = FilterResControl.fromValue(val),
                     },
-                    .filter_mode_volume => .{ .filter_mode = FilterModeVolume.fromValue(val) },
+                    .filter_mode_volume => .{
+                        .filter_mode = FilterModeVolume.fromValue(val),
+                    },
                     .osc1_attack_decay, .osc2_attack_decay, .osc3_attack_decay => .{
                         .attack_decay = AttackDecay.fromValue(val),
                     },

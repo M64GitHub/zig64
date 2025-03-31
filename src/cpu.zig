@@ -17,8 +17,6 @@ status: u8,
 flags: CpuFlags,
 opcode_last: u8,
 cycles_executed: u32,
-cycles_since_vsync: u16,
-cycles_since_hsync: u8,
 cycles_last_step: u8,
 mem: *Ram64k,
 sid: *Sid,
@@ -68,8 +66,6 @@ pub fn init(mem: *Ram64k, sid: *Sid, vic: *Vic, pc_start: u16) Cpu {
         .cycles_executed = 0,
         .cycles_last_step = 0,
         .opcode_last = 0x00, // No opcode executed yet
-        .cycles_since_vsync = 0,
-        .cycles_since_hsync = 0,
         .mem = mem,
         .sid = sid,
         .vic = vic,
@@ -77,7 +73,7 @@ pub fn init(mem: *Ram64k, sid: *Sid, vic: *Vic, pc_start: u16) Cpu {
     };
 }
 
-pub fn reset(cpu: *Cpu) void {
+fn doReset(cpu: *Cpu) void {
     // leaves memory unchanged
     cpu.a = 0;
     cpu.x = 0;
@@ -102,9 +98,21 @@ pub fn reset(cpu: *Cpu) void {
 }
 
 // Reset Cpu and clear memory
-pub fn hardReset(cpu: *Cpu) void {
+fn doHardReset(cpu: *Cpu) void {
     cpu.reset();
     cpu.mem.clear();
+}
+
+pub fn reset(cpu: *Cpu, hard: bool) void {
+    if (hard) {
+        if (cpu.dbg_enabled)
+            stdout.print("[cpu] hard reset\n", .{}) catch {};
+        cpu.doHardReset();
+    } else {
+        if (cpu.dbg_enabled)
+            stdout.print("[cpu] reset\n", .{}) catch {};
+        cpu.reset();
+    }
 }
 
 pub fn writeMem(cpu: *Cpu, data: []const u8, addr: u16) void {
@@ -415,7 +423,8 @@ pub fn adc(cpu: *Cpu, op: u8) void {
         cpu.flags.c = @intFromBool(sum > 0xFF);
         const signs_match = ((old_a ^ m) & 0x80) == 0;
         const sign_flipped = ((old_a ^ cpu.a) & 0x80) != 0;
-        cpu.flags.v = @intFromBool(signs_match and sign_flipped and (sum <= 0xFF));
+        cpu.flags.v =
+            @intFromBool(signs_match and sign_flipped and (sum <= 0xFF));
     }
     cpu.updateFlags(cpu.a);
 }
@@ -442,7 +451,8 @@ pub fn sbc(cpu: *Cpu, op: u8) void {
     } else {
         const old_a: u8 = cpu.a;
         const m: u8 = op;
-        const result: i16 = @as(i16, old_a) - @as(i16, m) - @as(i16, 1 - cpu.flags.c);
+        const result: i16 = @as(i16, old_a) - @as(i16, m) -
+            @as(i16, 1 - cpu.flags.c);
         cpu.a = @intCast(result & 0xFF); // Fixed type error!
         cpu.flags.c = @intFromBool(result >= 0);
         cpu.flags.v = @intFromBool(((old_a ^ m) & (old_a ^ cpu.a) & 0x80) != 0);
@@ -881,9 +891,6 @@ pub fn runStep(cpu: *Cpu) u8 {
                 }
                 cpu.cycles_last_step =
                     @as(u8, @truncate(cpu.cycles_executed -% cycles_now));
-
-                // skip vic timing on exit
-
                 return 0;
             }
 
@@ -1373,38 +1380,9 @@ pub fn runStep(cpu: *Cpu) u8 {
     cpu.cycles_last_step =
         @as(u8, @truncate(cpu.cycles_executed -% cycles_now));
 
-    cpu.cycles_since_vsync += cpu.cycles_last_step;
-    cpu.cycles_since_hsync += cpu.cycles_last_step;
-
-    // VIC vertical sync
-    if (cpu.vic.model == Vic.Model.pal and
-        cpu.cycles_since_vsync >= Vic.Timing.cyclesVsyncPal)
-    {
-        cpu.vic.frame_ctr += 1;
-        cpu.cycles_since_vsync = 0;
-    }
-
-    if (cpu.vic.model == Vic.Model.ntsc and
-        cpu.cycles_since_vsync >= Vic.Timing.cyclesVsyncNtsc)
-    {
-        cpu.vic.frame_ctr += 1;
-        cpu.cycles_since_vsync = 0;
-    }
-
-    // VIC horizontal sync
-    if (cpu.vic.model == Vic.Model.pal and
-        cpu.cycles_since_hsync >= Vic.Timing.cyclesRasterlinePal)
-    {
-        cpu.vic.emulateD012();
-        cpu.cycles_since_hsync = 0;
-    }
-
-    if (cpu.vic.model == Vic.Model.ntsc and
-        cpu.cycles_since_hsync >= Vic.Timing.cyclesRasterlineNtsc)
-    {
-        cpu.vic.emulateD012();
-        cpu.cycles_since_hsync = 0;
-    }
+    const vic_cycles = cpu.vic.emulate(cpu.cycles_last_step);
+    cpu.cycles_last_step += vic_cycles;
+    cpu.cycles_executed += vic_cycles;
 
     // dbg output vic, sid
 

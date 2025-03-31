@@ -47,7 +47,6 @@ pub fn call(c64: *C64, address: u16) void {
     c64.cpu.sp = 0xFF;
 
     c64.sid.ext_reg_written = false;
-    c64.cpu.pushW(0x0000);
     c64.cpu.pc = address;
     if (c64.dbg_enabled) {
         stdout.print("[c64] calling address: {X:0>4}\n", .{
@@ -64,13 +63,11 @@ pub fn callSidTrace(
     address: u16,
     allocator: std.mem.Allocator,
 ) ![]Sid.RegisterChange {
-    // Reset CPU state like call()
     c64.cpu.status = 0x00;
     c64.cpu.psToFlags();
     c64.cpu.sp = 0xFF;
 
     c64.sid.ext_reg_written = false;
-    c64.cpu.pushW(0x0000);
     c64.cpu.pc = address;
 
     if (c64.dbg_enabled) {

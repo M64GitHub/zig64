@@ -126,6 +126,9 @@ pub fn main() !void {
     // Run each routine with callSidTrace
     const routines = [_]u16{ 0x0800, 0x0900, 0x0A00 };
     for (routines) |addr| {
+        c64.cpu.printStatus();
+        std.debug.print("LALA!\n", .{});
+
         const changes = try c64.callSidTrace(addr, allocator);
         defer allocator.free(changes);
 

@@ -13,6 +13,8 @@ badline_happened: bool,
 rasterline_changed: bool,
 rasterline: u16,
 frame_ctr: usize,
+cycles_since_vsync: u16,
+cycles_since_hsync: u8,
 mem: *Ram64k,
 cpu: *Cpu,
 dbg_enabled: bool,
@@ -39,6 +41,8 @@ pub fn init(cpu: *Cpu, mem: *Ram64k, vic_model: Model) Vic {
         .rasterline_changed = false,
         .rasterline = 0,
         .frame_ctr = 0,
+        .cycles_since_hsync = 0,
+        .cycles_since_vsync = 0,
         .cpu = cpu,
         .mem = mem,
         .dbg_enabled = false,
@@ -47,10 +51,12 @@ pub fn init(cpu: *Cpu, mem: *Ram64k, vic_model: Model) Vic {
     return vic;
 }
 
-pub fn emulateD012(vic: *Vic) void {
+pub fn emulateD012(vic: *Vic) u8 {
     vic.rasterline += 1;
     vic.rasterline_changed = true;
     vic.hsync_happened = true;
+
+    var rv: u8 = 0;
 
     vic.mem.data[0xD012] = vic.mem.data[0xD012] +% 1;
     if ((vic.mem.data[0xD012] == 0) or
@@ -66,11 +72,51 @@ pub fn emulateD012(vic: *Vic) void {
     // check badline
     if (vic.rasterline % 8 == 3) {
         vic.badline_happened = true;
-        vic.cpu.cycles_executed += Timing.cyclesBadlineStealing;
-        vic.cpu.cycles_last_step += Timing.cyclesBadlineStealing;
-        vic.cpu.cycles_since_hsync += Timing.cyclesBadlineStealing;
-        vic.cpu.cycles_since_vsync += Timing.cyclesBadlineStealing;
+        vic.cycles_since_hsync += Timing.cyclesBadlineStealing;
+        vic.cycles_since_vsync += Timing.cyclesBadlineStealing;
+        rv = Timing.cyclesBadlineStealing;
     }
+
+    return rv;
+}
+
+pub fn emulate(vic: *Vic, cycles_last_step: u8) u8 {
+    vic.cycles_since_vsync += cycles_last_step;
+    vic.cycles_since_hsync += cycles_last_step;
+
+    var rv: u8 = 0;
+
+    // VIC vertical sync
+    if (vic.model == .pal and
+        vic.cycles_since_vsync >= Timing.cyclesVsyncPal)
+    {
+        vic.frame_ctr += 1;
+        vic.cycles_since_vsync = 0;
+    }
+
+    if (vic.model == Vic.Model.ntsc and
+        vic.cycles_since_vsync >= Timing.cyclesVsyncNtsc)
+    {
+        vic.frame_ctr += 1;
+        vic.cycles_since_vsync = 0;
+    }
+
+    // VIC horizontal sync
+    if (vic.model == Vic.Model.pal and
+        vic.cycles_since_hsync >= Timing.cyclesRasterlinePal)
+    {
+        rv = vic.emulateD012();
+        vic.cycles_since_hsync = 0;
+    }
+
+    if (vic.model == Vic.Model.ntsc and
+        vic.cycles_since_hsync >= Timing.cyclesRasterlineNtsc)
+    {
+        rv = vic.emulateD012();
+        vic.cycles_since_hsync = 0;
+    }
+
+    return rv;
 }
 
 pub fn printStatus(vic: *Vic) void {
