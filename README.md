@@ -949,12 +949,12 @@ The assembly metadata decoder and disassembler, providing detailed instruction a
   ```
   Converts an instruction into a human-readable string (e.g., `"LDA #$10"`).
   - **Example**:
-  ```zig
-  var buffer: [32]u8 = undefined;
-  const insn = Asm.decodeInstruction(&[_]u8{ 0xA9, 0x10 }); // LDA #$10
-  const disasm = try Asm.disassembleInstruction(&buffer, 0x0800, insn);
-  std.debug.print("{s}\n", .{disasm}); // Prints: "LDA #$10"
-  ```
+    ```zig
+    var buffer: [32]u8 = undefined;
+    const insn = Asm.decodeInstruction(&[_]u8{ 0xA9, 0x10 }); // LDA #$10
+    const disasm = try Asm.disassembleInstruction(&buffer, 0x0800, insn);
+    std.debug.print("{s}\n", .{disasm}); // Prints: "LDA #$10"
+    ```
 
   ```zig
   pub fn disassembleCodeLine(
