@@ -8,32 +8,32 @@
  
 A **Commodore 64 MOS 6510 emulator core** implemented in **Zig**, engineered for precision, flexibility, and seamless integration into C64-focused projects. This emulator delivers cycle-accurate CPU execution, detailed raster beam emulation for PAL and NTSC video synchronization, and advanced SID register tracking with change decoding, making it an ideal foundation for C64 software analysis, dissecting SID player routines, analyzing register manipulations, and debugging.
 
-Built as the **computational backbone** of a virtual C64 system, it powers a range of applications—from tracing and debugging 6510 assembly with rich CPU state insights to dissecting SID register manipulations for tools like 🎧 [zigreSID](https://github.com/M64GitHub/zigreSID). Leveraging Zig’s modern features, it offers a clean, extensible platform with enhanced debugging capabilities, including step-by-step CPU traces and detailed SID change analysis.
+Built as the **computational backbone** of a virtual C64 system, it powers a range of applications—from tracing and debugging 6510 assembly with rich CPU state insights to dissecting SID register manipulations for tools like [zigreSID](https://github.com/M64GitHub/zigreSID). Leveraging Zig’s modern features, it offers a clean, extensible platform with enhanced debugging capabilities, including step-by-step CPU traces and detailed SID change analysis.
 
 This project **sparked from a passion for Commodore 64 SID music**, aiming to recreate and elevate that experience across platforms. As a musician tweaking SID tunes and `.sid` files—archives embedding 6510 assembly for player routines—I needed a core to execute these, trace SID register changes with cycle precision, to enable custom sound tools. That vision grew into this emulator, blending nostalgia with cutting-edge emulation tech.
 
 **A key goal** is to **lower the barriers** to C64 emulation, offering an accessible entry point for developers and enthusiasts alike. With intuitive Zig tooling, robust CPU debugging, and SID state tracking, it simplifies analyzing intricate C64 programs, decoding SID behavior, and testing software—empowering users to explore, experiment, and create with ease.
 
-## 🚀 Key Features
-- 🎮 **Cycle-Accurate 6510 CPU Emulation**  
+## Key Features
+- **Cycle-Accurate 6510 CPU Emulation**  
   Implements all documented MOS 6502/6510 instructions and addressing modes with exact timing and behavior, ensuring faithful program execution down to the cycle.
 
-- 🎞 **Video Synchronization**  
+- **Video Synchronization**  
   Aligns CPU cycles with PAL and NTSC video timings, featuring full raster beam emulation and precise bad line handling for authentic raster interrupt behavior.
 
-- 🎵 **Advanced SID Register Tracking & Decoding**  
+- **Advanced SID Register Tracking & Decoding**  
   Monitors all SID register writes with cycle precision, decoding changes into detailed structs (e.g., waveforms, envelopes), perfect for analyzing player routines and sound interactions.
 
-- 💾 **Program Loading Capabilities**  
+- **Program Loading Capabilities**  
   Loads `.prg` files directly into memory, streamlining execution and integration of C64 programs and `.sid` player codebases.
 
-- 🛠 **Powerful Debugging Tools**  
+- **Powerful Debugging Tools**  
   Offers step-by-step CPU tracing, rich state inspection (registers, flags, memory, VIC-II, SID), and SID change logging, empowering precise control and deep analysis.
 
-- 🔍 **Robust Disassembler & Instruction Metadata**  
+- **Robust Disassembler & Instruction Metadata**  
   Transforms 6502/6510 opcodes into readable mnemonics with metadata (size, group, addressing mode, operand type/size/access), ideal for code tracing and reverse-engineering.
 
-- 🧪 **Testing C64 Programs with Zig**  
+- **Testing C64 Programs with Zig**  
   Seamlessly integrates with Zig’s testing framework, enabling developers to write unit tests for C64 code and verify emulator behavior with ease.
 
 ## Quick Start Demo
@@ -454,23 +454,23 @@ pub fn build(b: *std.Build) void {
 }
 ```
 
-## 🔓 License
+## License
 This emulator is released under the **MIT License**, allowing free modification and distribution.
 
-## 🌐 Related Projects  
-- 🎧 **[zigreSID](https://github.com/M64GitHub/zigreSID)** – A SID sound emulation library for Zig, integrating with this emulator for `.sid` file playback.
+## Related Projects  
+- **[zigreSID](https://github.com/M64GitHub/zigreSID)** – A SID sound emulation library for Zig, integrating with this emulator for `.sid` file playback.
 
 
 Developed with ❤️ by M64  
 
-## 🚀 Get Started Now!
+## Get Started Now!
 Clone the repository and start experimenting:
 ```sh
 git clone https://github.com/M64GitHub/zig64.git
 cd zig64
 zig build
 ```
-Enjoy bringing the **C64 CPU to life in Zig!** 🕹🔥
+Enjoy bringing the **C64 CPU to life in Zig!** 
 
 
 
