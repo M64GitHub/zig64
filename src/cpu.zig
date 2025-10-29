@@ -1,5 +1,4 @@
 const std = @import("std");
-const stdout = std.io.getStdOut().writer();
 
 const Ram64k = @import("mem.zig");
 const Sid = @import("sid.zig");
@@ -106,11 +105,11 @@ fn doHardReset(cpu: *Cpu) void {
 pub fn reset(cpu: *Cpu, hard: bool) void {
     if (hard) {
         if (cpu.dbg_enabled)
-            stdout.print("[cpu] hard reset\n", .{}) catch {};
+            std.debug.print("[cpu] hard reset\n", .{});
         cpu.doHardReset();
     } else {
         if (cpu.dbg_enabled)
-            stdout.print("[cpu] reset\n", .{}) catch {};
+            std.debug.print("[cpu] reset\n", .{});
         cpu.reset();
     }
 }
@@ -163,7 +162,7 @@ pub fn printStatus(cpu: *Cpu) void {
 
     const insn_size = Asm.getInstructionSize(insn);
 
-    stdout.print("[cpu] PC: {X:0>4} | {s} | {s} | A: {X:0>2} | X: {X:0>2} | Y: {X:0>2} | SP: {X:0>2} | Cycl: {d:0>2} | Cycl-TT: {d} | ", .{
+    std.debug.print("[cpu] PC: {X:0>4} | {s} | {s} | A: {X:0>2} | X: {X:0>2} | Y: {X:0>2} | SP: {X:0>2} | Cycl: {d:0>2} | Cycl-TT: {d} | ", .{
         cpu.pc,
         bytesToHex(&cpu.mem.data, cpu.pc, insn_size),
         padTo16(disasm, 12, &buf_disasm_pad),
@@ -173,13 +172,13 @@ pub fn printStatus(cpu: *Cpu) void {
         cpu.sp,
         cpu.cycles_last_step,
         cpu.cycles_executed,
-    }) catch {};
+    });
     printFlags(cpu);
-    stdout.print("\n", .{}) catch {};
+    std.debug.print("\n", .{});
 }
 
 pub fn printTrace(cpu: *Cpu) void {
-    stdout.print("PC: {X:0>4} OP: {X:0>2} {X:0>2} {X:0>2} A:{X:0>2} X:{X:0>2} Y:{X:0>2} FL:{X:0>2}", .{
+    std.debug.print("PC: {X:0>4} OP: {X:0>2} {X:0>2} {X:0>2} A:{X:0>2} X:{X:0>2} Y:{X:0>2} FL:{X:0>2}", .{
         cpu.pc,
         cpu.mem.data[cpu.pc],
         cpu.mem.data[cpu.pc + 1],
@@ -188,13 +187,13 @@ pub fn printTrace(cpu: *Cpu) void {
         cpu.x,
         cpu.y,
         cpu.status,
-    }) catch {};
-    stdout.print("\n", .{}) catch {};
+    });
+    std.debug.print("\n", .{});
 }
 
 pub fn printFlags(cpu: *Cpu) void {
     cpu.flagsToPS();
-    stdout.print("FL: {b:0>8}", .{cpu.status}) catch {};
+    std.debug.print("FL: {b:0>8}", .{cpu.status});
 }
 
 pub fn readByte(cpu: *Cpu, addr: u16) u8 {
@@ -877,17 +876,17 @@ pub fn runStep(cpu: *Cpu) u8 {
             cpu.pc = jsr_addr;
             cpu.cycles_executed +%= 1; // Matches 6 cycles with fetch and push
             if (cpu.dbg_enabled) {
-                stdout.print("[cpu] JSR {X:0>4}, return to {X:0>4}\n", .{
+                std.debug.print("[cpu] JSR {X:0>4}, return to {X:0>4}\n", .{
                     jsr_addr,
                     ret_addr,
-                }) catch {};
+                });
             }
         },
 
         Asm.rts.opcode => {
             if (cpu.sp == 0xFF) {
                 if (cpu.dbg_enabled) {
-                    stdout.print("[cpu] RTS EXIT!\n", .{}) catch {};
+                    std.debug.print("[cpu] RTS EXIT!\n", .{});
                 }
                 cpu.cycles_last_step =
                     @as(u8, @truncate(cpu.cycles_executed -% cycles_now));
@@ -898,9 +897,9 @@ pub fn runStep(cpu: *Cpu) u8 {
             cpu.pc = ret_addr + 1;
             cpu.cycles_executed +%= 2;
             if (cpu.dbg_enabled) {
-                stdout.print("[cpu] RTS to {X:0>4}\n", .{
+                std.debug.print("[cpu] RTS to {X:0>4}\n", .{
                     ret_addr + 1,
-                }) catch {};
+                });
             }
         },
 
@@ -908,7 +907,7 @@ pub fn runStep(cpu: *Cpu) u8 {
             const addr: u16 = addrAbs(cpu);
             cpu.pc = addr;
             if (cpu.dbg_enabled) {
-                stdout.print("[cpu] JMP {X:0>4}\n", .{addr}) catch {};
+                std.debug.print("[cpu] JMP {X:0>4}\n", .{addr});
             }
         },
 
@@ -1394,7 +1393,7 @@ pub fn runStep(cpu: *Cpu) u8 {
     if ((cpu.mem.data[0x01] & 0x07) != 0x5 and
         ((cpu.pc == 0xea31) or (cpu.pc == 0xea81)))
     {
-        stdout.print("[cpu] RTI\n", .{}) catch {};
+        std.debug.print("[cpu] RTI\n", .{});
 
         return 0;
     }

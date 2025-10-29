@@ -1,5 +1,4 @@
 const std = @import("std");
-const stdout = std.io.getStdOut().writer();
 
 pub const Sid = @This();
 
@@ -255,10 +254,16 @@ pub fn writeRegister(sid: *Sid, reg: usize, val: u8) void {
                     .filter_mode_volume => .{
                         .filter_mode = FilterModeVolume.fromValue(val),
                     },
-                    .osc1_attack_decay, .osc2_attack_decay, .osc3_attack_decay => .{
+                    .osc1_attack_decay,
+                    .osc2_attack_decay,
+                    .osc3_attack_decay,
+                    => .{
                         .attack_decay = AttackDecay.fromValue(val),
                     },
-                    .osc1_sustain_release, .osc2_sustain_release, .osc3_sustain_release => .{
+                    .osc1_sustain_release,
+                    .osc2_sustain_release,
+                    .osc3_sustain_release,
+                    => .{
                         .sustain_release = SustainRelease.fromValue(val),
                     },
                     else => .{ .raw = val },
@@ -321,10 +326,16 @@ pub fn writeRegisterCycle(sid: *Sid, reg: usize, val: u8, cycle: usize) void {
                     .filter_mode_volume => .{
                         .filter_mode = FilterModeVolume.fromValue(val),
                     },
-                    .osc1_attack_decay, .osc2_attack_decay, .osc3_attack_decay => .{
+                    .osc1_attack_decay,
+                    .osc2_attack_decay,
+                    .osc3_attack_decay,
+                    => .{
                         .attack_decay = AttackDecay.fromValue(val),
                     },
-                    .osc1_sustain_release, .osc2_sustain_release, .osc3_sustain_release => .{
+                    .osc1_sustain_release,
+                    .osc2_sustain_release,
+                    .osc3_sustain_release,
+                    => .{
                         .sustain_release = SustainRelease.fromValue(val),
                     },
                     else => .{ .raw = val },
@@ -351,11 +362,11 @@ pub fn writeRegisterCycle(sid: *Sid, reg: usize, val: u8, cycle: usize) void {
 }
 
 pub fn printRegisters(sid: *Sid) void {
-    stdout.print("[sid] registers: ", .{}) catch {};
+    std.debug.print("[sid] registers: ", .{});
     for (sid.registers) |v| {
-        stdout.print("{X:0>2} ", .{v}) catch {};
+        std.debug.print("{X:0>2} ", .{v});
     }
-    stdout.print("\n", .{}) catch {};
+    std.debug.print("\n", .{});
 }
 
 fn printChange(sid: *Sid, meaning: RegisterMeaning, val: u8) void {

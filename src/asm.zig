@@ -1,5 +1,4 @@
 const std = @import("std");
-const stdout = std.io.getStdOut().writer();
 
 pub const Asm = @This();
 
@@ -104,7 +103,7 @@ pub fn disassembleForward(mem: []u8, pc_start: u16, count: usize) !void {
         const insn = decodeInstruction(&bytes);
         var obuf: [32]u8 = undefined;
         const str = try disassembleCodeLine(&obuf, pc, insn);
-        stdout.print("{s}\n", .{str}) catch {};
+        std.debug.print("{s}\n", .{str});
         pc = pc +% getInstructionSize(insn);
     }
 }

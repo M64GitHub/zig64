@@ -1,7 +1,5 @@
-pub const version = "0.4.0";
-
+pub const version = "0.5.0";
 const std = @import("std");
-const stdout = std.io.getStdOut().writer();
 
 pub const Cpu = @import("cpu.zig");
 pub const Ram64k = @import("mem.zig");
@@ -49,9 +47,9 @@ pub fn call(c64: *C64, address: u16) void {
     c64.sid.ext_reg_written = false;
     c64.cpu.pc = address;
     if (c64.dbg_enabled) {
-        stdout.print("[c64] calling address: {X:0>4}\n", .{
+        std.debug.print("[c64] calling address: {X:0>4}\n", .{
             address,
-        }) catch {};
+        });
     }
     while (c64.cpu.runStep() != 0) {}
     c64.sid.reg_written = c64.sid.ext_reg_written;
@@ -71,17 +69,17 @@ pub fn callSidTrace(
     c64.cpu.pc = address;
 
     if (c64.dbg_enabled) {
-        stdout.print("[c64] tracing SID from address: {X:0>4}\n", .{address}) catch {};
+        std.debug.print("[c64] tracing SID from address: {X:0>4}\n", .{address});
     }
 
     // ArrayList to collect RegisterChange instances
-    var changes = std.ArrayList(Sid.RegisterChange).init(allocator);
-    defer changes.deinit(); // Frees the list memory, not the items
+    var changes = std.ArrayList(Sid.RegisterChange){};
+    defer changes.deinit(allocator); // Frees the list memory, not the items
 
     // Run the program, collecting SID changes
     while (c64.cpu.runStep() != 0) {
         if (c64.sid.last_change) |change| {
-            try changes.append(change); // Add the change to the array
+            try changes.append(allocator, change); // Add the change to the array
         }
     }
 
@@ -89,7 +87,7 @@ pub fn callSidTrace(
     c64.sid.reg_changed = c64.sid.ext_reg_changed;
 
     // Return the owned slice of changes
-    return changes.toOwnedSlice();
+    return changes.toOwnedSlice(allocator);
 }
 
 pub fn loadPrg(
@@ -102,7 +100,7 @@ pub fn loadPrg(
     defer file.close();
 
     if (c64.dbg_enabled) {
-        try stdout.print("[c64] loading file: '{s}'\n", .{
+        std.debug.print("[c64] loading file: '{s}'\n", .{
             file_name,
         });
     }
@@ -152,7 +150,7 @@ pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) !u16 {
         load_address = @as(u16, lo) | @as(u16, hi);
 
         if (c64.dbg_enabled) {
-            try stdout.print("[c64] file load address: ${X:0>4}\n", .{
+            std.debug.print("[c64] file load address: ${X:0>4}\n", .{
                 load_address,
             });
         }
@@ -161,11 +159,14 @@ pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) !u16 {
         while (i < (load_address +% program.len -% 2)) : (i +%= 1) {
             c64.mem.data[i] = program[offs];
             if (c64.dbg_enabled)
-                stdout.print("[c64] writing mem: {X:0>4} offs: {X:0>4} data: {X:0>2}\n", .{
-                    i,
-                    offs,
-                    program[offs],
-                }) catch {};
+                std.debug.print(
+                    "[c64] writing mem: {X:0>4} offs: {X:0>4} data: {X:0>2}\n",
+                    .{
+                        i,
+                        offs,
+                        program[offs],
+                    },
+                );
             offs += 1;
         }
     }
@@ -173,8 +174,10 @@ pub fn setPrg(c64: *C64, program: []const u8, pc_to_loadaddr: bool) !u16 {
     return load_address;
 }
 
-pub fn appendSidChanges(existing_changes: *std.ArrayList(
-    Sid.RegisterChange,
-), new_changes: []Sid.RegisterChange) !void {
-    try existing_changes.appendSlice(new_changes);
+pub fn appendSidChanges(
+    existing_changes: *std.ArrayList(Sid.RegisterChange),
+    new_changes: []Sid.RegisterChange,
+    allocator: std.mem.Allocator,
+) !void {
+    try existing_changes.appendSlice(allocator, new_changes);
 }

@@ -5,19 +5,18 @@ const Asm = C64.Asm;
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
-    const stdout = std.io.getStdOut().writer();
 
     // Initialize the C64 emulator at $0800 with PAL VIC
     var c64 = try C64.init(allocator, C64.Vic.Model.pal, 0x0800);
     defer c64.deinit(allocator);
 
     // Print initial emulator state
-    try stdout.print("CPU start address: ${X:0>4}\n", .{c64.cpu.pc});
-    try stdout.print("VIC model: {s}\n", .{@tagName(c64.vic.model)});
-    try stdout.print("SID base address: ${X:0>4}\n", .{c64.sid.base_address});
+    std.debug.print("CPU start address: ${X:0>4}\n", .{c64.cpu.pc});
+    std.debug.print("VIC model: {s}\n", .{@tagName(c64.vic.model)});
+    std.debug.print("SID base address: ${X:0>4}\n", .{c64.sid.base_address});
 
     // Write a SID register sweep program to $0800
-    try stdout.print("\nWriting SID sweep program to $0800...\n", .{});
+    std.debug.print("\nWriting SID sweep program to $0800...\n", .{});
     c64.cpu.writeByte(Asm.lda_imm.opcode, 0x0800); //  LDA #$0A     ; Load initial value 10
     c64.cpu.writeByte(0x0A, 0x0801);
     c64.cpu.writeByte(Asm.tax.opcode, 0x0802); //      TAX          ; X = A (index for SID regs)
@@ -38,10 +37,10 @@ pub fn main() !void {
     c64.sid.dbg_enabled = true;
 
     // Step through the program, analyzing SID changes
-    try stdout.print("\nExecuting SID sweep step-by-step...\n", .{});
+    std.debug.print("\nExecuting SID sweep step-by-step...\n", .{});
     while (c64.cpu.runStep() != 0) {
         if (c64.sid.last_change) |change| {
-            try stdout.print(
+            std.debug.print(
                 "SID register {s} changed!\n",
                 .{@tagName(change.meaning)},
             );
@@ -52,27 +51,27 @@ pub fn main() !void {
                     Sid.FilterModeVolume.fromValue(change.old_value).volume;
                 const new_vol =
                     Sid.FilterModeVolume.fromValue(change.new_value).volume;
-                try stdout.print(
+                std.debug.print(
                     "Volume changed: {d} => {d}\n",
                     .{ old_vol, new_vol },
                 );
             }
             if (change.oscWaveformChanged(1)) {
                 const wf = Sid.WaveformControl.fromValue(change.new_value);
-                try stdout.print(
+                std.debug.print(
                     "Osc1 waveform updated: Pulse={}\n",
                     .{wf.pulse},
                 );
             }
             if (change.oscFreqChanged(1)) {
-                try stdout.print(
+                std.debug.print(
                     "Osc1 freq updated: {X:02} => {X:02}\n",
                     .{ change.old_value, change.new_value },
                 );
             }
             if (change.oscAttackDecayChanged(1)) {
                 const ad = Sid.AttackDecay.fromValue(change.new_value);
-                try stdout.print(
+                std.debug.print(
                     "Osc1 attack/decay: A={d}, D={d}\n",
                     .{ ad.attack, ad.decay },
                 );
@@ -81,6 +80,6 @@ pub fn main() !void {
     }
 
     // Final SID state
-    try stdout.print("\nFinal SID registers:\n", .{});
+    std.debug.print("\nFinal SID registers:\n", .{});
     c64.sid.printRegisters();
 }

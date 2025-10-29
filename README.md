@@ -1,10 +1,10 @@
 # Commodore 64 MOS 6510 Emulator Core
 
 ![Tests](https://github.com/M64GitHub/zig64/actions/workflows/test.yml/badge.svg)
-![Version](https://img.shields.io/badge/version-0.4.0-007bff?style=flat)
+![Version](https://img.shields.io/badge/version-0.5.0-007bff?style=flat)
 ![Status](https://img.shields.io/badge/status-active-00cc00?style=flat)
 ![License](https://img.shields.io/badge/license-MIT-brightgreen?style=flat)
-![Zig](https://img.shields.io/badge/Zig-0.14.0-orange?style=flat)
+![Zig](https://img.shields.io/badge/Zig-0.15.2-orange?style=flat)
  
 A **Commodore 64 MOS 6510 emulator core** implemented in **Zig**, engineered for precision, flexibility, and seamless integration into C64-focused projects. This emulator delivers cycle-accurate CPU execution, detailed raster beam emulation for PAL and NTSC video synchronization, and advanced SID register tracking with change decoding, making it an ideal foundation for C64 software analysis, dissecting SID player routines, analyzing register manipulations, and debugging.
 
@@ -418,16 +418,7 @@ zig build test
 ## Using zig64 In Your Project
 To add `zig64` as a dependency, use:
 ```sh
-zig fetch --save https://github.com/M64GitHub/zig64/archive/refs/tags/v0.4.0.tar.gz
-```
-This will add the dependency to your `build.zig.zon`:
-```zig
-.dependencies = .{
-    .zig64 = .{
-        .url = "https://github.com/M64GitHub/zig64/archive/refs/tags/v0.4.0.tar.gz",
-        .hash = "zig64-0.4.0-v6Fnevh-BADQQLrOWxSwFPI_uzYK_c75MpZtAyP2zosT",
-    },
-},
+zig fetch --save https://github.com/M64GitHub/zig64/archive/refs/tags/v0.5.0.tar.gz
 ```
 
 In your `build.zig`, add the module as follows:
@@ -470,7 +461,6 @@ git clone https://github.com/M64GitHub/zig64.git
 cd zig64
 zig build
 ```
-Enjoy bringing the **C64 CPU to life in Zig!** 
 
 
 
