@@ -13,40 +13,46 @@ pub fn build(b: *std.Build) void {
     const mod_flagz = dep_flagz.module("flagz");
 
     // -- Example loadprg
-    const exe_loadprg = b.addExecutable(.{
-        .name = "loadprg-example",
-        .root_source_file = b.path(
-            "src/examples/loadprg_example.zig",
-        ),
+    const exe_loadprg_mod = b.addModule("exe_loadprg", .{
+        .root_source_file = b.path("src/examples/loadprg_example.zig"),
         .target = target,
         .optimize = optimize,
     });
-    exe_loadprg.root_module.addImport("flagz", mod_flagz);
-    exe_loadprg.root_module.addImport("zig64", mod_zig64);
+    exe_loadprg_mod.addImport("flagz", mod_flagz);
+    exe_loadprg_mod.addImport("zig64", mod_zig64);
+
+    const exe_loadprg = b.addExecutable(.{
+        .name = "loadprg-example",
+        .root_module = exe_loadprg_mod,
+    });
     b.installArtifact(exe_loadprg);
 
     // -- Example cpu-writebyte
-    const exe_writebyte = b.addExecutable(.{
-        .name = "writebyte-example",
-        .root_source_file = b.path(
-            "src/examples/cpu-writebyte_example.zig",
-        ),
+    const exe_writebyte_mod = b.addModule("exe_writebyte", .{
+        .root_source_file = b.path("src/examples/cpu-writebyte_example.zig"),
         .target = target,
         .optimize = optimize,
     });
-    exe_writebyte.root_module.addImport("zig64", mod_zig64);
+    exe_writebyte_mod.addImport("zig64", mod_zig64);
+
+    const exe_writebyte = b.addExecutable(.{
+        .name = "writebyte-example",
+        .root_module = exe_writebyte_mod,
+    });
     b.installArtifact(exe_writebyte);
 
     // -- Example sid-trace
-    const exe_sidtrace = b.addExecutable(.{
-        .name = "sidtrace-example",
-        .root_source_file = b.path(
-            "src/examples/sid_trace_example.zig",
-        ),
+    const exe_sidtrace_mod = b.addModule("exe_sidtrace", .{
+        .root_source_file = b.path("src/examples/sid_trace_example.zig"),
         .target = target,
         .optimize = optimize,
     });
-    exe_sidtrace.root_module.addImport("zig64", mod_zig64);
+    exe_sidtrace_mod.addImport("zig64", mod_zig64);
+
+    const exe_sidtrace = b.addExecutable(.{
+        .name = "sidtrace-example",
+        .root_module = exe_sidtrace_mod,
+    });
     b.installArtifact(exe_sidtrace);
 
     // -- Run steps for all
@@ -82,14 +88,16 @@ pub fn build(b: *std.Build) void {
     run_cmd_sidtrace.step.dependOn(b.getInstallStep());
 
     // -- Test (Cpu)
-    const test_exe = b.addTest(.{
-        .root_source_file = b.path(
-            "src/test/test-cpu.zig",
-        ),
+    const test_mod = b.addModule("test", .{
+        .root_source_file = b.path("src/test/test-cpu.zig"),
         .target = target,
         .optimize = optimize,
     });
-    test_exe.root_module.addImport("zig64", mod_zig64);
+    test_mod.addImport("zig64", mod_zig64);
+
+    const test_exe = b.addTest(.{
+        .root_module = test_mod,
+    });
 
     const test_run = b.addRunArtifact(test_exe);
     test_run.step.dependOn(b.getInstallStep());

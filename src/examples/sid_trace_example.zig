@@ -120,8 +120,8 @@ pub fn main() !void {
     c64.sid.dbg_enabled = true;
 
     // Master list for all changes
-    var all_changes = std.ArrayList(C64.Sid.RegisterChange).init(allocator);
-    defer all_changes.deinit();
+    var all_changes = std.ArrayList(C64.Sid.RegisterChange){};
+    defer all_changes.deinit(allocator);
 
     // Run each routine with callSidTrace
     const routines = [_]u16{ 0x0800, 0x0900, 0x0A00 };
@@ -132,13 +132,24 @@ pub fn main() !void {
         const changes = try c64.callSidTrace(addr, allocator);
         defer allocator.free(changes);
 
-        try C64.appendSidChanges(&all_changes, changes); // Static call!
-        std.debug.print("Traced {d} SID changes from ${X:0>4}\n", .{ changes.len, addr });
+        try C64.appendSidChanges(&all_changes, changes, allocator);
+        std.debug.print(
+            "Traced {d} SID changes from ${X:0>4}\n",
+            .{ changes.len, addr },
+        );
     }
 
     // Print all collected changes
     std.debug.print("\nTotal SID changes: {d}\n", .{all_changes.items.len});
     for (all_changes.items) |change| {
-        std.debug.print("Cycle {d}: {s} changed {X:02} => {X:02}\n", .{ change.cycle, @tagName(change.meaning), change.old_value, change.new_value });
+        std.debug.print(
+            "Cycle {d}: {s} changed {X:02} => {X:02}\n",
+            .{
+                change.cycle,
+                @tagName(change.meaning),
+                change.old_value,
+                change.new_value,
+            },
+        );
     }
 }

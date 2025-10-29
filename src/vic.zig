@@ -1,5 +1,4 @@
 const std = @import("std");
-const stdout = std.io.getStdOut().writer();
 
 const Ram64k = @import("mem.zig");
 const Cpu = @import("cpu.zig");
@@ -120,12 +119,15 @@ pub fn emulate(vic: *Vic, cycles_last_step: u8) u8 {
 }
 
 pub fn printStatus(vic: *Vic) void {
-    stdout.print("[vic] RL: {X:0>4} | VSYNC: {} | HSYNC: {} | BL: {} | RL-CHG: {} | FRM: {d}\n", .{
-        vic.rasterline,
-        vic.vsync_happened,
-        vic.hsync_happened,
-        vic.badline_happened,
-        vic.rasterline_changed,
-        vic.frame_ctr,
-    }) catch {};
+    std.debug.print(
+        "[vic] RL: {X:0>4} | VSYNC: {} | HSYNC: {} | BL: {} | RL-CHG: {} | FRM: {d}\n",
+        .{
+            vic.rasterline,
+            vic.vsync_happened,
+            vic.hsync_happened,
+            vic.badline_happened,
+            vic.rasterline_changed,
+            vic.frame_ctr,
+        },
+    );
 }
