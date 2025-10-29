@@ -454,16 +454,3 @@ This emulator is released under the **MIT License**, allowing free modification 
 
 Developed with ❤️ by M64  
 
-## Get Started Now!
-Clone the repository and start experimenting:
-```sh
-git clone https://github.com/M64GitHub/zig64.git
-cd zig64
-zig build
-```
-
-
-
-
-
-
