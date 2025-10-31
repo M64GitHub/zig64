@@ -400,7 +400,7 @@ Final SID registers:
 
 ## Building the Project
 #### Requirements
-![Zig](https://img.shields.io/badge/Zig-0.14.0-orange?style=flat)
+![Zig](https://img.shields.io/badge/Zig-0.15.2-orange?style=flat)
 
 #### Build
 ```sh
