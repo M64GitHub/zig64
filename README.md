@@ -452,5 +452,4 @@ This emulator is released under the **MIT License**, allowing free modification 
 - **[zigreSID](https://github.com/M64GitHub/zigreSID)** – A SID sound emulation library for Zig, integrating with this emulator for `.sid` file playback.
 
 
-Developed with ❤️ by M64  
-
+Made with `<3` and **Zig**
