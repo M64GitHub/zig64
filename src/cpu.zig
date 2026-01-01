@@ -198,7 +198,7 @@ pub fn printFlags(cpu: *Cpu) void {
 
 pub fn readByte(cpu: *Cpu, addr: u16) u8 {
     const sid_base = cpu.sid.base_address;
-    if ((addr >= sid_base) and (addr <= (sid_base + 25))) {
+    if ((addr >= sid_base) and (addr < (sid_base + 25))) {
         const val = cpu.sid.registers[addr - 0xD400];
         if (cpu.sid.dbg_enabled) {
             std.debug.print(
@@ -226,7 +226,7 @@ pub fn readWordZP(cpu: *Cpu, addr: u8) u16 {
 pub fn writeByte(cpu: *Cpu, val: u8, addr: u16) void {
     const sid_base = cpu.sid.base_address;
     // check sid reg writes
-    if ((addr >= sid_base) and (addr <= (sid_base + 25))) {
+    if ((addr >= sid_base) and (addr < (sid_base + 25))) {
         cpu.sid.writeRegisterCycle(addr - sid_base, val, cpu.cycles_executed);
     }
     cpu.mem.data[addr] = val;
