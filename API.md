@@ -656,7 +656,7 @@ The video timing component synchronizing CPU cycles with C64 raster behavior.
 ## Asm
 The assembly metadata decoder and disassembler, providing detailed instruction analysis.
 
-- **Fields**: None — acts as a namespace for disassembly functions and types.
+- **Fields**: None - acts as a namespace for disassembly functions and types.
 
 - **Types** Overview:
   - `Group` - Enumerates instruction categories (e.g., `branch`, `load_store`).

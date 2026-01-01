@@ -8,11 +8,11 @@
  
 A **Commodore 64 MOS 6510 emulator core** implemented in **Zig**, engineered for precision, flexibility, and seamless integration into C64-focused projects. This emulator delivers cycle-accurate CPU execution, detailed raster beam emulation for PAL and NTSC video synchronization, and advanced SID register tracking with change decoding, making it an ideal foundation for C64 software analysis, dissecting SID player routines, analyzing register manipulations, and debugging.
 
-Built as the **computational backbone** of a virtual C64 system, it powers a range of applications—from tracing and debugging 6510 assembly with rich CPU state insights to dissecting SID register manipulations for tools like [zigreSID](https://github.com/M64GitHub/zigreSID). Leveraging Zig’s modern features, it offers a clean, extensible platform with enhanced debugging capabilities, including step-by-step CPU traces and detailed SID change analysis.
+Built as the **computational backbone** of a virtual C64 system, it powers a range of applications-from tracing and debugging 6510 assembly with rich CPU state insights to dissecting SID register manipulations for tools like [zigreSID](https://github.com/M64GitHub/zigreSID). Leveraging Zig’s modern features, it offers a clean, extensible platform with enhanced debugging capabilities, including step-by-step CPU traces and detailed SID change analysis.
 
-This project **sparked from a passion for Commodore 64 SID music**, aiming to recreate and elevate that experience across platforms. As a musician tweaking SID tunes and `.sid` files—archives embedding 6510 assembly for player routines—I needed a core to execute these, trace SID register changes with cycle precision, to enable custom sound tools. That vision grew into this emulator, blending nostalgia with cutting-edge emulation tech.
+This project **sparked from a passion for Commodore 64 SID music**, aiming to recreate and elevate that experience across platforms. As a musician tweaking SID tunes and `.sid` files-archives embedding 6510 assembly for player routines-I needed a core to execute these, trace SID register changes with cycle precision, to enable custom sound tools. That vision grew into this emulator, blending nostalgia with cutting-edge emulation tech.
 
-**A key goal** is to **lower the barriers** to C64 emulation, offering an accessible entry point for developers and enthusiasts alike. With intuitive Zig tooling, robust CPU debugging, and SID state tracking, it simplifies analyzing intricate C64 programs, decoding SID behavior, and testing software—empowering users to explore, experiment, and create with ease.
+**A key goal** is to **lower the barriers** to C64 emulation, offering an accessible entry point for developers and enthusiasts alike. With intuitive Zig tooling, robust CPU debugging, and SID state tracking, it simplifies analyzing intricate C64 programs, decoding SID behavior, and testing software-empowering users to explore, experiment, and create with ease.
 
 ## Key Features
 - **Cycle-Accurate 6510 CPU Emulation**  
@@ -109,14 +109,14 @@ This emulator is structured as a set of modular components, forming the foundati
 - `Sid`: Holds register values and tracks register writes.
 - `Asm`: Provides assembly metadata decoding and disassembly.
 
-Each component features its own `dbg_enabled` flag—e.g., `c64.dbg_enabled` for emulator logs, `cpu.dbg_enabled` for execution details—enabling targeted debugging. The `Cpu` powers the system, running code and tracking SID register writes, while `Vic` ensures cycle-accurate timing.  
+Each component features its own `dbg_enabled` flag-e.g., `c64.dbg_enabled` for emulator logs, `cpu.dbg_enabled` for execution details-enabling targeted debugging. The `Cpu` powers the system, running code and tracking SID register writes, while `Vic` ensures cycle-accurate timing.  
 The `Asm` struct enhances this core with a powerful disassembler and metadata decoder, offering detailed instruction analysis.  
 The sections below outline their mechanics, API, and examples to guide you in using this emulator core effectively.
 
 ## Component Interactions
 
 **C64: Emulator Core**  
-The `C64` struct serves as the main struct, initializing components like `Cpu`, `Sid`, `Vic`, and `Ram64k`, and loading `.prg` files into `Ram64k` with `loadPrg()`. It directs `Cpu` execution through `run()`, `runFrames()`, or `call()`, the latter resetting CPU state and tracking SID register changes during subroutine execution via flags like `sid.ext_reg_written` and `sid.ext_reg_changed`. For advanced SID analysis, `callSidTrace()` executes subroutines while capturing every register change with cycle precision into an array of `RegisterChange` structs, which can be aggregated across multiple calls using `appendSidChanges()`—ideal for debugging `.sid` files or custom sound routines.
+The `C64` struct serves as the main struct, initializing components like `Cpu`, `Sid`, `Vic`, and `Ram64k`, and loading `.prg` files into `Ram64k` with `loadPrg()`. It directs `Cpu` execution through `run()`, `runFrames()`, or `call()`, the latter resetting CPU state and tracking SID register changes during subroutine execution via flags like `sid.ext_reg_written` and `sid.ext_reg_changed`. For advanced SID analysis, `callSidTrace()` executes subroutines while capturing every register change with cycle precision into an array of `RegisterChange` structs, which can be aggregated across multiple calls using `appendSidChanges()`-ideal for debugging `.sid` files or custom sound routines.
 
 **Cpu: Execution Engine**  
 The `Cpu` struct drives the emulator as the 6502 execution core, fetching instructions from `Ram64k` and stepping through them with `runStep()`. It orchestrates cycle-accurate execution, managing registers (`pc`, `a`, `x`, `y`, `sp`), status flags, and memory operations while coordinating with `Vic` for timing and `Sid` for register writes. Integrated with `Asm`, it leverages decoded `Instruction` metadata to execute opcodes and supports debugging with detailed trace output.
