@@ -21,6 +21,7 @@ mem: *Ram64k,
 sid: *Sid,
 vic: *Vic,
 dbg_enabled: bool,
+rti_exited: bool,
 
 pub const CpuFlags = struct {
     c: u1,
@@ -69,6 +70,7 @@ pub fn init(mem: *Ram64k, sid: *Sid, vic: *Vic, pc_start: u16) Cpu {
         .sid = sid,
         .vic = vic,
         .dbg_enabled = false,
+        .rti_exited = false,
     };
 }
 
@@ -94,6 +96,7 @@ fn doReset(cpu: *Cpu) void {
     cpu.cycles_executed = 0;
     cpu.cycles_last_step = 0;
     cpu.opcode_last = 0x00;
+    cpu.rti_exited = false;
 }
 
 // Reset Cpu and clear memory
@@ -1394,7 +1397,7 @@ pub fn runStep(cpu: *Cpu) u8 {
         ((cpu.pc == 0xea31) or (cpu.pc == 0xea81)))
     {
         std.debug.print("[cpu] RTI\n", .{});
-
+        cpu.rti_exited = true;
         return 0;
     }
 

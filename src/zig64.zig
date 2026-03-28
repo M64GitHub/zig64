@@ -40,20 +40,49 @@ pub fn deinit(c64: *C64, allocator: std.mem.Allocator) void {
 }
 
 pub fn call(c64: *C64, address: u16) void {
+    _ = c64.callWithLimit(address, 0);
+}
+
+/// Call a subroutine with a cycle limit.
+/// max_cycles=0 means unlimited.
+/// Returns true if routine completed,
+/// false if cycle limit was exceeded.
+pub fn callWithLimit(
+    c64: *C64,
+    address: u16,
+    max_cycles: u32,
+) bool {
     c64.cpu.status = 0x00;
     c64.cpu.psToFlags();
     c64.cpu.sp = 0xFF;
 
     c64.sid.ext_reg_written = false;
     c64.cpu.pc = address;
+    c64.cpu.rti_exited = false;
     if (c64.dbg_enabled) {
-        std.debug.print("[c64] calling address: {X:0>4}\n", .{
-            address,
-        });
+        std.debug.print(
+            "[c64] calling address: {X:0>4}\n",
+            .{address},
+        );
     }
-    while (c64.cpu.runStep() != 0) {}
-    c64.sid.reg_written = c64.sid.ext_reg_written;
-    c64.sid.reg_changed = c64.sid.ext_reg_changed;
+    var cycles: u32 = 0;
+    while (c64.cpu.runStep() != 0) {
+        cycles +%= c64.cpu.cycles_last_step;
+        if (max_cycles > 0 and
+            cycles >= max_cycles)
+        {
+            c64.sid.reg_written =
+                c64.sid.ext_reg_written;
+            c64.sid.reg_changed =
+                c64.sid.ext_reg_changed;
+            return false;
+        }
+    }
+    c64.sid.reg_written =
+        c64.sid.ext_reg_written;
+    c64.sid.reg_changed =
+        c64.sid.ext_reg_changed;
+    return true;
 }
 
 pub fn callSidTrace(
@@ -67,9 +96,13 @@ pub fn callSidTrace(
 
     c64.sid.ext_reg_written = false;
     c64.cpu.pc = address;
+    c64.cpu.rti_exited = false;
 
     if (c64.dbg_enabled) {
-        std.debug.print("[c64] tracing SID from address: {X:0>4}\n", .{address});
+        std.debug.print(
+            "[c64] tracing SID from address: {X:0>4}\n",
+            .{address},
+        );
     }
 
     // ArrayList to collect RegisterChange instances
